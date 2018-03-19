@@ -4,13 +4,22 @@ from __future__ import print_function
 
 import argparse
 import logging
+import random
 
-# Imports
 import numpy as np
 import tensorflow as tf
 
+from server import Server
+from client import Client
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s %(message)s')
+
+# Set random seeds for reproducibility.
+RANDOM_SEED = 42
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
+tf.set_random_seed(RANDOM_SEED)
 
 class Experiment:
     def __init__(self, config):
@@ -32,9 +41,9 @@ class Experiment:
         # Make the clients and server and connect them
         logging.info('Setting up server and clients.')
         self.clients = []
-        for X, y in zipy(X_train_list, y_train_list):
+        for X, y in zip(X_train_list, y_train_list):
             self.clients.append(Client(self.host, self.port, X, y))
-        self.server = Server(self.host, self.port, self.clients. X_test, y_test)
+        self.server = Server(self.host, self.port, self.clients, X_test, y_test)
 
         # Set up models
         logging.info('Setting up the deep models.')
@@ -45,7 +54,6 @@ class Experiment:
         for client in self.clients:
             client.setup_model(self.model_type)
             client.setup_training(self.batch_size, self.epochs, self.learning_rate)
-
         logging.info('Done setting up experiment.')
 
     def get_datasets(self, num_clients, model_type, dataset_type):
@@ -81,7 +89,6 @@ class Experiment:
                np.array(X_test), np.array(y_test)
 
     def run(self):
-        pass
         self.server.federated_learning(self.fraction, self.max_rounds)
 
 
