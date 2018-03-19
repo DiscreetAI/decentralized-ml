@@ -17,7 +17,7 @@ class Experiment:
         logging.info('Starting experiment.')
         self.config = config
         self.host = config['host']
-        self.port = 0
+        self.port = config['port']
         self.num_clients = config['num_clients']
         self.model_type = config['model_type']
         self.dataset_type = config['dataset_type']
@@ -104,7 +104,8 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--learningrate', type=float, help="learning rate \
         (default 1e-4)")
     parser.add_argument('-hh', '--host', type=str, help="hostname (default \
-        localhost)")
+        127.0.0.1)")
+    parser.add_argument('-p', '--port', type=str, help="port (default 12345)")
     args = parser.parse_args()
 
     k = args.clients if args.clients else 100
@@ -116,6 +117,7 @@ if __name__ == '__main__':
     e = args.epochs if args.epochs else 10
     l = args.learningrate if args.learningrate else 1e-4
     h = args.host if args.host else '127.0.0.1'
+    p = args.port if args.port else 12345
 
     config = {
         "num_clients": k,
@@ -126,7 +128,8 @@ if __name__ == '__main__':
         "batch_size": b,
         "epochs": e,
         "learning_rate": l,
-        "host": h
+        "host": h,
+        "port": p
     }
 
     experiment = Experiment(config)
