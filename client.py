@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='[Client] %(asctime)s %(levelname)s %(message)s')
 
 class Client(object):
-    def __init__(self, host, port, X_train, y_train):
+    def __init__(self, X_train, y_train):
         # Since this architecture doesn't use sockets, we will
         # ignore the host and the port.
         self.X_train = X_train

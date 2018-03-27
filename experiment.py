@@ -25,8 +25,8 @@ class Experiment:
     def __init__(self, config):
         logging.info('Starting experiment.')
         self.config = config
-        self.host = config['host']
-        self.port = config['port']
+        # self.host = config['host']
+        # self.port = config['port']
         self.num_clients = config['num_clients']
         self.model_type = config['model_type']
         self.dataset_type = config['dataset_type']
@@ -42,8 +42,8 @@ class Experiment:
         logging.info('Setting up server and clients.')
         self.clients = []
         for X, y in zip(X_train_list, y_train_list):
-            self.clients.append(Client(self.host, self.port, X, y))
-        self.server = Server(self.host, self.port, self.clients, X_test, y_test)
+            self.clients.append(Client(X, y))
+        self.server = Server(self.clients, X_test, y_test)
 
         # Set up models
         logging.info('Setting up the deep models.')
@@ -77,7 +77,6 @@ class Experiment:
             X_train, y_train = X_train[indices], y_train[indices]
             indices = np.random.permutation(X_test.shape[0])
             X_test, y_test = X_test[indices], y_test[indices]
-            print(y_train[0])
 
             # Partition data
             X_train_list = np.split(X_train, num_clients)
@@ -110,9 +109,9 @@ if __name__ == '__main__':
         epochs (default 10)")
     parser.add_argument('-l', '--learningrate', type=float, help="learning rate \
         (default 1e-4)")
-    parser.add_argument('-hh', '--host', type=str, help="hostname (default \
-        127.0.0.1)")
-    parser.add_argument('-p', '--port', type=str, help="port (default 12345)")
+    # parser.add_argument('-hh', '--host', type=str, help="hostname (default \
+    #     127.0.0.1)")
+    # parser.add_argument('-p', '--port', type=str, help="port (default 12345)")
     args = parser.parse_args()
 
     k = args.clients if args.clients else 100
@@ -123,8 +122,8 @@ if __name__ == '__main__':
     b = args.batchsize if args.batchsize else -1
     e = args.epochs if args.epochs else 10
     l = args.learningrate if args.learningrate else 1e-4
-    h = args.host if args.host else '127.0.0.1'
-    p = args.port if args.port else 12345
+    # h = args.host if args.host else '127.0.0.1'
+    # p = args.port if args.port else 12345
 
     config = {
         "num_clients": k,
@@ -135,8 +134,8 @@ if __name__ == '__main__':
         "batch_size": b,
         "epochs": e,
         "learning_rate": l,
-        "host": h,
-        "port": p
+        # "host": h,
+        # "port": p
     }
 
     experiment = Experiment(config)

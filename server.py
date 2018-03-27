@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='[Server] %(asctime)s %(levelname)s %(message)s')
 
 class Server:
-    def __init__(self, host, port, clients, X_test, y_test):
+    def __init__(self, clients, X_test, y_test):
         # Since this architecture doesn't use sockets, we will
         # ignore the host and the port.
         self.clients = clients
@@ -44,7 +44,7 @@ class Server:
                 update = self.model.scale_weights(update, num_data)
                 weights = self.model.sum_weights(weights, update)
                 n += num_data
-            weights = self.model.scale_weights(update, 1/n)
+            weights = self.model.inverse_scale_weights(update, n)
 
             self.model.load_weights(weights)
             logging.info('Main model updated.')
