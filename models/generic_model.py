@@ -33,3 +33,6 @@ class GenericModel:
 
     def scale_weights(self, weights, factor):
         raise NotImplementedError("Subclasses should implement this!")
+
+    def inverse_scale_weights(self, weights, factor):
+        raise NotImplementedError("Subclasses should implement this!")
