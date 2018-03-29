@@ -13,13 +13,7 @@ class GenericModel:
 
     """
 
-    def build(self):
-        raise NotImplementedError("Subclasses should implement this!")
-
-    def initialize_weights(self):
-        raise NotImplementedError("Subclasses should implement this!")
-
-    def setup_optimizer(self, learning_rate):
+    def get_model(self):
         raise NotImplementedError("Subclasses should implement this!")
 
     def load_weights(self):

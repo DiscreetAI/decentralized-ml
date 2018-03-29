@@ -41,8 +41,10 @@ class Experiment:
         # Make the clients and server and connect them
         logging.info('Setting up server and clients.')
         self.clients = []
+        i = 1
         for X, y in zip(X_train_list, y_train_list):
-            self.clients.append(Client(X, y))
+            self.clients.append(Client(i, X, y))
+            i += 1
         self.server = Server(self.clients, X_test, y_test)
 
         # Set up models
@@ -67,6 +69,9 @@ class Experiment:
                       ))
             X_test = mnist.test.images
             y_test = np.asarray(mnist.test.labels, dtype=np.int32)
+
+            X_train = X_train.reshape(-1, 784)
+            X_test = X_test.reshape(-1, 784)
         else:
             raise ValueError('Model type {0} not supported.'.format(model_type))
 
@@ -84,8 +89,7 @@ class Experiment:
         else:
             raise ValueError('Dataset type {0} not supported.'.format(dataset_type))
 
-        return np.array(X_train_list), np.array(y_train_list), \
-               np.array(X_test), np.array(y_test)
+        return X_train_list, y_train_list, X_test, y_test
 
     def run(self):
         self.server.federated_learning(self.fraction, self.max_rounds)

@@ -1,2 +1,4 @@
 MNIST-data
 logs
+*.pyc
+.DS_Store
