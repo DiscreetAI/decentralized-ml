@@ -3,24 +3,52 @@ import tensorflow as tf
 
 from models.generic_model import GenericModel
 
-
-class Perceptron(GenericModel):
+class Perceptron:
     def __init__(self):
         self.n_input = 784
-        self.n_classes = 10
         self.n_hidden1 = 200
         self.n_hidden2 = 200
+        self.n_classes = 10
 
     def preprocess_input(self, x):
         return x
 
     def build_model(self, input_layer):
-        with tf.variable_scope("layer1"):
-            self.layer1 = tf.layers.dense(input_layer, self.n_hidden1, tf.nn.relu)
-        with tf.variable_scope("layer2"):
-            self.layer2 = tf.layers.dense(self.layer1, self.n_hidden2, tf.nn.relu)
-        with tf.variable_scope("logits_layer"):
-            self.logits = tf.layers.dense(self.layer2, self.n_classes)
+        # with tf.variable_scope("layer1"):
+        #     self.layer1 = tf.layers.dense(input_layer, self.n_hidden1, tf.nn.relu)
+        # with tf.variable_scope("layer2"):
+        #     self.layer2 = tf.layers.dense(self.layer1, self.n_hidden2, tf.nn.relu)
+        # with tf.variable_scope("logits_layer"):
+        #     self.logits = tf.layers.dense(self.layer2, self.n_classes)
+        new_weights = self.new_weights if hasattr(self, 'new_weights') else None
+        get_tensor_name = lambda l, t: new_weights['/'.join([l, "dense", t]) + ":0"]
+
+        layer_name = "layer1"
+        with tf.variable_scope(layer_name):
+            kernel_init, bias_init = None, None
+            if new_weights:
+                kernel_init = tf.constant_initializer(get_tensor_name(layer_name, "kernel"))
+                bias_init = tf.constant_initializer(get_tensor_name(layer_name, "bias"))
+            self.layer1 = tf.layers.dense(input_layer, self.n_hidden1, tf.nn.relu,
+                kernel_initializer=kernel_init, bias_initializer=bias_init)
+
+        layer_name = "layer2"
+        with tf.variable_scope(layer_name):
+            kernel_init, bias_init = None, None
+            if new_weights:
+                kernel_init = tf.constant_initializer(get_tensor_name(layer_name, "kernel"))
+                bias_init = tf.constant_initializer(get_tensor_name(layer_name, "bias"))
+            self.layer2 = tf.layers.dense(self.layer1, self.n_hidden2, tf.nn.relu,
+                kernel_initializer=kernel_init, bias_initializer=bias_init)
+
+        layer_name = "logits_layer"
+        with tf.variable_scope(layer_name):
+            kernel_init, bias_init = None, None
+            if new_weights:
+                kernel_init = tf.constant_initializer(get_tensor_name(layer_name, "kernel"))
+                bias_init = tf.constant_initializer(get_tensor_name(layer_name, "bias"))
+            self.logits = tf.layers.dense(self.layer2, self.n_classes,
+                kernel_initializer=kernel_init, bias_initializer=bias_init)
 
     def build_loss(self):
         self.loss = tf.losses.sparse_softmax_cross_entropy(
@@ -57,20 +85,20 @@ class Perceptron(GenericModel):
           "accuracy": tf.metrics.accuracy(labels=self.labels, predictions=self.predictions["classes"])
         }
 
-    def get_estimator(self, mode):
+    def get_estimator(self, mode, scaffold):
         estimator = None
         self.build_predictions_obj()
         if mode == tf.estimator.ModeKeys.PREDICT:
             self.build_eval_metric()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, predictions=self.predictions)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, predictions=self.predictions, scaffold=scaffold)
         elif mode == tf.estimator.ModeKeys.TRAIN:
             self.build_loss()
             self.build_optimizer()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, train_op=self.optimizer)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, train_op=self.optimizer, scaffold=scaffold)
         elif mode == tf.estimator.ModeKeys.EVAL:
             self.build_loss()
             self.build_eval_metric()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops, scaffold=scaffold)
         return estimator
 
 
@@ -80,7 +108,8 @@ class Perceptron(GenericModel):
         """
         # Set up hyperparameters.
         if params:
-            self.learning_rate = params["learning_rate"]
+            self.learning_rate = params.get("learning_rate", None)
+            self.new_weights = params.get("new_weights", None)
 
         # Do pre-processing if necessary.
         self.input_layer = self.preprocess_input(features["x"])
@@ -89,16 +118,25 @@ class Perceptron(GenericModel):
         # Define the model.
         self.build_model(self.input_layer)
 
-        # Build and return the estimator.
-        return self.get_estimator(mode)
+        def init_fn(scaffold, sess):
+            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+            print(collection)
+            # for tensor in collection:
+            #     assign_op = tensor.assign(self.new_weights[tensor.name])
+            #     sess.run(assign_op)
+        scaffold = tf.train.Scaffold(init_fn=init_fn)
 
-    def load_weights(self, new_weights, metagraph_file, checkpoint_dir):
+        # Build and return the estimator.
+        return self.get_estimator(mode, scaffold)
+
+    def load_weights(self, new_weights, latest_checkpoint, checkpoint_dir):
         tf.reset_default_graph()
         with tf.Session().as_default() as sess:
-            new_saver = tf.train.import_meta_graph(metagraph_file)
+            new_saver = tf.train.import_meta_graph(latest_checkpoint + '.meta')
             # To load non-trainable variables and prevent errors...
+            # we restore them if they are found, or initialize them otherwise.
             try:
-                new_saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir))
+                new_saver.restore(sess, latest_checkpoint)
             except:
                 sess.run(tf.global_variables_initializer())
 
@@ -108,6 +146,7 @@ class Perceptron(GenericModel):
                 sess.run(assign_op)
 
             save_path = new_saver.save(sess, checkpoint_dir + "model.ckpt")
+        tf.reset_default_graph()
 
     def get_weights(self, latest_checkpoint):
         tf.reset_default_graph()

@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import logging
 import random
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -12,8 +13,10 @@ import tensorflow as tf
 from server import Server
 from client import Client
 
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s %(levelname)s %(message)s')
+os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
+#logging.getLogger('tensorflow').disabled = True
 
 # Set random seeds for reproducibility.
 RANDOM_SEED = 42
@@ -45,14 +48,14 @@ class Experiment:
         for X, y in zip(X_train_list, y_train_list):
             self.clients.append(Client(i, X, y))
             i += 1
-        self.server = Server(self.clients, X_test, y_test)
+        #self.server = Server(self.clients, X_test, y_test)
+        self.server = Server(self.clients, X_train_list[0], y_train_list[0])
 
         # Set up models
         logging.info('Setting up the deep models.')
         self.batch_size = config['batch_size']
         self.epochs = config['epochs']
         self.learning_rate = config['learning_rate']
-        self.server.setup_model(self.model_type)
         for client in self.clients:
             client.setup_model(self.model_type)
             client.setup_training(self.batch_size, self.epochs, self.learning_rate)
@@ -92,13 +95,13 @@ class Experiment:
         return X_train_list, y_train_list, X_test, y_test
 
     def run(self):
-        self.server.federated_learning(self.fraction, self.max_rounds)
+        self.server.federated_learning(self.fraction, self.max_rounds, self.model_type)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-k', '--clients', type=int, help="number of clients \
-        to instantiate (default 100)")
+        to instantiate (default 1)")
     parser.add_argument('-m', '--model', type=str, help="type of deep model \
         (specifies the dataset) (default perceptron)")
     parser.add_argument('-d', '--datasettype', type=str, help="type of dataset \
@@ -108,9 +111,9 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--maxrounds', type=int, help="maximum number \
         of communication rounds (default 100000)")
     parser.add_argument('-b', '--batchsize', type=int, help="local batchsize \
-        (default infinity)")
+        (default 50)")
     parser.add_argument('-e', '--epochs', type=int, help="number of local \
-        epochs (default 10)")
+        epochs (-1 implies the whole dataset) (default 50)")
     parser.add_argument('-l', '--learningrate', type=float, help="learning rate \
         (default 1e-4)")
     # parser.add_argument('-hh', '--host', type=str, help="hostname (default \
@@ -118,12 +121,12 @@ if __name__ == '__main__':
     # parser.add_argument('-p', '--port', type=str, help="port (default 12345)")
     args = parser.parse_args()
 
-    k = args.clients if args.clients else 100
+    k = args.clients if args.clients else 1
     m = args.model if args.model else 'perceptron'
     d = args.datasettype if args.datasettype else 'iid'
     c = args.fraction if args.fraction else 1.0
     r = args.maxrounds if args.maxrounds else 100000
-    b = args.batchsize if args.batchsize else -1
+    b = args.batchsize if args.batchsize else 50
     e = args.epochs if args.epochs else 10
     l = args.learningrate if args.learningrate else 1e-4
     # h = args.host if args.host else '127.0.0.1'
