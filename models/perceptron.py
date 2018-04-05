@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from models.generic_model import GenericModel
 
-class Perceptron:
+class Perceptron(GenericModel):
     def __init__(self):
         self.n_input = 784
         self.n_hidden1 = 200
@@ -14,12 +14,6 @@ class Perceptron:
         return x
 
     def build_model(self, input_layer):
-        # with tf.variable_scope("layer1"):
-        #     self.layer1 = tf.layers.dense(input_layer, self.n_hidden1, tf.nn.relu)
-        # with tf.variable_scope("layer2"):
-        #     self.layer2 = tf.layers.dense(self.layer1, self.n_hidden2, tf.nn.relu)
-        # with tf.variable_scope("logits_layer"):
-        #     self.logits = tf.layers.dense(self.layer2, self.n_classes)
         new_weights = self.new_weights if hasattr(self, 'new_weights') else None
         get_tensor_name = lambda l, t: new_weights['/'.join([l, "dense", t]) + ":0"]
 
@@ -85,20 +79,20 @@ class Perceptron:
           "accuracy": tf.metrics.accuracy(labels=self.labels, predictions=self.predictions["classes"])
         }
 
-    def get_estimator(self, mode, scaffold):
+    def get_estimator(self, mode):
         estimator = None
         self.build_predictions_obj()
         if mode == tf.estimator.ModeKeys.PREDICT:
             self.build_eval_metric()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, predictions=self.predictions, scaffold=scaffold)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, predictions=self.predictions)
         elif mode == tf.estimator.ModeKeys.TRAIN:
             self.build_loss()
             self.build_optimizer()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, train_op=self.optimizer, scaffold=scaffold)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, train_op=self.optimizer)
         elif mode == tf.estimator.ModeKeys.EVAL:
             self.build_loss()
             self.build_eval_metric()
-            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops, scaffold=scaffold)
+            estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops)
         return estimator
 
 
@@ -118,16 +112,8 @@ class Perceptron:
         # Define the model.
         self.build_model(self.input_layer)
 
-        def init_fn(scaffold, sess):
-            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            print(collection)
-            # for tensor in collection:
-            #     assign_op = tensor.assign(self.new_weights[tensor.name])
-            #     sess.run(assign_op)
-        scaffold = tf.train.Scaffold(init_fn=init_fn)
-
         # Build and return the estimator.
-        return self.get_estimator(mode, scaffold)
+        return self.get_estimator(mode)
 
     def load_weights(self, new_weights, latest_checkpoint, checkpoint_dir):
         tf.reset_default_graph()

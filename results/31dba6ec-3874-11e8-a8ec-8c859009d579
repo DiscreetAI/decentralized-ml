@@ -1,0 +1,1 @@
+{"duration": [31.937206029891968], "config": {"num_clients": 1, "model_type": "perceptron", "dataset_type": "iid", "fraction": 1.0, "max_rounds": 1, "batch_size": 50, "epochs": 10, "learning_rate": 0.0001, "save_dir": "./results/"}, "accuracy": [0.9733999967575073], "loss": [0.0878831148147583], "global_step": [56.0]}
