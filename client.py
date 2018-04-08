@@ -17,6 +17,7 @@ class Client(object):
         self.iden = iden
         self.X_train = X_train
         self.y_train = y_train
+        self.contract = None
 
     def setup_model(self, model_type):
         self.model_type = model_type
@@ -66,7 +67,17 @@ class Client(object):
         logging.info('Training complete.')
         new_weights = self.model.get_weights(self.get_latest_checkpoint())
         shutil.rmtree("./checkpoints-{0}/".format(self.iden))
-        return new_weights, self.X_train[0].size
+        update, num_data = new_weights, self.X_train[0].size
+        update = self.model.scale_weights(update, num_data)
+        return update, num_data
+
+    def send_weights(self):
+        #this should call the contract.sendResponse() with the first argument train() as the input
+        pass
+
+    def start_listening(self):
+        #this should set this client to start listening to a specific contract
+        pass
 
     def get_checkpoints_folder(self):
         return "./checkpoints-{0}/{1}/".format(self.iden, self.model_type)
