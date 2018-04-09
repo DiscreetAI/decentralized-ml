@@ -1,6 +1,7 @@
 import logging
 import pickle
 import shutil
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -8,6 +9,13 @@ import tensorflow as tf
 from models.perceptron import Perceptron
 from models.cnn import CNN
 from models.lstm import LSTM
+
+from ethereum-utils import is_address
+from web3.auto import w3
+from web3 import Web3, HTTPProvider
+
+
+web3 = Web3(HTTPProvider('http://localhost:8545'))
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Client] %(asctime)s %(levelname)s %(message)s')
@@ -71,13 +79,26 @@ class Client(object):
         update = self.model.scale_weights(update, num_data)
         return update, num_data
 
-    def send_weights(self):
+    def send_weights(self, from_account, train_arr, train_key):
         #this should call the contract.sendResponse() with the first argument train() as the input
-        pass
+        tx_hash = contract_obj.functions.sendResponse(train_arr, train_key, len(train_arr)).transact(
+            {'from': from_account})
+        tx_receipt = web3.eth.getTransactionReceipt(tx_hash)
+        log = contract_obj.events.ResponseReceived().processReceipt(tx_receipt)
+        return log[0]
 
-    def start_listening(self):
+    def handle_event(event):
+        print(event)
+
+    def start_listening(self, address, event_to_listen, poll_interval):
         #this should set this client to start listening to a specific contract
-        pass
+        #make this non-blocking
+        assert(is_address(address))
+        block_filter = w3.eth.filter('latest')
+        while True:
+            for event in event_filter.get_new_entries():
+                handle_event(event)
+            time.sleep(poll_interval)
 
     def get_checkpoints_folder(self):
         return "./checkpoints-{0}/{1}/".format(self.iden, self.model_type)
