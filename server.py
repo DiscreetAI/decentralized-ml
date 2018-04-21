@@ -1,6 +1,5 @@
 import time
 import random
-import uuid
 import json
 import logging
 import pathlib
@@ -28,7 +27,7 @@ class Server:
             "config": config,
             "learning_rate": []
         }
-        self.save_path = self.config['save_dir'] + "/" + str(uuid.uuid1())
+        self.save_path = self.config['save_dir'] + "/" + str(time.time())
 
     def setup_model(self, model_type):
         self.model_type = model_type
