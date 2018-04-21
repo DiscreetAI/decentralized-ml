@@ -52,7 +52,7 @@ class Perceptron(GenericModel):
         )
 
     def build_optimizer(self):
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
         self.optimizer = optimizer.minimize(
             loss=self.loss,
             global_step=tf.train.get_global_step(),
