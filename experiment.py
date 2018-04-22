@@ -59,7 +59,7 @@ class Experiment:
 
     def get_datasets(self, num_clients, model_type, dataset_type):
         # Load training and eval data
-        if model_type == 'perceptron':
+        if model_type == 'perceptron' or model_type == 'cnn-mnist':
             mnist = tf.contrib.learn.datasets.load_dataset("mnist")
             X_train = np.concatenate((mnist.train.images, mnist.validation.images))
             y_train = np.concatenate((
@@ -69,8 +69,12 @@ class Experiment:
             X_test = mnist.test.images
             y_test = np.asarray(mnist.test.labels, dtype=np.int32)
 
-            X_train = X_train.reshape(-1, 784)
-            X_test = X_test.reshape(-1, 784)
+            if model_type == 'perceptron':
+                X_train = X_train.reshape(-1, 784)
+                X_test = X_test.reshape(-1, 784)
+            if model_type == 'cnn-mnist':
+                X_train = X_train.reshape(-1, 28, 28, 1)
+                X_test = X_test.reshape(-1, 28, 28, 1)
         else:
             raise ValueError('Model type {0} not supported.'.format(model_type))
 

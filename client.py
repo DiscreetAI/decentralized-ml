@@ -22,7 +22,7 @@ class Client(object):
         self.model_type = model_type
         if model_type == "perceptron":
             self.model = Perceptron()
-        elif model_type == "cnn":
+        elif model_type == "cnn-mnist":
             self.model = CNN()
         elif model_type == "lstm":
             self.model = LSTM()

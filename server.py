@@ -33,7 +33,7 @@ class Server:
         self.model_type = model_type
         if model_type == "perceptron":
             self.model = Perceptron()
-        elif model_type == "cnn":
+        elif model_type == "cnn-mnist":
             self.model = CNN()
         elif model_type == "lstm":
             self.model = LSTM()
@@ -45,6 +45,10 @@ class Server:
         if model_type == "perceptron":
             m = Perceptron()
             inputs = tf.placeholder(tf.float32, shape=(None, 28*28))
+            _ = m.get_model(features={"x": inputs}, labels=None, mode='predict', params=None)
+        elif model_type == 'cnn-mnist':
+            m = CNN()
+            inputs = tf.placeholder(tf.float32, shape=(None, 28, 28, 1))
             _ = m.get_model(features={"x": inputs}, labels=None, mode='predict', params=None)
         else:
             raise ValueError("Model {model_type} not supported.".format(model_type))
