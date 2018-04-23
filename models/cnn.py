@@ -29,9 +29,7 @@ class CNN(GenericModel):
             self.out = tf.layers.conv2d(input_layer, self.n_channels1, self.kernel_size1,
                 activation=tf.nn.relu, kernel_initializer=kernel_init, bias_initializer=bias_init)
 
-        layer_name = "pool1"
-        with tf.variable_scope(layer_name):
-            self.out = tf.layers.max_pooling2d(inputs=self.out, pool_size=[2, 2], strides=2)
+        self.out = tf.layers.max_pooling2d(inputs=self.out, pool_size=[2, 2], strides=2)
 
         layer_name = "conv_layer2"
         with tf.variable_scope(layer_name):
@@ -42,9 +40,8 @@ class CNN(GenericModel):
             self.out = tf.layers.conv2d(self.out, self.n_channels2, self.kernel_size2,
                 activation=tf.nn.relu, kernel_initializer=kernel_init, bias_initializer=bias_init)
 
-        layer_name = "pool2"
-        with tf.variable_scope(layer_name):
-            self.out = tf.layers.max_pooling2d(inputs=self.out, pool_size=[2, 2], strides=1)
+
+        self.out = tf.layers.max_pooling2d(inputs=self.out, pool_size=[2, 2], strides=1)
 
         self.out = tf.layers.flatten(self.out)
 
@@ -165,22 +162,3 @@ class CNN(GenericModel):
             collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
             weights = {tensor.name:sess.run(tensor) for tensor in collection}
         return weights
-
-    def sum_weights(self, weights1, weights2):
-        new_weights = {}
-        for key1, key2 in zip(sorted(weights1.keys()), sorted(weights2.keys())):
-            assert key1 == key2, 'Error with keys'
-            new_weights[key1] = weights1[key1] + weights2[key2]
-        return new_weights
-
-    def scale_weights(self, weights, factor):
-        new_weights = {}
-        for key, value in weights.items():
-            new_weights[key] = value * factor
-        return new_weights
-
-    def inverse_scale_weights(self, weights, factor):
-        new_weights = {}
-        for key, value in weights.items():
-            new_weights[key] = value / factor
-        return new_weights

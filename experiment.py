@@ -46,7 +46,8 @@ class Experiment:
         for X, y in zip(X_train_list, y_train_list):
             self.clients.append(Client(i, X, y))
             i += 1
-        self.server = Server(self.clients, X_test, y_test, config)
+        self.validation_client = Client('val', X_test, y_test)
+        self.server = Server(self.clients, self.validation_client, config)
 
         # Set up models
         logging.info('Setting up the deep models.')
@@ -55,6 +56,7 @@ class Experiment:
         self.learning_rate = config['learning_rate']
         for client in self.clients:
             client.setup_model(self.model_type)
+        self.validation_client.setup_model(self.model_type)
         logging.info('Done setting up experiment.')
 
     def get_datasets(self, num_clients, model_type, dataset_type):
@@ -101,58 +103,45 @@ class Experiment:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--notes', type=str, help="notes about the \
-        experiment (default <none>)")
+        experiment (default <none>)", default="")
     parser.add_argument('-k', '--clients', type=int, help="number of clients \
-        to instantiate (default 1)")
+        to instantiate (default 1)", default=1)
     parser.add_argument('-m', '--model', type=str, help="type of deep model \
-        (specifies the dataset) (default perceptron)")
+        (specifies the dataset) (default perceptron)", default="perceptron")
     parser.add_argument('-d', '--datasettype', type=str, help="type of dataset \
-        partition (default IID)")
+        partition (default IID)", default="iid")
     parser.add_argument('-c', '--fraction', type=float, help="fraction of \
-        clients to train on (default 1.0)")
+        clients to train on (default 1.0)", default=1.0)
     parser.add_argument('-r', '--maxrounds', type=int, help="maximum number \
-        of communication rounds (default 100000)")
+        of communication rounds (default 100000)", default=100000)
     parser.add_argument('-b', '--batchsize', type=int, help="local batchsize \
-        (default 50)")
+        (default 50)", default=50)
     parser.add_argument('-e', '--epochs', type=int, help="number of local \
-        epochs (-1 implies the whole dataset) (default 50)")
+        epochs (-1 implies the whole dataset) (default 5)", default=5)
     parser.add_argument('-l', '--learningrate', type=float, help="learning rate \
-        (default 1e-4)")
+        (default 1e-4)", default=1e-4)
     parser.add_argument('-f', '--savedir', type=str, help="directory to save \
-        validation history (default './results')")
+        validation history (default './results')", default='./results')
     parser.add_argument('-g', '--goalaccuracy', type=float, help="accuracy \
-        when training should stop (default 1.0)")
+        when training should stop (default 1.0)", default=1.0)
     parser.add_argument('-y', '--decay', type=float, help="learning rate decay \
-        (default 0.99)")
+        (default 0.99)", default=0.99)
     args = parser.parse_args()
 
-    n = args.notes if args.notes else ""
-    k = args.clients if args.clients else 1
-    m = args.model if args.model else 'perceptron'
-    d = args.datasettype if args.datasettype else 'iid'
-    c = args.fraction if args.fraction else 1.0
-    r = args.maxrounds if args.maxrounds else 100000
-    b = args.batchsize if args.batchsize else 50
-    e = args.epochs if args.epochs else 10
-    l = args.learningrate if args.learningrate else 1e-4
-    f = args.savedir if args.savedir else './results/'
-    g = args.goalaccuracy if args.goalaccuracy else 1.0
-    y = args.decay if args.decay else 0.99
-
     config = {
-        "num_clients": k,
-        "model_type": m,
-        "dataset_type": d,
-        "fraction": c,
-        "max_rounds": r,
-        "batch_size": b,
-        "epochs": e,
-        "learning_rate": l,
-        "save_dir": f,
-        "goal_accuracy": g,
-        "lr_decay": y,
+        "notes": args.notes,
+        "num_clients": args.clients,
+        "model_type": args.model,
+        "dataset_type": args.datasettype,
+        "fraction": args.fraction,
+        "max_rounds": args.maxrounds,
+        "batch_size": args.batchsize,
+        "epochs": args.epochs,
+        "learning_rate": args.learningrate,
+        "save_dir": args.savedir,
+        "goal_accuracy": args.goalaccuracy,
+        "lr_decay": args.decay,
     }
 
     experiment = Experiment(config)
-
     experiment.run()
