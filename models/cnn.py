@@ -1,9 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from models.generic_model import GenericModel
+from models.generic_model import GenericTensorflowModel
 
-class CNN(GenericModel):
+class CNN(GenericTensorflowModel):
     def __init__(self):
         self.n_channels1 = 32
         self.kernel_size1 = (5, 5)
@@ -13,7 +13,13 @@ class CNN(GenericModel):
         self.n_classes = 10
 
     def preprocess_input(self, x):
+        x = tf.cast(x, tf.float32)
+        # TODO: Implement pre-process for CIFAR10.
         return x
+
+    def preprocess_labels(self, labels):
+        labels = tf.cast(labels, tf.int32)
+        return labels
 
     def build_model(self, input_layer):
         new_weights = self.new_weights if hasattr(self, 'new_weights') else None
@@ -114,7 +120,6 @@ class CNN(GenericModel):
             estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops)
         return estimator
 
-
     def get_model(self, features, labels, mode, params):
         """
         When using the Estimator API, features will come as a TF Tensor already.
@@ -127,38 +132,11 @@ class CNN(GenericModel):
         # Do pre-processing if necessary.
         self.input_layer = self.preprocess_input(features["x"])
         self.labels = labels
+        if labels != None:
+            self.labels = self.preprocess_labels(labels)
 
         # Define the model.
         self.build_model(self.input_layer)
 
         # Build and return the estimator.
         return self.get_estimator(mode)
-
-    def load_weights(self, new_weights, latest_checkpoint, checkpoint_dir):
-        tf.reset_default_graph()
-        with tf.Session().as_default() as sess:
-            new_saver = tf.train.import_meta_graph(latest_checkpoint + '.meta')
-            # To load non-trainable variables and prevent errors...
-            # we restore them if they are found, or initialize them otherwise.
-            try:
-                new_saver.restore(sess, latest_checkpoint)
-            except:
-                sess.run(tf.global_variables_initializer())
-
-            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            for tensor in collection:
-                assign_op = tensor.assign(new_weights[tensor.name])
-                sess.run(assign_op)
-
-            save_path = new_saver.save(sess, checkpoint_dir + "model.ckpt")
-        tf.reset_default_graph()
-
-    def get_weights(self, latest_checkpoint):
-        tf.reset_default_graph()
-        graph = tf.Graph()
-        with tf.Session(graph=graph) as sess:
-            new_saver = tf.train.import_meta_graph(latest_checkpoint + '.meta')
-            new_saver.restore(sess, latest_checkpoint)
-            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            weights = {tensor.name:sess.run(tensor) for tensor in collection}
-        return weights

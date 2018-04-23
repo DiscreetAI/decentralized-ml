@@ -9,10 +9,7 @@ import numpy as np
 import tensorflow as tf
 import ray
 
-from models.generic_model import GenericModel
-# from models.perceptron import Perceptron
-# from models.cnn import CNN
-# from models.lstm import LSTM
+from models.generic_model import GenericTensorflowModel, GenericKerasModel
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Server] %(asctime)s %(levelname)s %(message)s')
@@ -28,7 +25,11 @@ class Server:
             "learning_rate": []
         }
         self.save_path = self.config['save_dir'] + "/" + str(time.time())
-        self.model = GenericModel()
+
+        if config['model_type'] == 'lstm':
+            self.model = GenericKerasModel()
+        else:
+            self.model = GenericTensorflowModel()
 
     def get_initial_weights(self, model_type):
         """

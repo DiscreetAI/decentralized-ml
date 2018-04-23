@@ -11,7 +11,7 @@ import numpy as np
 import tensorflow as tf
 
 from server import Server
-from client import Client
+from client import TensorflowClient, KerasClient
 
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s %(levelname)s %(message)s')
@@ -41,6 +41,10 @@ class Experiment:
 
         # Make the clients and server and connect them
         logging.info('Setting up server and clients.')
+        if self.model_type == 'lstm':
+            Client = KerasClient
+        else:
+            Client = TensorflowClient
         self.clients = []
         i = 1
         for X, y in zip(X_train_list, y_train_list):
@@ -77,6 +81,12 @@ class Experiment:
             if model_type == 'cnn-mnist':
                 X_train = X_train.reshape(-1, 28, 28, 1)
                 X_test = X_test.reshape(-1, 28, 28, 1)
+        elif model_type == 'cnn-cifar10':
+            # NOTE: the paper doesn't implement cifar-mnist and non-iid.
+            cifar_data = tf.keras.datasets.cifar10.load_data()
+            training_data, testing_data = cifar_data
+            X_train, y_train = training_data
+            X_test, y_test = testing_data
         else:
             raise ValueError('Model type {0} not supported.'.format(model_type))
 

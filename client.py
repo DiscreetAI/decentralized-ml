@@ -7,12 +7,12 @@ import tensorflow as tf
 
 from models.perceptron import Perceptron
 from models.cnn import CNN
-from models.lstm import LSTM
+from models.lstm import LSTMModel
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Client] %(asctime)s %(levelname)s %(message)s')
 
-class TFClient(object):
+class TensorflowClient(object):
     def __init__(self, iden, X, y):
         self.iden = iden
         self.X = X
@@ -24,8 +24,8 @@ class TFClient(object):
             self.model = Perceptron()
         elif model_type == "cnn-mnist":
             self.model = CNN()
-        elif model_type == "lstm":
-            self.model = LSTM()
+        elif model_type == "cnn-cifar10":
+            self.model = CNN()
         else:
             raise ValueError("Model {0} not supported.".format(model_type))
 
@@ -110,6 +110,10 @@ class TFClient(object):
             m = CNN()
             inputs = tf.placeholder(tf.float32, shape=(None, 28, 28, 1))
             _ = m.get_model(features={"x": inputs}, labels=None, mode='predict', params=None)
+        elif model_type == 'cnn-cifar10':
+            m = CNN()
+            inputs = tf.placeholder(tf.float32, shape=(None, 32, 32, 3))
+            _ = m.get_model(features={"x": inputs}, labels=None, mode='predict', params=None)
         else:
             raise ValueError("Model {model_type} not supported.".format(model_type))
         with tf.Session().as_default() as sess:
@@ -124,3 +128,32 @@ class TFClient(object):
 
     def get_latest_checkpoint(self):
         return tf.train.latest_checkpoint(self.get_checkpoints_folder())
+
+class KerasClient(object):
+    def __init__(self, iden, X, y):
+        self.iden = iden
+        self.X = X
+        self.y = y
+
+    def setup_model(self, model_type):
+        self.model_type = model_type
+        if model_type == "lstm":
+            self.model = LSTMModel()
+        else:
+            raise ValueError("Model {0} not supported.".format(model_type))
+
+    def train(self, weights, config):
+        logging.info('Training just started.')
+        assert weights != None, 'weights must not be None.'
+        self.model.set_weights(weights)
+        self.model.train(X)
+        logging.info('Training complete.')
+        new_weights = self.model.get_weights()
+        return new_weights, len(X)
+
+    def validate(self, t, weights, config):
+        # TODO: Need to implement Keras validation.
+        pass
+
+    def get_initial_weights(self):
+        return self.model.get_initial_weights()

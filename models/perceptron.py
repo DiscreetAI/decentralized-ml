@@ -1,9 +1,9 @@
 import numpy as np
 import tensorflow as tf
 
-from models.generic_model import GenericModel
+from models.generic_model import GenericTensorflowModel
 
-class Perceptron(GenericModel):
+class Perceptron(GenericTensorflowModel):
     def __init__(self):
         self.n_input = 784
         self.n_hidden1 = 200
@@ -95,7 +95,6 @@ class Perceptron(GenericModel):
             estimator = tf.estimator.EstimatorSpec(mode=mode, loss=self.loss, eval_metric_ops=self.eval_metric_ops)
         return estimator
 
-
     def get_model(self, features, labels, mode, params):
         """
         When using the Estimator API, features will come as a TF Tensor already.
@@ -114,32 +113,3 @@ class Perceptron(GenericModel):
 
         # Build and return the estimator.
         return self.get_estimator(mode)
-
-    def load_weights(self, new_weights, latest_checkpoint, checkpoint_dir):
-        tf.reset_default_graph()
-        with tf.Session().as_default() as sess:
-            new_saver = tf.train.import_meta_graph(latest_checkpoint + '.meta')
-            # To load non-trainable variables and prevent errors...
-            # we restore them if they are found, or initialize them otherwise.
-            try:
-                new_saver.restore(sess, latest_checkpoint)
-            except:
-                sess.run(tf.global_variables_initializer())
-
-            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            for tensor in collection:
-                assign_op = tensor.assign(new_weights[tensor.name])
-                sess.run(assign_op)
-
-            save_path = new_saver.save(sess, checkpoint_dir + "model.ckpt")
-        tf.reset_default_graph()
-
-    def get_weights(self, latest_checkpoint):
-        tf.reset_default_graph()
-        graph = tf.Graph()
-        with tf.Session(graph=graph) as sess:
-            new_saver = tf.train.import_meta_graph(latest_checkpoint + '.meta')
-            new_saver.restore(sess, latest_checkpoint)
-            collection = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-            weights = {tensor.name:sess.run(tensor) for tensor in collection}
-        return weights
