@@ -1,6 +1,7 @@
 import logging
 import pickle
 import shutil
+import random
 
 import numpy as np
 import tensorflow as tf
@@ -18,6 +19,13 @@ class TensorflowClient(object):
         self.X = X
         self.y = y
 
+        # TODO: Should be randomized.
+        cut_off = int(X.shape[0] * 0.8)
+        self.X_train = X[:cut_off]
+        self.y_train = y[:cut_off]
+        self.X_test = X[cut_off:]
+        self.y_test = y[cut_off:]
+
     def setup_model(self, model_type):
         self.model_type = model_type
         if model_type == "perceptron":
@@ -32,7 +40,14 @@ class TensorflowClient(object):
     def train(self, weights, config):
         logging.info('Training just started.')
         assert weights != None, 'weights must not be None.'
-        batch_size = self.X.shape[0] \
+
+        assert config["averaging_type"] in ["data_size", "val_acc"]
+        if config["averaging_type"] == "data_size":
+            X, y = self.X, self.y
+        elif config["averaging_type"] == "val_acc":
+            X, y = self.X_train, self.y_train
+
+        batch_size = X.shape[0] \
             if config["batch_size"] == -1 else config["batch_size"]
         epochs = config["epochs"]
         learning_rate = config["learning_rate"]
@@ -44,19 +59,35 @@ class TensorflowClient(object):
             params = params
         )
         train_input_fn = tf.estimator.inputs.numpy_input_fn(
-            x={"x": self.X},
-            y=self.y,
+            x={"x": X},
+            y=y,
             batch_size=batch_size,
             num_epochs=epochs,
             shuffle=True
         )
-        classifier.train(
-            input_fn=train_input_fn,
-        )
+        classifier.train(input_fn=train_input_fn)
         logging.info('Training complete.')
         new_weights = self.model.get_weights(self.get_latest_checkpoint())
+
+        if config["averaging_type"] == "data_size":
+            omega = X.shape[0]
+        elif config["averaging_type"] == "val_acc":
+            eval_classifier = tf.estimator.Estimator(
+                model_fn=self.model.get_model,
+                model_dir=self.get_checkpoints_folder(),
+                params = {'new_weights': new_weights}
+            )
+            eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+                x={"x": self.X_test},
+                y=self.y_test,
+                num_epochs=1,
+                shuffle=False
+            )
+            eval_results = eval_classifier.evaluate(input_fn=eval_input_fn)
+            omega = eval_results["accuracy"]
+
         shutil.rmtree("./checkpoints-{0}/".format(self.iden))
-        return new_weights, self.X[0].size
+        return new_weights, omega
 
     def validate(self, t, weights, config):
         # check if this is needed

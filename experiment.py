@@ -136,6 +136,8 @@ if __name__ == '__main__':
         when training should stop (default 1.0)", default=1.0)
     parser.add_argument('-y', '--decay', type=float, help="learning rate decay \
         (default 0.99)", default=0.99)
+    parser.add_argument('-a', '--avgtype', type=str, help="type of averaging \
+        algorithm (data_size, val_acc) (default data_size)", default="data_size")
     args = parser.parse_args()
 
     config = {
@@ -151,6 +153,7 @@ if __name__ == '__main__':
         "save_dir": args.savedir,
         "goal_accuracy": args.goalaccuracy,
         "lr_decay": args.decay,
+        "averaging_type": args.avgtype
     }
 
     experiment = Experiment(config)
