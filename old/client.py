@@ -5,10 +5,13 @@ import random
 
 import numpy as np
 import tensorflow as tf
+import keras
 
 from models.perceptron import Perceptron
 from models.cnn import CNN
 from models.lstm import LSTMModel
+
+from models.keras_perceptron import KerasPerceptron
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Client] %(asctime)s %(levelname)s %(message)s')
