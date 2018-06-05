@@ -1,8 +1,16 @@
+# Add the parent directory to the PATH to allow imports.
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+
+import numpy as np
+import keras
 from keras.models import Sequential
 from keras.layers import Dense
+from keras import optimizers
 
-from generic_model import GenericKerasModel
-# from models.generic_model import GenericKerasModel
+from models.generic_model import GenericKerasModel
 
 class KerasPerceptron(GenericKerasModel):
     def __init__(self, is_training=False):
@@ -17,21 +25,48 @@ class KerasPerceptron(GenericKerasModel):
 
     def build_model(self):
         model = Sequential()
-        model.add(Dense(self.n_hidden1, input_dim=self.n_input, activation='relu'))
+        model.add(Dense(self.n_hidden1, input_shape=(self.n_input,), activation='relu'))
         model.add(Dense(self.n_hidden2, activation='relu'))
         model.add(Dense(self.n_classes, activation='linear'))
         model.summary()
         return model
 
     def compile_model(self):
+        sgd = optimizers.SGD(lr=0.01, decay=1e-6)
         self.model.compile(
-            optimizer='sgd',
+            optimizer=sgd,
             loss='categorical_crossentropy',
             metrics=['acc']
         )
 
+
 if __name__ == '__main__':
+    from examples.labelers import mnist_labeler # Should be removed for labeler interoperability.
+    from data.iterators import count_datapoints
+    from data.iterators import create_train_dataset_iterator
+    from data.iterators import create_test_dataset_iterator
+
+    # Constants
+    data_count = 60000
+    split = 0.8
+    batch_size = 1
+    epochs = 2
+
+    # Model definition
     m = KerasPerceptron(is_training=True)
 
-    # m.build_optimizer(1.47)
-    # m.train(text, {"epochs":1, "batch_size":8})
+    # Training
+    dataset_iterator = create_train_dataset_iterator('datasets/mnist', data_count, \
+        split=split, batch_size=batch_size, labeler=mnist_labeler)
+    hist = m.model.fit_generator(dataset_iterator, epochs=epochs, \
+        steps_per_epoch=(data_count*split)//batch_size)
+    train_history = hist.history
+    print(train_history)
+
+    # Validation
+    dataset_iterator = create_test_dataset_iterator('datasets/mnist', data_count, \
+        split=split, batch_size=batch_size, labeler=mnist_labeler)
+    hist = m.model.evaluate_generator(dataset_iterator, \
+        steps=(data_count*(1-split))//batch_size)
+    val_history = dict(zip(m.model.metrics_names, hist))
+    print(val_history)
