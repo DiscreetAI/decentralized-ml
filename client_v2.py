@@ -7,7 +7,6 @@ import tensorflow as tf
 import keras
 
 from custom.keras import model_from_serialized, get_optimizer
-from examples.labelers import mnist_labeler # Should be removed for labeler interoperability.
 from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
@@ -39,7 +38,8 @@ class DMLClient(object):
         self.config = config
         self.data_count = count_datapoints(dataset_path)
 
-    def train(self, serialized_model, model_type, initial_weights, hyperparams):
+    def train(self, serialized_model, model_type, initial_weights, hyperparams,
+        labeler):
         """
         Trains the specified machine learning model on all the local data,
         starting from the initial model state specified, until a stopping
@@ -48,8 +48,8 @@ class DMLClient(object):
         Returns the updated model weights, the weighting factor omega, and stats
         about the training job.
 
-        NOTE: Should probably have a function to preprocess/create labels from
-        the raw data. This function would be called `labeler`.
+        NOTE: Uses the same hyperparameters and labeler for training and
+        validating during 'avg_type' of type 'val_acc'.
         """
         # Get the right dataset iterator based on the averaging type.
         avg_type = hyperparams['averaging_type']
@@ -59,13 +59,13 @@ class DMLClient(object):
         if avg_type == 'data_size':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
                 count=self.data_count, split=self.config['split'], \
-                batch_size=batch_size, labeler=mnist_labeler)
+                batch_size=batch_size, labeler=labeler)
         elif avg_type == 'val_acc':
-            dataset_iterators = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, batch_size=batch_size, labeler=mnist_labeler)
+            dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
+                count=self.data_count, batch_size=batch_size, labeler=labeler)
             test_dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
                 count=self.data_count, split=self.config['split'], \
-                batch_size=batch_size, labeler=mnist_labeler)
+                batch_size=batch_size, labeler=labeler)
 
         # Train the model the right way based on the model type.
         assert model_type in ['keras'], \
@@ -80,15 +80,15 @@ class DMLClient(object):
             omega = self.data_count * self.config['split']
         elif avg_type == 'val_acc':
             val_stats = self.validate(serialized_model, model_type, new_weights,
-                custom_iterator=test_dataset_iterator)
-            omega = val_stats['val_metric']
+                hyperparams, labeler, custom_iterator=test_dataset_iterator)
+            omega = val_stats['val_metric']['acc']
             train_stats.update(val_stats)
 
         # Return the results.
         return new_weights, omega, train_stats
 
     def validate(self, serialized_model, model_type, weights, hyperparams,
-        custom_iterator=None):
+        labeler, custom_iterator=None):
         """
         Validates on all the local data the specified machine learning model at
         the state specified.
@@ -100,7 +100,7 @@ class DMLClient(object):
         if custom_iterator is None:
             dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
                 count=self.data_count, split=(1-self.config['split']), \
-                batch_size=batch_size, labeler=mnist_labeler)
+                batch_size=batch_size, labeler=labeler)
         else:
             dataset_iterator = custom_iterator
 
@@ -174,9 +174,21 @@ if __name__ == '__main__':
         'epochs': 2,
     }
 
-    new_weights, omega, train_stats = \
-        client.train(model_json, 'keras', initial_weights, hyperparams)
-    print(train_stats)
+    from examples.labelers import mnist_labeler
+    new_weights, omega, train_stats = client.train(
+        model_json,
+        'keras',
+        initial_weights,
+        hyperparams,
+        mnist_labeler
+    )
+    print(omega, train_stats)
 
-    val_stats = client.validate(model_json, 'keras', new_weights, hyperparams)
+    val_stats = client.validate(
+        model_json,
+        'keras',
+        new_weights,
+        hyperparams,
+        mnist_labeler
+    )
     print(val_stats)

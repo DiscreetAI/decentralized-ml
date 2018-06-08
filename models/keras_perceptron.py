@@ -32,7 +32,7 @@ class KerasPerceptron(GenericKerasModel):
         return model
 
     def compile_model(self):
-        sgd = optimizers.SGD(lr=0.01, decay=1e-6)
+        sgd = optimizers.SGD(lr=0.00001)
         self.model.compile(
             optimizer=sgd,
             loss='categorical_crossentropy',
