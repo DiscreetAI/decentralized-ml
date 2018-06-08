@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import keras
 
-from custom.keras import model_from_serialized
+from custom.keras import model_from_serialized, get_optimizer
 from examples.labelers import mnist_labeler # Should be removed for labeler interoperability.
 from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
@@ -158,7 +158,12 @@ if __name__ == '__main__':
 
     from models.keras_perceptron import KerasPerceptron
     m = KerasPerceptron(is_training=True)
-    model_json = m.model.to_json()
+    model_architecture = m.model.to_json()
+    model_optimizer = get_optimizer(m.model)
+    model_json = {
+        "architecture": model_architecture,
+        "optimizer": model_optimizer
+    }
     print(model_json)
 
     initial_weights = client.initialize_model(model_json, 'keras')
@@ -173,5 +178,5 @@ if __name__ == '__main__':
         client.train(model_json, 'keras', initial_weights, hyperparams)
     print(train_stats)
 
-    val_stats = client.validate(model_json, 'keras', new_weights)
+    val_stats = client.validate(model_json, 'keras', new_weights, hyperparams)
     print(val_stats)
