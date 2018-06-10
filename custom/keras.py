@@ -7,6 +7,7 @@ import json
 from keras import optimizers
 from keras.models import model_from_json
 
+
 def model_from_serialized(serialized_model):
     uncompiled_model = model_from_json(serialized_model['architecture'])
     return _load_optimizer(uncompiled_model, serialized_model['optimizer'])

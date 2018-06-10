@@ -11,12 +11,13 @@ from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='[Client] %(asctime)s %(levelname)s %(message)s')
 
-class DMLClient(object):
+logging.basicConfig(level=logging.DEBUG,
+                    format='[Runner] %(asctime)s %(levelname)s %(message)s')
+
+class DMLRunner(object):
     """
-    DML Client
+    DML Runner
 
     This class manages the training and validation of a DML job. It trains or
     validate a specified machine learning model on a local dataset. An instance
@@ -31,7 +32,7 @@ class DMLClient(object):
 
     def __init__(self, dataset_path, config):
         """
-        Sets up the unique identifier of the DML Client and the local dataset path.
+        Sets up the unique identifier of the DML Runner and the local dataset path.
         """
         self.iden = str(uuid.uuid4())[:8]
         self.dataset_path = dataset_path
@@ -154,7 +155,7 @@ if __name__ == '__main__':
         'split': 0.8,
     }
 
-    client = DMLClient('datasets/mnist', config)
+    runner = DMLRunner('datasets/mnist', config)
 
     from models.keras_perceptron import KerasPerceptron
     m = KerasPerceptron(is_training=True)
@@ -166,7 +167,7 @@ if __name__ == '__main__':
     }
     print(model_json)
 
-    initial_weights = client.initialize_model(model_json, 'keras')
+    initial_weights = runner.initialize_model(model_json, 'keras')
 
     hyperparams = {
         'averaging_type': 'data_size',
@@ -175,7 +176,7 @@ if __name__ == '__main__':
     }
 
     from examples.labelers import mnist_labeler
-    new_weights, omega, train_stats = client.train(
+    new_weights, omega, train_stats = runner.train(
         model_json,
         'keras',
         initial_weights,
@@ -184,7 +185,7 @@ if __name__ == '__main__':
     )
     print(omega, train_stats)
 
-    val_stats = client.validate(
+    val_stats = runner.validate(
         model_json,
         'keras',
         new_weights,

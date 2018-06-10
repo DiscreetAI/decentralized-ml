@@ -12,6 +12,7 @@ from keras import optimizers
 
 from models.generic_model import GenericKerasModel
 
+
 class KerasPerceptron(GenericKerasModel):
     def __init__(self, is_training=False):
         self.n_input = 784
@@ -41,10 +42,10 @@ class KerasPerceptron(GenericKerasModel):
 
 
 if __name__ == '__main__':
-    from examples.labelers import mnist_labeler # Should be removed for labeler interoperability.
     from data.iterators import count_datapoints
     from data.iterators import create_train_dataset_iterator
     from data.iterators import create_test_dataset_iterator
+    from examples.labelers import mnist_labeler
 
     # Constants
     data_count = 60000
