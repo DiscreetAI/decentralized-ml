@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 
+
 def count_datapoints(dataset_path):
     """
     Counts and returns the number of datapoints in the `dataset_path` directory.

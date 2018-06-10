@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 
+
 def mnist_labeler(line):
     """
     Returns an (X, y) tuple from a line of the MNIST CSV files, where X is a

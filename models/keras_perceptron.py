@@ -1,5 +1,5 @@
 # Add the parent directory to the PATH to allow imports.
-import os,sys,inspect
+import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
@@ -11,6 +11,7 @@ from keras.layers import Dense
 from keras import optimizers
 
 from models.generic_model import GenericKerasModel
+
 
 class KerasPerceptron(GenericKerasModel):
     def __init__(self, is_training=False):
@@ -41,10 +42,10 @@ class KerasPerceptron(GenericKerasModel):
 
 
 if __name__ == '__main__':
-    from examples.labelers import mnist_labeler # Should be removed for labeler interoperability.
     from data.iterators import count_datapoints
     from data.iterators import create_train_dataset_iterator
     from data.iterators import create_test_dataset_iterator
+    from examples.labelers import mnist_labeler
 
     # Constants
     data_count = 60000
