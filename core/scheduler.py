@@ -27,18 +27,26 @@ class DMLScheduler(object):
 		self.current_runner = None
 		self.queue = Queue()
 		with open('core/config.json') as f:
-    		self.dataset_path = json.load(f)["dataset_path"]
+			config = json.load(f)
+    		self.dataset_path = config["dataset_path"]
+			self.run_frequency = config["scheduler_frequency_in_mins"]
+		schedule.every(run_frequency).minutes.do(self._run_next_job_if_necessary())
+		schedule.run_continuously()
 
-	def enqueue(dml_job):
+	def enqueue(self, dml_job):
 		assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
 		self.queue.put(dml_job)
-		if not self.current_runner:
+		self._run_next_job_if_necessary()
+
+	def _run_next_job_if_necessary(self):
+		if not self.current_runner and not self.queue.empty():
 			self._run_next_job()
 
-	def _dequeue():
-		return self.queue.get()
-
-	def _run_next_job():
+	def _run_next_job(self):
 		current_job = self._dequeue()
 		self.current_runner = DMLRunner(self.dataset_path, current_job.config)
 		self.current_runner.run_job(current_job)
+		self.current_runner = None
+
+	def _dequeue(self):
+		return self.queue.get()

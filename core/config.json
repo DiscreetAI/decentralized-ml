@@ -1,3 +1,4 @@
 {
-  "dataset_path": "datasets/mnist"
+  "dataset_path": "datasets/mnist",
+  "scheduler_frequency_in_mins": 1
 }
