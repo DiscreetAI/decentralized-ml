@@ -2,6 +2,7 @@ import asyncio
 import time
 import pprint
 import requests
+import pandas as pd
 
 import rlp
 import web3
@@ -116,3 +117,16 @@ def deploy_contract(w3, contract_interface):
 
 	address = w3.eth.getTransactionReceipt(tx_hash)['contractAddress']
 	return address
+
+def get_contract_address(address_name, db):
+    try:
+	    sample_data = pd.read_sql_query("select * from {}".format(address_name), db.engine)
+	    return sample_data.to_json()
+    except: 
+        print('No contract address by the name of {} exists'.format(address_name))
+
+def post_contract_address(contract_address, json, address_name, db):
+    sample_data = pd.DataFrame()
+    sample_data['contract_address'] = [contract_address]
+    sample_data['json'] = [json]
+    sample_data.to_sql(name=address_name, con=db.engine, if_exists='replace', index=False)

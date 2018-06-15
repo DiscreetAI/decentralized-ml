@@ -18,20 +18,27 @@ from data.iterators import create_test_dataset_iterator
 
 from eth_utils import is_address
 from solc import compile_source, compile_files
-from blockchain.blockchain_utils import *
-from blockchain.ipfs_utils import *
+# from blockchain_utils import *
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
 
-class Listener(object):
+# class ListenerDAG(object):
+#     """
+#     This class listens to its peers on the DAG network.
+#     """
+#     def __init__():
+
+
+
+class ListenerEthereum(object):
     """
     This class listens to the deployed smart contract.
     """
     def __init__(self, iden, provider, clientAddress=None, delegatorAddress=None):
 
         self.web3 = provider
-        self.api = ipfsapi.connect('127.0.0.1', 5001)
+        # self.api = ipfsapi.connect('127.0.0.1', 5001)
 
         self.PASSPHRASE = 'panda'
         self.TEST_ACCOUNT = '0xb4734dCc08241B46C0D7d22D163d065e8581503e'
