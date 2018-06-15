@@ -1,6 +1,7 @@
 import ipfsapi
 import json
 from filelock import FileLock
+import base58
 
 from keras.models import load_model, model_from_json
 
@@ -34,6 +35,11 @@ def serialize_keras_model(model):
             model_bin = f.read()
             f.close()
         return model_bin
+def ipfs2base32(ipfshash):
+    bytes_array = base58.b58decode(ipfshash) 
+    return bytes_array[2:]
 # def send_model():
 #     dict_of_stuff = keras2ipfs()
 #     return dict_of_stuff
+if __name__ == '__main__':
+    print(ipfs2base32('QmVm4yB2jxPwXXVXM6n86TuwA4jCQ7EfNPjguFrhoCbPiJ'))
