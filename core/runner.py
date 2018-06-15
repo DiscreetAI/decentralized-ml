@@ -16,10 +16,9 @@ from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 
+
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
-
-from blockchain import *
 
 class DMLRunner(object):
     """
