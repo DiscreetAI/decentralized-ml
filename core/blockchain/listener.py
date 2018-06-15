@@ -34,7 +34,8 @@ from blockchain_utils import *
 import ipfsapi
 
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
-TEMP_DELEGATOR_ADDR = self.web3.toChecksumAddress('0x9522f8d44ea66b96fcda5cb0c483759efa44adcd')
+TEMP_DELEGATOR_ADDR = '0x9522f8d44ea66b96fcda5cb0c483759efa44adcd'
+# TEMP_DELEGATOR_ADDR = self.web3.toChecksumAddress('0x9522f8d44ea66b96fcda5cb0c483759efa44adcd')
 # TEMP_DELEGATOR_ABI = '''[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"clientArray","type":"address[]"},{"indexed":false,"name":"StateMachineAddress","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]'''
 # TEMP_STATEMACHINE_ABI = '''[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32[]"}],"name":"newModel","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amt","type":"uint256"}],"name":"reward","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"stage","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"viewValidator","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_validator","type":"address"},{"name":"_listeners","type":"address[]"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[],"name":"NewModel","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]'''
 
@@ -51,14 +52,14 @@ class ListenerEthereum(object):
         # Connect scheduler
         self.scheduler = Scheduler()
 
-        # Set up web3 and IPFS
+        # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
         self.web3 = Web3(HTTPProvider(ETH_NODE_ADDR))
         assert self.web3.isConnected()
         self.api = ipfsapi.connect('127.0.0.1', 5001)
         
         # Set up the ETH account
         self.PASSPHRASE = 'panda'
-        self.TEST_ACCOUNT = '0xb4734dCc08241B46C0D7d22D163d065e8581503e'
+        self.TEST_ACCOUNT = '0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4'
 
         if clientAddress:
             assert(is_address(clientAddress))
@@ -116,11 +117,17 @@ class ListenerEthereum(object):
     def listen_delegator(self, event_data=None):
         self.filter_set(
             "NewQuery(address[] clientArray, address StateMachineAddress)",
-            TEMP_DELEGATOR_ADDR, handle_newstatemachine)
+            TEMP_DELEGATOR_ADDR, self.handle_newstatemachine)
 
     def listen_statemachine(self, address):
-        self.filter_set("NewModel()", address, handle_newmodel)
-        self.filter_set("DoneTraining()", address, listen_delegator)
+        self.filter_set("NewModel()", address, self.handle_newmodel)
+        self.filter_set("DoneTraining()", address, self.checkBalance)
+
+    def checkBalance(self, event_data):
+        print(event_data)
+        expectedBalance = event_data.split("000000000000000000000000")[2]
+        myBalance = self.web3.eth.getBalance(self.clientAddress)
+        assert myBalance == expectedBalance
 
     def handle_newmodel(self, event_data):
         print(event_data)
@@ -153,5 +160,5 @@ class ListenerEthereum(object):
         #     return "not me"
 
 if __name__ == '__main__':
-    post_contract_address(contractaddr, contractabi, "delegator", db)
-    print(get_contract_address("delegator", db))
+    listener = ListenerEthereum()
+    listener.main()
