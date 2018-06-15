@@ -15,11 +15,11 @@ from custom.keras import model_from_serialized, get_optimizer
 from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
+from core.utils.dmljob import DMLJob
+
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
-
-from blockchain import *
 
 class DMLRunner(object):
     """
@@ -44,6 +44,32 @@ class DMLRunner(object):
         self.dataset_path = dataset_path
         self.config = config
         self.data_count = count_datapoints(dataset_path)
+
+    def run_job(self, dml_job):
+        """Identifies the DMLJob type and runs it."""
+        assert dml_job.job_type in ['train', 'validate', 'initialize'],
+            'DMLJob type ({0}) is not valid'.format(dml_job.job_type)
+        if dml_job.job_type == 'train':
+            self.train(
+                dml_job.serialized_model,
+                dml_job.model_type,
+                dml_job.weights,
+                dml_job.hyperparams,
+                dml_job.labeler
+            )
+        elif dml_job.job_type == 'validate':
+            self.validate(
+                 dml_job.serialized_model,
+                 dml_job.model_type,
+                 dml_job.weights,
+                 dml_job.hyperparams,
+                 dml_job.labeler
+            )
+        elif dml_job.job_type == 'initialize':
+            self.initialize_model(
+                dml_job.serialized_model,
+                dml_job.model_type
+            )
 
     def train(self, serialized_model, model_type, initial_weights, hyperparams,
         labeler):
