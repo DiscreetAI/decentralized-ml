@@ -7,15 +7,11 @@ import logging
 import random
 import uuid
 
-import numpy as np
-import tensorflow as tf
-import keras
-
 from custom.keras import model_from_serialized, get_optimizer
 from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
-from core.utils.dmljob import DMLJob
+from core.utils.keras import train_keras_model, validate_keras_model
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -44,34 +40,58 @@ class DMLRunner(object):
         self.dataset_path = dataset_path
         self.config = config
         self.data_count = count_datapoints(dataset_path)
+        self.current_job = None
 
-    def run_job(self, dml_job):
-        """Identifies the DMLJob type and runs it."""
-        assert dml_job.job_type in ['train', 'validate', 'initialize'],
-            'DMLJob type ({0}) is not valid'.format(dml_job.job_type)
-        if dml_job.job_type == 'train':
-            self.train(
-                dml_job.serialized_model,
-                dml_job.model_type,
-                dml_job.weights,
-                dml_job.hyperparams,
-                dml_job.labeler
-            )
-        elif dml_job.job_type == 'validate':
-            self.validate(
-                 dml_job.serialized_model,
-                 dml_job.model_type,
-                 dml_job.weights,
-                 dml_job.hyperparams,
-                 dml_job.labeler
-            )
-        elif dml_job.job_type == 'initialize':
-            self.initialize_model(
-                dml_job.serialized_model,
-                dml_job.model_type
-            )
+    def run_job(self, job):
+        """
+        Identifies a DMLJob type and executes it.
 
-    def train(self, serialized_model, model_type, initial_weights, hyperparams,
+        If the runner is already executing a job, it silently does nothing.
+        """
+        assert job.job_type in ['train', 'validate', 'initialize'], \
+            'DMLJob type ({0}) is not valid'.format(job.job_type)
+        if self.is_active(): return
+        self.current_job = job
+        if job.job_type == 'train':
+            new_weights, omega, train_stats = self._train(
+                job.serialized_model,
+                job.model_type,
+                job.weights,
+                job.hyperparams,
+                job.labeler
+            )
+            # TODO: Do something with the results.
+            print(train_stats)
+            return_obj = new_weights, omega, train_stats
+        elif job.job_type == 'validate':
+            val_stats = self._validate(
+                 job.serialized_model,
+                 job.model_type,
+                 job.weights,
+                 job.hyperparams,
+                 job.labeler
+            )
+            # TODO: Do something with the results.
+            print(val_stats)
+            return_obj = val_stats
+        elif job.job_type == 'initialize':
+            initial_weights = self._initialize_model(
+                job.serialized_model,
+                job.model_type
+            )
+            # TODO: Do something with the results.
+            print(initial_weights)
+            return_obj = initial_weights
+        self.current_job = None
+        return return_obj
+
+    def is_active(self):
+        """
+        Returns whether the runner is running a job.
+        """
+        return self.current_job != None
+
+    def _train(self, serialized_model, model_type, initial_weights, hyperparams,
         labeler):
         """
         Trains the specified machine learning model on all the local data,
@@ -91,13 +111,13 @@ class DMLRunner(object):
             "Averaging type '{0}' is not supported.".format(avg_type)
         if avg_type == 'data_size':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=self.config['split'], \
+                count=self.data_count, split=hyperparams['split'], \
                 batch_size=batch_size, labeler=labeler)
         elif avg_type == 'val_acc':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
                 count=self.data_count, batch_size=batch_size, labeler=labeler)
             test_dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=self.config['split'], \
+                count=self.data_count, split=hyperparams['split'], \
                 batch_size=batch_size, labeler=labeler)
 
         # Train the model the right way based on the model type.
@@ -106,13 +126,13 @@ class DMLRunner(object):
         if model_type == 'keras':
             new_weights, train_stats = train_keras_model(serialized_model,
                 initial_weights, dataset_iterator, \
-                self.data_count*self.config['split'], hyperparams)
+                self.data_count*hyperparams['split'], hyperparams)
 
         # Get the right omega based on the averaging type.
         if avg_type == 'data_size':
-            omega = self.data_count * self.config['split']
+            omega = self.data_count * hyperparams['split']
         elif avg_type == 'val_acc':
-            val_stats = self.validate(serialized_model, model_type, new_weights,
+            val_stats = self._validate(serialized_model, model_type, new_weights,
                 hyperparams, labeler, custom_iterator=test_dataset_iterator)
             omega = val_stats['val_metric']['acc']
             train_stats.update(val_stats)
@@ -120,7 +140,7 @@ class DMLRunner(object):
         # Return the results.
         return new_weights, omega, train_stats
 
-    def validate(self, serialized_model, model_type, weights, hyperparams,
+    def _validate(self, serialized_model, model_type, weights, hyperparams,
         labeler, custom_iterator=None):
         """
         Validates on all the local data the specified machine learning model at
@@ -132,7 +152,7 @@ class DMLRunner(object):
         batch_size = hyperparams['batch_size']
         if custom_iterator is None:
             dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=(1-self.config['split']), \
+                count=self.data_count, split=(1-hyperparams['split']), \
                 batch_size=batch_size, labeler=labeler)
         else:
             dataset_iterator = custom_iterator
@@ -142,12 +162,12 @@ class DMLRunner(object):
             "Model type '{0}' is not supported.".format(model_type)
         if model_type == 'keras':
             val_stats = validate_keras_model(serialized_model, weights,
-                dataset_iterator, self.data_count*(1-self.config['split']))
+                dataset_iterator, self.data_count*(1-hyperparams['split']))
 
         # Return the validation stats.
         return val_stats
 
-    def initialize_model(self, serialized_model, model_type):
+    def _initialize_model(self, serialized_model, model_type):
         """
         Initializes and returns the model weights as specified in the model.
         """
@@ -159,33 +179,8 @@ class DMLRunner(object):
         return initial_weights
 
 
-def train_keras_model(serialized_model, weights, dataset_iterator, data_count, hyperparams):
-    logging.info('Keras training just started.')
-    assert weights != None, "Initial weights must not be 'None'."
-    model = model_from_serialized(serialized_model)
-    model.set_weights(weights)
-    hist = model.fit_generator(dataset_iterator, epochs=hyperparams['epochs'], \
-        steps_per_epoch=data_count//hyperparams['batch_size'])
-    new_weights = model.get_weights()
-    logging.info('Keras training complete.')
-    return new_weights, {'training_history' : hist.history}
-
-
-def validate_keras_model(serialized_model, weights, dataset_iterator, data_count):
-    logging.info('Keras validation just started.')
-    assert weights != None, "weights must not be 'None'."
-    model = model_from_serialized(serialized_model)
-    model.set_weights(weights)
-    history = model.evaluate_generator(dataset_iterator, steps=data_count)
-    metrics = dict(zip(model.metrics_names, history))
-    logging.info('Keras validation complete.')
-    return {'val_metric': metrics}
-
-
 if __name__ == '__main__':
-    config = {
-        'split': 0.8,
-    }
+    config = {}
 
     runner = DMLRunner('datasets/mnist', config)
 
@@ -199,29 +194,40 @@ if __name__ == '__main__':
     }
     print(model_json)
 
-    initial_weights = runner.initialize_model(model_json, 'keras')
+    from core.utils.dmljob import DMLJob
+    initialize_job = DMLJob(
+        "initialize",
+        model_json,
+        "keras"
+    )
+    initial_weights = runner.run_job(initialize_job)
 
     hyperparams = {
         'averaging_type': 'data_size',
         'batch_size': 50,
         'epochs': 2,
+        'split': 0.8,
     }
 
     from examples.labelers import mnist_labeler
-    new_weights, omega, train_stats = runner.train(
+    train_job = DMLJob(
+        "train",
         model_json,
-        'keras',
+        "keras",
+        config,
         initial_weights,
         hyperparams,
         mnist_labeler
     )
-    print(omega, train_stats)
+    new_weights, omega, train_stats = runner.run_job(train_job)
 
-    val_stats = runner.validate(
+    validate_job = DMLJob(
+        "validate",
         model_json,
         'keras',
+        config,
         new_weights,
         hyperparams,
         mnist_labeler
     )
-    print(val_stats)
+    val_stats = runner.run_job(validate_job)
