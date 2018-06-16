@@ -1,4 +1,5 @@
 {
   "dataset_path": "datasets/mnist",
-  "scheduler_frequency_in_mins": 1
+  "scheduler_frequency_in_mins": 1,
+  "runner_config": {}
 }

@@ -24,12 +24,13 @@ class DMLScheduler(object):
 	"""
 
 	def __init__(self):
-		self.current_runner = None
 		self.queue = Queue()
 		with open('core/config.json') as f:
 			config = json.load(f)
-    		self.dataset_path = config["dataset_path"]
-			self.run_frequency = config["scheduler_frequency_in_mins"]
+    		dataset_path = config["dataset_path"]
+			run_frequency = config["scheduler_frequency_in_mins"]
+			runner_config = config["runner_config"]
+		self.current_runner = DMLRunner(dataset_path, runner_config)
 		schedule.every(run_frequency).minutes.do(self._run_next_job_if_necessary())
 		schedule.run_continuously()
 
@@ -39,14 +40,12 @@ class DMLScheduler(object):
 		self._run_next_job_if_necessary()
 
 	def _run_next_job_if_necessary(self):
-		if not self.current_runner and not self.queue.empty():
+		if not self.current_runner.is_active() and not self.queue.empty():
 			self._run_next_job()
 
 	def _run_next_job(self):
 		current_job = self._dequeue()
-		self.current_runner = DMLRunner(self.dataset_path, current_job.config)
 		self.current_runner.run_job(current_job)
-		self.current_runner = None
 
 	def _dequeue(self):
 		return self.queue.get()
