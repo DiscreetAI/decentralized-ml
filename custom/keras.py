@@ -70,7 +70,7 @@ def get_optimizer(model):
                 'metrics': model.metrics,
                 'sample_weight_mode': model.sample_weight_mode,
                 'loss_weights': model.loss_weights,
-            }, default=get_json_type).encode('utf8')
+            }, default=get_json_type)
 
     return metadata
 
@@ -107,7 +107,7 @@ def _load_optimizer(uncompiled_model, optimizer_metadata):
                       'the model was *not* compiled. '
                       'Compile it manually.')
         return uncompiled_model
-    training_config = json.loads(training_config.decode('utf-8'))
+    training_config = json.loads(training_config)
     optimizer_config = training_config['optimizer_config']
     optimizer = optimizers.deserialize(optimizer_config,
                                        custom_objects=custom_objects)

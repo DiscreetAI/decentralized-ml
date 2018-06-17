@@ -38,8 +38,19 @@ def serialize_keras_model(model):
 def ipfs2base32(ipfshash):
     bytes_array = base58.b58decode(ipfshash) 
     return bytes_array[2:]
+def base322ipfs(bytes32):
+    ipfs_hash = base58.b58encode(b'\x12 ' + bytes32)
+    return ipfs_hash
+def push_file(filepath):
+    return api.add(filepath)
+def push_model(model_json):
+    return api.add_json(model_json)
+def get_model(model_addr):
+    return api.get_json(model_addr)
+
 # def send_model():
 #     dict_of_stuff = keras2ipfs()
 #     return dict_of_stuff
-if __name__ == '__main__':
-    print(ipfs2base32('QmVm4yB2jxPwXXVXM6n86TuwA4jCQ7EfNPjguFrhoCbPiJ'))
+# if __name__ == '__main__':
+    # print(ipfs2base32('QmZf6NVYgxTMA6996744sbakRN9Ks8xE6HWAEb3x6JN5i9'))
+    # print(base322ipfs(ipfs2base32('QmZf6NVYgxTMA6996744sbakRN9Ks8xE6HWAEb3x6JN5i9')))

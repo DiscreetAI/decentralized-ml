@@ -20,6 +20,7 @@ from core.utils.dmljob import DMLJob
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
+from blockchain.ipfs_utils import * 
 
 class DMLRunner(object):
     """
@@ -47,7 +48,7 @@ class DMLRunner(object):
 
     def run_job(self, dml_job):
         """Identifies the DMLJob type and runs it."""
-        assert dml_job.job_type in ['train', 'validate', 'initialize'],
+        assert dml_job.job_type in ['train', 'validate', 'initialize'], \
             'DMLJob type ({0}) is not valid'.format(dml_job.job_type)
         if dml_job.job_type == 'train':
             self.train(
@@ -183,6 +184,7 @@ def validate_keras_model(serialized_model, weights, dataset_iterator, data_count
 
 
 if __name__ == '__main__':
+
     config = {
         'split': 0.8,
     }
@@ -197,7 +199,9 @@ if __name__ == '__main__':
         "architecture": model_architecture,
         "optimizer": model_optimizer
     }
-    print(model_json)
+    addr = push_model(model_json)
+    model_json = get_model(base322ipfs(ipfs2base32(addr)))
+    # print(model_json)
 
     initial_weights = runner.initialize_model(model_json, 'keras')
 

@@ -10,7 +10,7 @@ import web3
 from eth_utils import is_address
 from ethereum.transactions import Transaction
 from solc import compile_source, compile_files
-from web3 import Web3, HTTPProvider, eth
+from web3 import Web3, HTTPProvider, eth, IPCProvider
 from web3.auto import w3
 from web3.utils.events import get_event_data
 

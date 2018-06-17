@@ -5,7 +5,6 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 from queue import Queue
-import schedule
 import time
 import json
 
@@ -26,19 +25,19 @@ class DMLScheduler(object):
 	def __init__(self):
 		self.current_runner = None
 		self.queue = Queue()
-		with open('core/config.json') as f:
-    		self.dataset_path = json.load(f)["dataset_path"]
+		with open('config.json') as f:
+			self.dataset_path = json.load(f)["dataset_path"]
 
-	def enqueue(dml_job):
+	def enqueue(self, dml_job):
 		assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
 		self.queue.put(dml_job)
 		if not self.current_runner:
 			self._run_next_job()
 
-	def _dequeue():
+	def _dequeue(self):
 		return self.queue.get()
 
-	def _run_next_job():
+	def _run_next_job(self):
 		current_job = self._dequeue()
 		self.current_runner = DMLRunner(self.dataset_path, current_job.config)
 		self.current_runner.run_job(current_job)

@@ -9,7 +9,7 @@ from ipfs_utils import *
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
 TEMP_DELEGATOR_ADDR = '0x9522f8d44ea66b96fcda5cb0c483759efa44adcd'
 # TEMP_DELEGATOR_ADDR = self.web3.toChecksumAddress('0x9522f8d44ea66b96fcda5cb0c483759efa44adcd')
-# TEMP_DELEGATOR_ABI = '''[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"clientArray","type":"address[]"},{"indexed":false,"name":"StateMachineAddress","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]'''
+TEMP_DELEGATOR_ABI = '''[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"clientArray","type":"address[]"},{"indexed":false,"name":"StateMachineAddress","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]'''
 # TEMP_STATEMACHINE_ABI = '''[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32[]"}],"name":"newModel","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amt","type":"uint256"}],"name":"reward","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"stage","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"viewValidator","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_validator","type":"address"},{"name":"_listeners","type":"address[]"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[],"name":"NewModel","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]'''
 TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
 # DML-Related Imports
@@ -17,41 +17,43 @@ TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
 # from scheduler import Scheduler
 
 from web3.auto import w3
-from scheduler import DMLScheduler
-from core.utils.dmljob import DMLJob
 
-class ListenerEthereum(object):
+class DMLDeveloper(object):
     """
-    This class listens to the deployed smart contract.
+    This class creates StateMachine smart contracts to train models.
     """
     def __init__(self, clientAddress=None):
 
-        # Connect scheduler
-        self.scheduler = DMLScheduler()
-
-        # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
-        self.web3 = Web3(IPCProvider())
-        # assert self.web3.isConnected()
-        # self.api = ipfsapi.connect('127.0.0.1', 5001)
-        
-        # Set up the ETH account
-        self.PASSPHRASE = 'panda'
-        self.TEST_ACCOUNT = "0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4"
-
         if clientAddress:
-            assert(is_address(clientAddress))
+            self.web3 = Web3(IPCProvider())
             self.clientAddress = clientAddress
         else:
-            #TODO: Initialize client 'container' address if it wasn't assigned one
-            self.clientAddress = self.TEST_ACCOUNT
-        # self.web3.personal.unlockAccount(self.clientAddress, self.PASSPHRASE)
-    
-        print("Client Address:", self.clientAddress)
+            self.web3 = Web3(HTTPProvider('http://54.153.84.146:8545'))
+            self.clientAddress = '0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4'
+        assert self.web3.isConnected()
+        # self.api = ipfsapi.connect('127.0.0.1', 5001)
+        CONTRACT_ADDRESS = to_checksum_address('0x39f3ba63142adf7455839fb4f91e7670a332a330')
+        self.web3.personal.unlockAccount(self.clientAddress, 'panda')
 
         # Start reading in the contracts
-        # self.delegator = self.web3.eth.contract(
-        #     address = TEMP_DELEGATOR_ADDR,
-        #     abi = TEMP_DELEGATOR_ABI)
+        self.delegator = self.web3.eth.contract(
+            address = TEMP_DELEGATOR_ADDR,
+            abi = TEMP_DELEGATOR_ABI)
+    
+    def deploy_StateMachine(targetAddrs, modelAddrs):
+        tx_hash = self.delegator.functions.
+            makeQuery(targetAddrs, modelAddrs).
+            transact('from:' self.clientAddress)
+        tx_hash = self.web3.eth.contract(
+            abi=contract_interface['abi'],
+            bytecode=contract_interface['bin']).constructor(addrs).transact({"from": self.clientAddress})
+
+        self.web3.eth.waitForTransactionReceipt(tx_hash)
+
+        address = self.web3.eth.getTransactionReceipt(tx_hash)['contractAddress']
+        return address
+
+    def upload_model(model_json, model_weights):
 
     async def start_listening(self, event_to_listen, poll_interval=5):
         while True:
