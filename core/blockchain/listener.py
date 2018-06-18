@@ -7,9 +7,9 @@ from blockchain_utils import *
 from ipfs_utils import *
 
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
-TEMP_DELEGATOR_ADDR = '0x3b35797e426f6f92104f273b951af76c4a6484cb'
+TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
 TEMP_DELEGATOR_ABI = '''
-[{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"}]
+[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
 '''
 TEMP_STATEMACHINE_ABI = '''
 [{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
@@ -21,6 +21,7 @@ TEMP_STATEMACHINE_ABI = '''
 from web3.auto import w3
 from scheduler import DMLScheduler
 from core.utils.dmljob import DMLJob
+from core.runner import DMLRunner
 
 class ListenerEthereum(object):
     """
@@ -34,6 +35,9 @@ class ListenerEthereum(object):
         # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
         # self.web3 = Web3(IPCProvider())
         assert self.web3.isConnected()
+        config = {}
+
+        self.runner = DMLRunner('datasets/mnist', config)
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
         
         # # Set up the ETH account
@@ -85,17 +89,22 @@ class ListenerEthereum(object):
         stateMachineAddress = event_json['addr']
         print(stateMachineAddress)
         models = event_json['models']
-        print(models)
+        model_json = bytes322json(models[0])
+        new_job = DMLJob(model_json)
+        self.runner.run_job(new_job)
+        # serialized_model = model_json['serialized_model']
+        # model_weights = bytes322weights(serialized_model, models[1])
+        # print(models)
         validator = event_json['validator']
-        print(event_json)
+        # print(event_json)
         self.listen_statemachine(stateMachineAddress)
 
     def listen_delegator(self, event_data=None):
         self.filter_set(
-            "NewQuery(address,bytes32[],address)",
+            "NewQuery(address,bytes32[2],address)",
             TEMP_DELEGATOR_ADDR, self.handle_newstatemachine)
 
-    def listen_statemachine(self, address=TEMP_STATEMACHINE_ADDR):
+    def listen_statemachine(self, address):
         self.filter_set("NewWeights(bytes32)", address, self.handle_newWeights)
         # self.filter_set("DoneTraining()", address, self.checkBalance)
 
@@ -116,7 +125,7 @@ class ListenerEthereum(object):
         # return event_data.split("000000000000000000000000")
 
     def main(self):
-        print(self.web3.eth.getBlock('latest'))
+        # print(self.web3.eth.getBlock('latest'))
         self.listen_delegator()
         # check = self.filter_set("QueryCreated(address,address)", self.Delegator_address, self.handle_QueryCreated_event)
         # if check[0] + check[1] == self.clientAddress.lower():

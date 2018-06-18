@@ -7,9 +7,9 @@ from blockchain.blockchain_utils import *
 from blockchain.ipfs_utils import *
 
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
-TEMP_DELEGATOR_ADDR = '0x3b35797e426f6f92104f273b951af76c4a6484cb'
+TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
 TEMP_DELEGATOR_ABI = '''
-[{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"}]
+[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
 '''
 TEMP_STATEMACHINE_ABI = '''
 [{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
@@ -54,7 +54,7 @@ class DMLDeveloper(object):
     def deploy_with_model(self, model, model_json):
         weights_bytes = weights2bytes32(model)   
         json_bytes = json2bytes32(model_json)
-        return self.deploy_StateMachine([self.clientAddress], [weights_bytes, json_bytes])
+        return self.deploy_StateMachine([self.clientAddress], [json_bytes, weights_bytes])
 
     def deploy_StateMachine(self, targetAddrs, modelAddrsBytes):
         print(targetAddrs)
@@ -208,5 +208,4 @@ if __name__ == '__main__':
         "optimizer": model_optimizer
     }
     developer = DMLDeveloper()
-    developer.deploy_with_json(model_json)
-    
+    developer.deploy_with_model(m.model, model_json)

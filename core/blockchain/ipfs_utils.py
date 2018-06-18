@@ -16,7 +16,6 @@ CONFIG = None
 # catted = api.cat('QmVm4yB2jxPwXXVXM6n86TuwA4jCQ7EfNPjguFrhoCbPiJ')
 # print('loaded in model from IPFS as bytes')
 # model = model.load_weights(catted)
-def bytes
 def keras2ipfs(model):
     return api.add_bytes(serialize_keras_model(model))
 
@@ -61,7 +60,7 @@ def weights2bytes32(model):
 def bytes322weights(model, bytes32):
     addr = bytes322ipfs(bytes32)
     return ipfs2keras(model, addr)
-    
+
 # def send_model():
 #     dict_of_stuff = keras2ipfs()
 #     return dict_of_stuff
