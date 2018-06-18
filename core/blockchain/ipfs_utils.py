@@ -16,6 +16,7 @@ CONFIG = None
 def ipfs2keras(model, model_address):
     deserialize_keras_model(model, api.cat(model_address))
     return 'Hoorah'
+
 def deserialize_keras_model(model, model_bin):
     lock = FileLock('models/temp_model.h5.lock')
     with lock:
@@ -23,10 +24,12 @@ def deserialize_keras_model(model, model_bin):
             g.write(model_bin)
             g.close()
         model.load_weights('models/temp_model.h5')
+
 # ipfs2keras(catted)
 # print('I loaded a model from IPFS!')
 def keras2ipfs(model):
     return api.add_bytes(serialize_keras_model(model))
+
 def serialize_keras_model(model):
     lock = FileLock('models/temp_model.h5.lock')
     with lock:
@@ -35,16 +38,21 @@ def serialize_keras_model(model):
             model_bin = f.read()
             f.close()
         return model_bin
+
 def ipfs2base32(ipfshash):
-    bytes_array = base58.b58decode(ipfshash) 
+    bytes_array = base58.b58decode(ipfshash)
     return bytes_array[2:]
+
 def base322ipfs(bytes32):
     ipfs_hash = base58.b58encode(b'\x12 ' + bytes32)
     return ipfs_hash
+
 def push_file(filepath):
     return api.add(filepath)
+
 def push_model(model_json):
     return api.add_json(model_json)
+
 def get_model(model_addr):
     return api.get_json(model_addr)
 

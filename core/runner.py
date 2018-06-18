@@ -12,11 +12,11 @@ from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
+from blockchain.ipfs_utils import *
 
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
-from blockchain.ipfs_utils import * 
 
 class DMLRunner(object):
     """
@@ -52,16 +52,19 @@ class DMLRunner(object):
         assert job.job_type in ['train', 'validate', 'initialize'], \
             'DMLJob type ({0}) is not valid'.format(job.job_type)
         if self.is_active(): return
+        logging.info("Running job (type: {0})...".format(job.job_type))
         self.current_job = job
         if job.job_type == 'train':
-            new_weights, omega, train_stats = self._train(
+            new_weights_path, omega, train_stats = self._train(
                 job.serialized_model,
                 job.model_type,
                 job.weights,
                 job.hyperparams,
                 job.labeler
             )
-            # TODO: Do something with the results.
+            print(new_weights_path)
+            exit(1)
+            # TODO: Send the results to the aggregator through P2P.
             print(train_stats)
             return_obj = new_weights, omega, train_stats
         elif job.job_type == 'validate':
@@ -72,7 +75,7 @@ class DMLRunner(object):
                  job.hyperparams,
                  job.labeler
             )
-            # TODO: Do something with the results.
+            # TODO: Send the results to the aggregator through P2P.
             print(val_stats)
             return_obj = val_stats
         elif job.job_type == 'initialize':
@@ -80,11 +83,11 @@ class DMLRunner(object):
                 job.serialized_model,
                 job.model_type
             )
-            # TODO: Do something with the results.
-            print(initial_weights)
+            # TODO: Send the results to the aggregator through P2P.
             return_obj = initial_weights
         self.current_job = None
-        return return_obj
+        logging.info("Finished running job!")
+        return return_obj # Returning is only for debugging purposes.
 
     def is_active(self):
         """
@@ -104,12 +107,15 @@ class DMLRunner(object):
 
         NOTE: Uses the same hyperparameters and labeler for training and
         validating during 'avg_type' of type 'val_acc'.
+
+        NOTE2: Assumes 'initial_weights' are the actual weights and not a path.
         """
         # Get the right dataset iterator based on the averaging type.
         avg_type = hyperparams['averaging_type']
         batch_size = hyperparams['batch_size']
         assert avg_type in ['data_size', 'val_acc'], \
             "Averaging type '{0}' is not supported.".format(avg_type)
+        logging.info("Training model...")
         if avg_type == 'data_size':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
                 count=self.data_count, split=hyperparams['split'], \
@@ -125,9 +131,9 @@ class DMLRunner(object):
         assert model_type in ['keras'], \
             "Model type '{0}' is not supported.".format(model_type)
         if model_type == 'keras':
-            new_weights, train_stats = train_keras_model(serialized_model,
+            new_weights_path, train_stats = train_keras_model(serialized_model,
                 initial_weights, dataset_iterator, \
-                self.data_count*hyperparams['split'], hyperparams)
+                self.data_count*hyperparams['split'], hyperparams, self.config)
 
         # Get the right omega based on the averaging type.
         if avg_type == 'data_size':
@@ -139,7 +145,7 @@ class DMLRunner(object):
             train_stats.update(val_stats)
 
         # Return the results.
-        return new_weights, omega, train_stats
+        return new_weights_path, omega, train_stats
 
     def _validate(self, serialized_model, model_type, weights, hyperparams,
         labeler, custom_iterator=None):
@@ -148,7 +154,10 @@ class DMLRunner(object):
         the state specified.
 
         Returns the metrics returned by the model.
+
+        NOTE: Assumes 'weights' are the actual weights and not a path.
         """
+        logging.info("Validating model...")
         # Choose the dataset to validate on.
         batch_size = hyperparams['batch_size']
         if custom_iterator is None:
@@ -174,14 +183,15 @@ class DMLRunner(object):
         """
         assert model_type in ['keras'], \
             "Model type '{0}' is not supported.".format(model_type)
+        logging.info("Initializing model...")
         if model_type == 'keras':
             model = model_from_serialized(serialized_model)
+            model.summary()
             initial_weights = model.get_weights()
         return initial_weights
 
 
 if __name__ == '__main__':
-
     config = {}
 
     runner = DMLRunner('datasets/mnist', config)
@@ -194,8 +204,10 @@ if __name__ == '__main__':
         "architecture": model_architecture,
         "optimizer": model_optimizer
     }
+    # @panda: why do we need to test this here?
     addr = push_model(model_json)
     model_json = get_model(base322ipfs(ipfs2base32(addr)))
+    ###########################################
     # print(model_json)
 
     from core.utils.dmljob import DMLJob

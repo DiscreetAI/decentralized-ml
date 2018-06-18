@@ -6,3 +6,5 @@ logs
 
 datasets/mnist
 datasets/shakespeare
+
+core/utils/weights

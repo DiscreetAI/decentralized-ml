@@ -4,7 +4,8 @@ class DMLJob(object):
 
     """
 
-    def __init__(self,
+    def __init__(
+        self,
         job_type,
         serialized_model,
         model_type,
