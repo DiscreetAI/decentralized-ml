@@ -2,6 +2,7 @@ import logging
 import uuid
 import os
 
+import numpy as np
 import keras
 
 from custom.keras import model_from_serialized
@@ -58,4 +59,4 @@ def deserialize_weights(serialized_weights):
 
     `serialized_weights` is a list of bytestrings of np arrays.
     """
-    return [np.fromstring(w) for w in serialized_weights]
+    return [np.array(np.fromstring(w)) for w in serialized_weights]

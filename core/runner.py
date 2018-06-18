@@ -89,7 +89,7 @@ class DMLRunner(object):
             weights_in_bytes = serialize_weights(initial_weights)
             # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
             # through P2P.
-            print(initial_weights)
+            #print(initial_weights)
             return_obj = initial_weights
         self.current_job = None
         logging.info("Finished running job!")
@@ -219,6 +219,14 @@ if __name__ == '__main__':
         "keras"
     )
     initial_weights = runner.run_job(initialize_job)
+
+    # TEST for FED AVG.
+    # from core.fed_learning import federated_averaging
+    # print(initial_weights[0], initial_weights[-1])
+    # avg_weights = federated_averaging([initial_weights, initial_weights])
+    # print(avg_weights[0], initial_weights[-1])
+    # exit(1)
+    ####
 
     hyperparams = {
         'averaging_type': 'data_size',
