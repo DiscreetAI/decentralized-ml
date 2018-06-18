@@ -26,7 +26,7 @@ class DMLJob(object):
 
 
 def serialize_job(dmljob_obj):
-    weights = np.array(dmljob_obj.weights).tostring()
+    weights = [w.tostring() for w in dmljob_obj.weights]
     rest = {
         'job_type': dmljob_obj.job_type,
         'serialized_model': dmljob_obj.serialized_model,
@@ -41,7 +41,7 @@ def serialize_job(dmljob_obj):
     }
 
 def deserialize_job(serialized_job):
-    weights = np.fromstring(serialized_job['weights'])
+    weights = [np.fromstring(w) for w in serialized_job['weights']]
     rest = serialized_job['job_data']
     return DMLJob(
         rest['job_type'],
