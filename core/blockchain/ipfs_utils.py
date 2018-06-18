@@ -35,18 +35,10 @@ def serialize_keras_model(model):
             model_bin = f.read()
             f.close()
         return model_bin
-def ipfs2base32(ipfshash):
-    bytes_array = base58.b58decode(ipfshash) 
+def json2bytes32(json):
+    content_hash = api.add_json(json)
+    bytes_array = base58.b58decode(content_hash) 
     return bytes_array[2:]
-def base322ipfs(bytes32):
-    ipfs_hash = base58.b58encode(b'\x12 ' + bytes32)
-    return ipfs_hash
-def push_file(filepath):
-    return api.add(filepath)
-def push_model(model_json):
-    return api.add_json(model_json)
-def get_model(model_addr):
-    return api.get_json(model_addr)
 
 # def send_model():
 #     dict_of_stuff = keras2ipfs()

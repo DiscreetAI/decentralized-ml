@@ -5,9 +5,9 @@ class DMLJob(object):
     """
 
     def __init__(self,
-        job_type,
         serialized_model,
-        model_type,
+        model_type = 'keras',
+        job_type = 'initialize',
         config={},
         weights=None,
         hyperparams=None,

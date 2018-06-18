@@ -38,7 +38,7 @@ class DMLScheduler(object):
 			num_processes = scheduler_config["num_processes"]
 		self.current_runner = DMLRunner(dataset_path, runner_config)
 		self.threading_pool = ThreadPool(num_processes)
-		self._start_cron(run_frequency_mins)
+		# self._start_cron(run_frequency_mins)
 		logging.info("Scheduler is set up!")
 
 	def add_job(self, dml_job):

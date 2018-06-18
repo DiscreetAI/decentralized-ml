@@ -3,18 +3,26 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 from eth_utils import is_address
-from blockchain_utils import *
-from ipfs_utils import *
+from blockchain.blockchain_utils import *
+from blockchain.ipfs_utils import *
 
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
-TEMP_DELEGATOR_ADDR = '0x9522f8d44ea66b96fcda5cb0c483759efa44adcd'
+TEMP_DELEGATOR_ADDR = '0x3b35797e426f6f92104f273b951af76c4a6484cb'
 # TEMP_DELEGATOR_ADDR = self.web3.toChecksumAddress('0x9522f8d44ea66b96fcda5cb0c483759efa44adcd')
-TEMP_DELEGATOR_ABI = '''[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"clientArray","type":"address[]"},{"indexed":false,"name":"StateMachineAddress","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]'''
+TEMP_DELEGATOR_ABI = '''
+[{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"","type":"address"}],"name":"NewQuery","type":"event"}]
+'''
 # TEMP_STATEMACHINE_ABI = '''[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32[]"}],"name":"newModel","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amt","type":"uint256"}],"name":"reward","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"stage","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"viewValidator","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_validator","type":"address"},{"name":"_listeners","type":"address[]"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[],"name":"NewModel","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]'''
 TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
 # DML-Related Imports
 # from dmljob import DMLJob
 # from scheduler import Scheduler
+
+from custom.keras import model_from_serialized, get_optimizer
+from data.iterators import count_datapoints
+from data.iterators import create_train_dataset_iterator
+from data.iterators import create_test_dataset_iterator
+from core.utils.keras import train_keras_model, validate_keras_model
 
 from web3.auto import w3
 
@@ -26,34 +34,37 @@ class DMLDeveloper(object):
 
         if clientAddress:
             self.web3 = Web3(IPCProvider())
+            assert self.web3.isConnected()
             self.clientAddress = clientAddress
+            # self.clientAddress = self.web3.toChecksumAddress(clientAddress)
         else:
             self.web3 = Web3(HTTPProvider('http://54.153.84.146:8545'))
-            self.clientAddress = '0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4'
-        assert self.web3.isConnected()
+            assert self.web3.isConnected()
+            self.clientAddress = self.web3.toChecksumAddress('0xb2CA9a58ea16599C2c827F399d07aA94b3C69dFb')
+            self.web3.personal.unlockAccount(self.clientAddress, 'panda')
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
-        CONTRACT_ADDRESS = to_checksum_address('0x39f3ba63142adf7455839fb4f91e7670a332a330')
-        self.web3.personal.unlockAccount(self.clientAddress, 'panda')
+        
 
         # Start reading in the contracts
         self.delegator = self.web3.eth.contract(
-            address = TEMP_DELEGATOR_ADDR,
+            address = self.web3.toChecksumAddress(TEMP_DELEGATOR_ADDR),
             abi = TEMP_DELEGATOR_ABI)
     
-    def deploy_StateMachine(targetAddrs, modelAddrs):
-        tx_hash = self.delegator.functions.
-            makeQuery(targetAddrs, modelAddrs).
-            transact('from:' self.clientAddress)
-        tx_hash = self.web3.eth.contract(
-            abi=contract_interface['abi'],
-            bytecode=contract_interface['bin']).constructor(addrs).transact({"from": self.clientAddress})
+    def deploy_with_json(self, model_json):
+        return self.deploy_StateMachine([self.clientAddress], [json2bytes32(model_json)])
+
+    def deploy_StateMachine(self, targetAddrs, modelAddrsBytes):
+        print(targetAddrs)
+        print(modelAddrsBytes)
+        tx_hash = self.delegator.functions.makeQuery(
+            targetAddrs, modelAddrsBytes).transact({'from': self.clientAddress})
 
         self.web3.eth.waitForTransactionReceipt(tx_hash)
 
         address = self.web3.eth.getTransactionReceipt(tx_hash)['contractAddress']
-        return address
+        print(address)
 
-    def upload_model(model_json, model_weights):
+    # def upload_model(model_json, model_weights):
 
     async def start_listening(self, event_to_listen, poll_interval=5):
         while True:
@@ -138,5 +149,13 @@ class DMLDeveloper(object):
         #     return "not me"
 
 if __name__ == '__main__':
-    listener = ListenerEthereum()
-    listener.main()
+    from models.keras_perceptron import KerasPerceptron
+    m = KerasPerceptron(is_training=True)
+    model_architecture = m.model.to_json()
+    model_optimizer = get_optimizer(m.model)
+    model_json = {
+        "architecture": model_architecture,
+        "optimizer": model_optimizer
+    }
+    developer = DMLDeveloper()
+    developer.deploy_with_json(model_json)
