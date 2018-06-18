@@ -18,15 +18,16 @@ def train_keras_model(serialized_model, weights, dataset_iterator, data_count,
     model.set_weights(weights)
     hist = model.fit_generator(dataset_iterator, epochs=hyperparams['epochs'], \
         steps_per_epoch=data_count//hyperparams['batch_size'])
-    weights_filepath = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        config["weights_directory"],
-        uuid.uuid4().hex[:8] + ".h5"
-    )
-    ensure_dir(weights_filepath)
-    model.save_weights(weights_filepath)
+    # weights_filepath = os.path.join(
+    #     os.path.dirname(os.path.realpath(__file__)),
+    #     config["weights_directory"],
+    #     uuid.uuid4().hex[:8] + ".h5"
+    # )
+    # ensure_dir(weights_filepath)
+    # model.save_weights(weights_filepath)
+    weights = model.get_weights()
     logging.info('Keras training complete.')
-    return weights_filepath, {'training_history' : hist.history}
+    return weights, {'training_history' : hist.history}
 
 
 def validate_keras_model(serialized_model, weights, dataset_iterator,
@@ -39,3 +40,22 @@ def validate_keras_model(serialized_model, weights, dataset_iterator,
     metrics = dict(zip(model.metrics_names, history))
     logging.info('Keras validation complete.')
     return {'val_metric': metrics}
+
+
+def serialize_weights(weights):
+    """
+    Returns a list of bytestrings of np arrays.
+
+    `weights` is a list of np arrays (the output of model.get_weights()).
+    """
+    return [w.tostring() for w in weights]
+
+
+def deserialize_weights(serialized_weights):
+    """
+    Returns a list of np arrays that a model can take in using
+    model.set_weights().
+
+    `serialized_weights` is a list of bytestrings of np arrays.
+    """
+    return [np.fromstring(w) for w in serialized_weights]
