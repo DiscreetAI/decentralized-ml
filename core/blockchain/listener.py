@@ -7,11 +7,13 @@ from blockchain_utils import *
 from ipfs_utils import *
 
 ETH_NODE_ADDR = 'http://54.153.84.146:8545'
-TEMP_DELEGATOR_ADDR = '0x9522f8d44ea66b96fcda5cb0c483759efa44adcd'
-# TEMP_DELEGATOR_ADDR = self.web3.toChecksumAddress('0x9522f8d44ea66b96fcda5cb0c483759efa44adcd')
-# TEMP_DELEGATOR_ABI = '''[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[]"}],"name":"makeQuery","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"clientArray","type":"address[]"},{"indexed":false,"name":"StateMachineAddress","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]'''
-# TEMP_STATEMACHINE_ABI = '''[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32[]"}],"name":"newModel","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amt","type":"uint256"}],"name":"reward","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"stage","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"viewValidator","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_validator","type":"address"},{"name":"_listeners","type":"address[]"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[],"name":"NewModel","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]'''
-TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
+TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
+TEMP_DELEGATOR_ABI = '''
+[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
+'''
+TEMP_STATEMACHINE_ABI = '''
+[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
+'''
 # DML-Related Imports
 # from dmljob import DMLJob
 # from scheduler import Scheduler
@@ -19,6 +21,7 @@ TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
 from web3.auto import w3
 from scheduler import DMLScheduler
 from core.utils.dmljob import DMLJob
+from core.runner import DMLRunner
 
 class ListenerEthereum(object):
     """
@@ -27,26 +30,29 @@ class ListenerEthereum(object):
     def __init__(self, clientAddress=None):
 
         # Connect scheduler
-        self.scheduler = DMLScheduler()
-
+        # self.scheduler = DMLScheduler()
+        self.web3 = Web3(HTTPProvider(ETH_NODE_ADDR))      
         # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
-        self.web3 = Web3(IPCProvider())
-        # assert self.web3.isConnected()
+        # self.web3 = Web3(IPCProvider())
+        assert self.web3.isConnected()
+        config = {}
+
+        self.runner = DMLRunner('datasets/mnist', config)
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
         
-        # Set up the ETH account
-        self.PASSPHRASE = 'panda'
-        self.TEST_ACCOUNT = "0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4"
+        # # Set up the ETH account
+        # self.PASSPHRASE = 'panda'
+        # self.TEST_ACCOUNT = "0x1554a1d22cae251e2050f67cd3cf3082c4a784e6"
 
-        if clientAddress:
-            assert(is_address(clientAddress))
-            self.clientAddress = clientAddress
-        else:
-            #TODO: Initialize client 'container' address if it wasn't assigned one
-            self.clientAddress = self.TEST_ACCOUNT
-        # self.web3.personal.unlockAccount(self.clientAddress, self.PASSPHRASE)
+        # if clientAddress:
+        #     assert(is_address(clientAddress))
+        #     self.clientAddress = clientAddress
+        # else:
+        #     #TODO: Initialize client 'container' address if it wasn't assigned one
+        #     self.clientAddress = self.TEST_ACCOUNT
+        # # self.web3.personal.unlockAccount(self.clientAddress, self.PASSPHRASE)
     
-        print("Client Address:", self.clientAddress)
+        # print("Client Address:", self.clientAddress)
 
         # Start reading in the contracts
         # self.delegator = self.web3.eth.contract(
@@ -73,25 +79,33 @@ class ListenerEthereum(object):
         try:
             inter = loop.run_until_complete(
                 self.start_listening(event_filter, 2))
-            check = handler(inter['data'])
+            check = handler(inter)
         finally:
             loop.close()
         return check
 
     def handle_newstatemachine(self, event_data):
-        print(event_data)
-        address = event_data.split("000000000000000000000000")[2]
-        assert(is_address(address))
-        self.listen_statemachine(address)
-        return event_data.split("000000000000000000000000")
+        event_json = decode_event(TEMP_DELEGATOR_ABI, event_data)
+        stateMachineAddress = event_json['addr']
+        print(stateMachineAddress)
+        models = event_json['models']
+        model_json = bytes322json(models[0])
+        new_job = DMLJob(model_json)
+        self.runner.run_job(new_job)
+        # serialized_model = model_json['serialized_model']
+        # model_weights = bytes322weights(serialized_model, models[1])
+        # print(models)
+        validator = event_json['validator']
+        # print(event_json)
+        self.listen_statemachine(stateMachineAddress)
 
     def listen_delegator(self, event_data=None):
         self.filter_set(
-            "NewQuery(address[] clientArray, address StateMachineAddress)",
+            "NewQuery(address,bytes32[2],address)",
             TEMP_DELEGATOR_ADDR, self.handle_newstatemachine)
 
-    def listen_statemachine(self, address=TEMP_STATEMACHINE_ADDR):
-        self.filter_set("NewModel(bytes32)", address, self.handle_newmodel)
+    def listen_statemachine(self, address):
+        self.filter_set("NewWeights(bytes32)", address, self.handle_newWeights)
         # self.filter_set("DoneTraining()", address, self.checkBalance)
 
     def checkBalance(self, event_data):
@@ -100,20 +114,19 @@ class ListenerEthereum(object):
         myBalance = self.web3.eth.getBalance(self.clientAddress)
         assert myBalance == expectedBalance
 
-    def handle_newmodel(self, event_data=None):
-        # print(event_data)
-        try:
-            model_addr = event_data.split("000000000000000000000000")[2]
-        except:
-            model_addr = b'\xa8*\x06\xd4\x92\x8b\xfe\xa5\tX\x8d\x818\xc9"\xba\t^d\x1c\xe9\xc8R\x93:\xf2h\x8aX|\x9a\x1a'
-        model_json = get_model(base322ipfs(model_addr))
-        new_job = DMLJob(model_json)
-        self.scheduler.enqueue(new_job)
+    def handle_newWeights(self, event_data=None):
+        event_json = decode_event(TEMP_STATEMACHINE_ABI, event_data)
+        model_addr_bytes = event_json['addr']
+        model = bytes322weights(model_addr_bytes)
+        # model = 
+        # model_weights = get_model(base322ipfs(model_addr))
+        # new_job = DMLJob(model_json)
+        # self.scheduler.add_job(new_job)
         # return event_data.split("000000000000000000000000")
 
     def main(self):
         # print(self.web3.eth.getBlock('latest'))
-        self.handle_newmodel()
+        self.listen_delegator()
         # check = self.filter_set("QueryCreated(address,address)", self.Delegator_address, self.handle_QueryCreated_event)
         # if check[0] + check[1] == self.clientAddress.lower():
         #     target_contract = check[0] + check[2]

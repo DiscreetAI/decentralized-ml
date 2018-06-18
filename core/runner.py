@@ -247,3 +247,23 @@ if __name__ == '__main__':
         mnist_labeler
     )
     val_stats = runner.run_job(validate_job)
+
+def serialize(DMLJob):
+    weights = np.array(self.weights).tobytes()
+    rest = {
+        'job_type': self.job_type, 
+        'serialized_model': self.serialized_model,
+        'model_type': self.model_type, 
+        'config': self.config, 
+        'hyperparams': self.hyperparams,
+        'labeler': self.labeler
+    }
+    return {
+        'weights': weights,
+        'job_data': rest
+    }
+
+def deserialize(dicto):
+    weights = np.fromstring(dicto['weights'], dtype='<f4')
+    rest = dicto['job_data']
+    return DMLJob(rest['job_type'], rest['serialzed_model'], rest['model_type'], rest['config'], weights, rest['hyperparams'], rest['labeler'])
