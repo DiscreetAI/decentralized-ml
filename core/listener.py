@@ -91,22 +91,24 @@ class ListenerEthereum(object):
             loop.close()
         return check
 
-    def handle_newstatemachine(self, event_data):
-        event_json = decode_event(TEMP_DELEGATOR_ABI, event_data)
-        stateMachineAddress = event_json['addr']
-        print(stateMachineAddress)
-        models = event_json['models']
+    def handle_newstatemachine(self, event_data, models=None):
+        # event_json = decode_event(TEMP_DELEGATOR_ABI, event_data)
+        # stateMachineAddress = event_json['addr']
+        # print(stateMachineAddress)
+        # models = event_json['models']
+        print(models[0])
         model_json = bytes322json(models[0])
         self.model_json = model_json
-        model_weights = bytes322bytes(models[1])
-        job_dict = {
-            'weights' : model_weights,
-            'job_data' : {
-                'job_type' : 'train',
-                'serialized_model' : model_json,
-                'model_type' : 'keras'
-            }
-        }
+        # model_weights = bytes322bytes(models[1])
+        # # print("Type of data is {}".format(isinstance(model_weights, bytes)))
+        # job_dict = {
+        #     'weights' : model_weights,
+        #     'job_data' : {
+        #         'job_type' : 'train',
+        #         'serialized_model' : model_json,
+        #         'model_type' : 'keras'
+        #     }
+        # }
         # model = self._initialize_model(model_json, 'keras')
         # model = bytes322weights(model, models[1])
         # self.model = model
@@ -147,7 +149,7 @@ class ListenerEthereum(object):
         myBalance = self.web3.eth.getBalance(self.clientAddress)
         assert myBalance == expectedBalance
 
-    def handle_newWeights(self, event_data=None):
+    def handle_newWeights(self, event_data):
         event_json = decode_event(TEMP_STATEMACHINE_ABI, event_data)
         model_addr_bytes = event_json['addr']
         # model = bytes322weights(self.model, model_addr_bytes)
@@ -173,7 +175,7 @@ class ListenerEthereum(object):
 
     def main(self):
         # print(self.web3.eth.getBlock('latest'))
-        self.listen_delegator()
+        self.handle_newstatemachine("",[bytearray(b'\xa8*\x06\xd4\x92\x8b\xfe\xa5\tX\x8d\x818\xc9"\xba\t^d\x1c\xe9\xc8R\x93:\xf2h\x8aX|\x9a\x1a'), bytearray(b'\x8c\xb3NR\xce\xdf\xf8\xfd\xf9F\x18\x92.\x123[\xe8\xc4\x82\x857\xb8\xb8\x90\x88\xd5\x11\x0b-4#D')])
         # check = self.filter_set("QueryCreated(address,address)", self.Delegator_address, self.handle_QueryCreated_event)
         # if check[0] + check[1] == self.clientAddress.lower():
         #     target_contract = check[0] + check[2]

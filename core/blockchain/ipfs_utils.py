@@ -21,8 +21,12 @@ def keras2ipfs(model):
 
 
 def ipfs2keras(model, model_addr):
-    return deserialize_keras_model(api.cat(model_addr))
+    return deserialize_keras_model(model, api.cat(model_addr))
 
+def ipfs2bytes(ipfs_hash):
+    bytez = api.cat(ipfs_hash)
+    # print("Type of data is {}".format(isinstance(bytez, bytes)))
+    return bytez
 
 def serialize_keras_model(model):
     lock = FileLock('temp_model.h5.lock')
@@ -60,7 +64,13 @@ def weights2bytes32(model):
 def bytes322weights(model, bytes32):
     addr = bytes322ipfs(bytes32)
     return ipfs2keras(model, addr)
-
+def bytes322bytes(bytes32):
+    addr = bytes322ipfs(bytes32)
+    bytez = ipfs2bytes(addr)
+    # print("Type of data is {}".format(isinstance(bytez, bytes)))
+    return bytez
+# def bytes322numpy(bytes32)
+#     bytez = bytes322bytes(byt)
 # def send_model():
 #     dict_of_stuff = keras2ipfs()
 #     return dict_of_stuff

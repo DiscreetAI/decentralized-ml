@@ -32,7 +32,7 @@ class DMLScheduler(object):
     def __init__(self):
         logging.info("Setting up scheduler...")
         self.queue = deque()
-        with open('core/config.json') as f:
+        with open('config.json') as f:
             config = json.load(f)
             dataset_path = config["dataset_path"]
             runner_config = config["runner_config"]

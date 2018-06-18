@@ -44,9 +44,9 @@ class DMLDeveloper(object):
             self.clientAddress = clientAddress
             # self.clientAddress = self.web3.toChecksumAddress(clientAddress)
         else:
-            self.web3 = Web3(HTTPProvider(BETA_URL))
+            self.web3 = Web3(HTTPProvider(ALPHA_URL))
             assert self.web3.isConnected()
-            self.clientAddress = self.web3.toChecksumAddress(BETA_ADDR)
+            self.clientAddress = self.web3.toChecksumAddress(ALPHA_ADDR)
             self.web3.personal.unlockAccount(self.clientAddress, 'panda')
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
         
@@ -56,11 +56,18 @@ class DMLDeveloper(object):
             address = self.web3.toChecksumAddress(TEMP_DELEGATOR_ADDR),
             abi = TEMP_DELEGATOR_ABI)
     
-    def deploy_with_model(self, model, model_json):
+    def deploy_with_model(self, model):
+        model_architecture = model.to_json()
+        model_optimizer = get_optimizer(m.model)
+        model_json = {
+            "architecture": model_architecture,
+            "optimizer": model_optimizer
+        }
         weights_bytes = weights2bytes32(model)   
-        complete_json = {'serialized_model' : model_json,
-                'job_type' : 'initialize',
-                'model_type' : 'keras'}
+        complete_json = model_json
+        # complete_json = {'serialized_model' : model_json,
+        #         'job_type' : 'initialize',
+        #         'model_type' : 'keras'}
         json_bytes = json2bytes32(complete_json)
         return self.deploy_StateMachine([self.clientAddress], [json_bytes, weights_bytes])
 
@@ -165,11 +172,10 @@ class DMLDeveloper(object):
     #     self.filter_set("NewModel(bytes32)", address, self.handle_newmodel)
     #     # self.filter_set("DoneTraining()", address, self.checkBalance)
 
-    # def checkBalance(self, event_data):
-    #     print(event_data)
-    #     expectedBalance = event_data.split("000000000000000000000000")[2]
-    #     myBalance = self.web3.eth.getBalance(self.clientAddress)
-    #     assert myBalance == expectedBalance
+    def checkBalance(self):
+        myBalance = self.web3.eth.getBalance(self.clientAddress)
+        print(myBalance)
+        return myBalance
 
     # def handle_newmodel(self, event_data=None):
     #     # print(event_data)
@@ -209,11 +215,8 @@ class DMLDeveloper(object):
 if __name__ == '__main__':
     from models.keras_perceptron import KerasPerceptron
     m = KerasPerceptron(is_training=True)
-    model_architecture = m.model.to_json()
-    model_optimizer = get_optimizer(m.model)
-    model_json = {
-        "architecture": model_architecture,
-        "optimizer": model_optimizer
-    }
+    model = m.model
     developer = DMLDeveloper()
-    developer.deploy_with_model(m.model, model_json)
+    developer.checkBalance()
+    developer.deploy_with_model(model)
+    developer.update_weights(model)
