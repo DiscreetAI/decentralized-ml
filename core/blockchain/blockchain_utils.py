@@ -3,6 +3,7 @@ import time
 import pprint
 import requests
 import pandas as pd
+import json
 
 import rlp
 import web3
@@ -13,7 +14,19 @@ from solc import compile_source, compile_files
 from web3 import Web3, HTTPProvider, eth, IPCProvider
 from web3.auto import w3
 from web3.utils.events import get_event_data
+from eth_abi import decode_abi
 
+def decode_event(abi, event_data):
+	input_dict = json.loads(abi)
+	e = [x for x in input_dict if x['type'] == 'event'][0]
+	print(e)
+	types = [i['type'] for i in e['inputs']]
+	print(types)
+	names = [i['name'] for i in e['inputs']]
+	print(names)
+	values = decode_abi(types, bytearray.fromhex(event_data['data'][2:]))
+	print(values)
+	return dict(zip(names, values))
 
 def get_testnet_eth(w3, to_address, provider=None):
 	TEST_ACCOUNT = '0xf6419f5c5295a70C702aC21aF0f64Be07B59F3c4'
