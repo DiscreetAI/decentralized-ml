@@ -84,6 +84,7 @@ class DMLRunner(object):
                 job.model_type
             )
             # TODO: Send the results to the aggregator through P2P.
+            print(initial_weights)
             return_obj = initial_weights
         self.current_job = None
         logging.info("Finished running job!")
@@ -204,13 +205,9 @@ if __name__ == '__main__':
         "architecture": model_architecture,
         "optimizer": model_optimizer
     }
-    # @panda: why do we need to test this here?
-    addr = push_model(model_json)
-    model_json = get_model(base322ipfs(ipfs2base32(addr)))
-    ###########################################
-    # print(model_json)
+    print(model_json)
 
-    from core.utils.dmljob import DMLJob
+    from core.utils.dmljob import DMLJob, serialize_job, deserialize_job
     initialize_job = DMLJob(
         "initialize",
         model_json,
@@ -247,23 +244,3 @@ if __name__ == '__main__':
         mnist_labeler
     )
     val_stats = runner.run_job(validate_job)
-
-def serialize(DMLJob):
-    weights = np.array(self.weights).tobytes()
-    rest = {
-        'job_type': self.job_type, 
-        'serialized_model': self.serialized_model,
-        'model_type': self.model_type, 
-        'config': self.config, 
-        'hyperparams': self.hyperparams,
-        'labeler': self.labeler
-    }
-    return {
-        'weights': weights,
-        'job_data': rest
-    }
-
-def deserialize(dicto):
-    weights = np.fromstring(dicto['weights'], dtype='<f4')
-    rest = dicto['job_data']
-    return DMLJob(rest['job_type'], rest['serialzed_model'], rest['model_type'], rest['config'], weights, rest['hyperparams'], rest['labeler'])
