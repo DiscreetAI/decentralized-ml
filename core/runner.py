@@ -221,9 +221,12 @@ if __name__ == '__main__':
     initial_weights = runner.run_job(initialize_job)
 
     # TEST for FED AVG.
+    # from core.utils.keras import serialize_weights
     # from core.fed_learning import federated_averaging
     # print(initial_weights[0], initial_weights[-1])
-    # avg_weights = federated_averaging([initial_weights, initial_weights])
+    # serialized_weights = serialize_weights(initial_weights)
+    # avg_weights = federated_averaging([serialized_weights, serialized_weights])
+    # print()
     # print(avg_weights[0], initial_weights[-1])
     # exit(1)
     ####

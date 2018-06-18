@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.utils.keras import deserialize_weights
+from core.utils.keras import deserialize_single_weights
 
 def federated_averaging(list_of_serialized_weights):
     """
@@ -17,10 +17,12 @@ def federated_averaging(list_of_serialized_weights):
 
     # Deserialize and average weights.
     averaged_weights = []
-    for i, serialized_weights in enumerate(list_of_serialized_weights):
-        weights_list = []
-        for j in range(len(serialized_weights)):
-            deserialized_weight = np.array(np.fromstring(serialized_weights[i]))
-            weights_list.append(deserialized_weight * omegas[i])
-        averaged_weights.append(sum(weights_list) / sum(omegas))
+    num_layers = len(list_of_serialized_weights[0])
+    for j in range(num_layers):
+        layer_weights_list = []
+        for i, serialized_weights in enumerate(list_of_serialized_weights):
+            bytestring = serialized_weights[j]
+            deserialized_weight = deserialize_single_weights(serialized_weights[j])
+            layer_weights_list.append(omegas[i] * deserialized_weight)
+        averaged_weights.append(sum(layer_weights_list) / sum(omegas))
     return averaged_weights

@@ -1,6 +1,8 @@
 import logging
 import uuid
 import os
+import json
+import io
 
 import numpy as np
 import keras
@@ -49,7 +51,14 @@ def serialize_weights(weights):
 
     `weights` is a list of np arrays (the output of model.get_weights()).
     """
-    return [w.tostring() for w in weights]
+    arr = []
+    for w in weights:
+        memfile = io.BytesIO()
+        np.save(memfile, w)
+        memfile.seek(0)
+        serialized = json.dumps(memfile.read().decode('latin-1'))
+        arr.append(serialized)
+    return arr
 
 
 def deserialize_weights(serialized_weights):
@@ -59,4 +68,12 @@ def deserialize_weights(serialized_weights):
 
     `serialized_weights` is a list of bytestrings of np arrays.
     """
-    return [np.array(np.fromstring(w)) for w in serialized_weights]
+    return [deserialize_single_weights(w) for w in serialized_weights]
+
+
+def deserialize_single_weights(single_serialized_weights):
+    memfile = io.BytesIO()
+    memfile.write(json.loads(single_serialized_weights).encode('latin-1'))
+    memfile.seek(0)
+    deserialized = np.load(memfile)
+    return deserialized
