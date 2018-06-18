@@ -6,7 +6,6 @@ from eth_utils import is_address
 from blockchain.blockchain_utils import *
 from blockchain.ipfs_utils import *
 
-ETH_NODE_ADDR = 'http://54.153.84.146:8545'
 TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
 TEMP_DELEGATOR_ABI = '''
 [{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
@@ -14,6 +13,12 @@ TEMP_DELEGATOR_ABI = '''
 TEMP_STATEMACHINE_ABI = '''
 [{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
 '''
+ALPHA_URL = 'http://54.153.84.146:8545'
+ALPHA_ADDR = '0xb2CA9a58ea16599C2c827F399d07aA94b3C69dFb'
+BETA_URL = 'http://18.144.49.201:8545'
+BETA_ADDR = '0x0d65094fee55c21e256d52602a0dd6a23072223d'
+GAMMA_URL = 'http://18.144.19.67:8545'
+GAMMA_ADDR = '0x8f8301d2ac2294ad243ab7052054c3aa9a068965'
 # TEMP_STATEMACHINE_ADDR = '0x2d3dbaa17e79c9ad964c88d2351d6157648de148'
 # DML-Related Imports
 # from dmljob import DMLJob
@@ -39,9 +44,9 @@ class DMLDeveloper(object):
             self.clientAddress = clientAddress
             # self.clientAddress = self.web3.toChecksumAddress(clientAddress)
         else:
-            self.web3 = Web3(HTTPProvider('http://54.153.84.146:8545'))
+            self.web3 = Web3(HTTPProvider(BETA_URL))
             assert self.web3.isConnected()
-            self.clientAddress = self.web3.toChecksumAddress('0xb2CA9a58ea16599C2c827F399d07aA94b3C69dFb')
+            self.clientAddress = self.web3.toChecksumAddress(BETA_ADDR)
             self.web3.personal.unlockAccount(self.clientAddress, 'panda')
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
         
@@ -53,7 +58,10 @@ class DMLDeveloper(object):
     
     def deploy_with_model(self, model, model_json):
         weights_bytes = weights2bytes32(model)   
-        json_bytes = json2bytes32(model_json)
+        complete_json = {'serialized_model' : model_json,
+                'job_type' : 'initialize',
+                'model_type' : 'keras'}
+        json_bytes = json2bytes32(complete_json)
         return self.deploy_StateMachine([self.clientAddress], [json_bytes, weights_bytes])
 
     def deploy_StateMachine(self, targetAddrs, modelAddrsBytes):
@@ -69,7 +77,7 @@ class DMLDeveloper(object):
 
         self.web3.eth.waitForTransactionReceipt(tx_hash)
         tx_receipt = self.web3.eth.getTransactionReceipt(tx_hash)
-
+        self.web3.personal.lockAccount(self.clientAddress)
         attr_dict = self.delegator.events.NewQuery().processReceipt(tx_receipt)
         print(attr_dict)
         addr = attr_dict[0]['args']['addr']

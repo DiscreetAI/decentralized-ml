@@ -6,7 +6,6 @@ from eth_utils import is_address
 from blockchain_utils import *
 from ipfs_utils import *
 
-ETH_NODE_ADDR = 'http://54.153.84.146:8545'
 TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
 TEMP_DELEGATOR_ABI = '''
 [{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
@@ -14,6 +13,12 @@ TEMP_DELEGATOR_ABI = '''
 TEMP_STATEMACHINE_ABI = '''
 [{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
 '''
+ALPHA_URL = 'http://54.153.84.146:8545'
+ALPHA_ADDR = '0xb2CA9a58ea16599C2c827F399d07aA94b3C69dFb'
+BETA_URL = 'http://18.144.49.201:8545'
+BETA_ADDR = '0x0d65094fee55c21e256d52602a0dd6a23072223d'
+GAMMA_URL = 'http://18.144.19.67:8545'
+GAMMA_ADDR = '0x8f8301d2ac2294ad243ab7052054c3aa9a068965'
 # DML-Related Imports
 # from dmljob import DMLJob
 # from scheduler import Scheduler
@@ -31,7 +36,7 @@ class ListenerEthereum(object):
 
         # Connect scheduler
         # self.scheduler = DMLScheduler()
-        self.web3 = Web3(HTTPProvider(ETH_NODE_ADDR))      
+        self.web3 = Web3(HTTPProvider(ALPHA_URL))      
         # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
         # self.web3 = Web3(IPCProvider())
         assert self.web3.isConnected()
