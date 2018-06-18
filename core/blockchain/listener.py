@@ -116,7 +116,7 @@ class ListenerEthereum(object):
         # return event_data.split("000000000000000000000000")
 
     def main(self):
-        # print(self.web3.eth.getBlock('latest'))
+        print(self.web3.eth.getBlock('latest'))
         self.listen_delegator()
         # check = self.filter_set("QueryCreated(address,address)", self.Delegator_address, self.handle_QueryCreated_event)
         # if check[0] + check[1] == self.clientAddress.lower():

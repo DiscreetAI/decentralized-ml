@@ -19,13 +19,9 @@ from eth_abi import decode_abi
 def decode_event(abi, event_data):
 	input_dict = json.loads(abi)
 	e = [x for x in input_dict if x['type'] == 'event'][0]
-	print(e)
 	types = [i['type'] for i in e['inputs']]
-	print(types)
 	names = [i['name'] for i in e['inputs']]
-	print(names)
 	values = decode_abi(types, bytearray.fromhex(event_data['data'][2:]))
-	print(values)
 	return dict(zip(names, values))
 
 def get_testnet_eth(w3, to_address, provider=None):

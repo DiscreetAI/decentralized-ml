@@ -61,6 +61,7 @@ def weights2bytes32(model):
 def bytes322weights(model, bytes32):
     addr = bytes322ipfs(bytes32)
     return ipfs2keras(model, addr)
+    
 # def send_model():
 #     dict_of_stuff = keras2ipfs()
 #     return dict_of_stuff
