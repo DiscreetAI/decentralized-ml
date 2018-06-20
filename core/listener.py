@@ -39,14 +39,14 @@ class ListenerEthereum(object):
 
         # Connect scheduler
         self.scheduler = DMLScheduler()
-        self.web3 = Web3(HTTPProvider(ALPHA_URL))      
+        self.web3 = Web3(HTTPProvider(ALPHA_URL))
         # Set up web3 and IPFS. MAKE SURE TO RUN 'IPFS DAEMON' BEFORE TRYING THIS!
         # self.web3 = Web3(IPCProvider())
         assert self.web3.isConnected()
         config = {}
 
         # self.api = ipfsapi.connect('127.0.0.1', 5001)
-        
+
         # # Set up the ETH account
         # self.PASSPHRASE = 'panda'
         # self.TEST_ACCOUNT = "0x1554a1d22cae251e2050f67cd3cf3082c4a784e6"
@@ -58,7 +58,7 @@ class ListenerEthereum(object):
         #     #TODO: Initialize client 'container' address if it wasn't assigned one
         #     self.clientAddress = self.TEST_ACCOUNT
         # # self.web3.personal.unlockAccount(self.clientAddress, self.PASSPHRASE)
-    
+
         # print("Client Address:", self.clientAddress)
 
         # Start reading in the contracts
@@ -167,7 +167,7 @@ class ListenerEthereum(object):
         self.scheduler.add_job(new_job)
         print("MEGADONE")
         return "I'm done!"
-        # model = 
+        # model =
         # model_weights = get_model(base322ipfs(model_addr))
         # new_job = DMLJob(model_json)
         # self.scheduler.add_job(new_job)
@@ -198,6 +198,6 @@ class ListenerEthereum(object):
         #     return "not me"
 
 if __name__ == '__main__':
-    # Make a model 
+    # Make a model
     listener = ListenerEthereum()
     listener.main()

@@ -24,8 +24,8 @@ class DMLScheduler(object):
     DML Scheduler
 
     This class schedules and manages the execution of DMLJobs using the DMLRunner.
-    Note: currently runs in a single-threaded environment.
-    Note2: only supports one dataset type.
+    NOTE: currently runs in a single-threaded environment.
+    NOTE2: only supports one dataset type.
 
     """
 

@@ -7,7 +7,7 @@ def standardize_df(df):
     def standardize(x):
         return (x-np.mean(x))/np.std(x)
     return df.apply(standardize)
-    
+
 
 dsm = DatasetManager('test', 'test.csv')
 raw = dsm.get_raw_data()
@@ -32,6 +32,3 @@ print("Called reset")
 dsm.reset()
 print("Trying to get transformed data:")
 transformed = dsm.get_transformed_data() # should error
-
-
-
