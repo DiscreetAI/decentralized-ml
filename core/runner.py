@@ -66,6 +66,10 @@ class DMLRunner(object):
                 job.hyperparams,
                 job.labeler
             )
+<<<<<<< HEAD
+=======
+            new_weights_in_bytes = serialize_weights(new_weights)
+>>>>>>> 2d6426d5e84e5713790b56de5e352e5e4bb93b27
             # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
             # through P2P.
             print(train_stats)
@@ -80,7 +84,10 @@ class DMLRunner(object):
             )
             # TODO: Send the results to the developer through P2P (maybe).
             # How are we getting this metadata (val_stats) back to the user?
+<<<<<<< HEAD
             # This has been assigned to Neelesh ^
+=======
+>>>>>>> 2d6426d5e84e5713790b56de5e352e5e4bb93b27
             print(val_stats)
             return_obj = val_stats
         elif job.job_type == 'initialize':

@@ -145,8 +145,13 @@ class DMLListener(object):
 
 if __name__ == '__main__':
 <<<<<<< HEAD
+<<<<<<< HEAD
     # Make a model 
     listener = DMLListener()
+=======
+    # Make a model
+    listener = ListenerEthereum()
+>>>>>>> 2d6426d5e84e5713790b56de5e352e5e4bb93b27
 =======
     # Make a model
     listener = ListenerEthereum()

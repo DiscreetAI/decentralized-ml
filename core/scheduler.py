@@ -27,8 +27,7 @@ class DMLScheduler(object):
     Note: currently runs in a single-threaded environment.
     Note2: only supports one dataset type.
     Note3: Singleton.
-    NOTE: currently runs in a single-threaded environment.
-    NOTE2: only supports one dataset type.
+
 
     """
     # Here will be the instance stored.
