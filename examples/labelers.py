@@ -16,3 +16,11 @@ def mnist_labeler(line):
     assert 0 <= y <= 9, "`y` is not between 0 and 9."
     y = keras.utils.to_categorical(y, num_classes=10)
     return (X, y)
+
+def lstm_labeler(line, apt_num = 1):
+
+    line = line.split(',')
+    y = float(line[apt_num])
+    del line[apt_num]
+    X = line
+    return (X, y)

@@ -1,5 +1,7 @@
 import numpy as np
 
+from core.utils.keras import serialize_weights, deserialize_weights
+
 class DMLJob(object):
     """
     DML Job
@@ -26,7 +28,6 @@ class DMLJob(object):
 
 
 def serialize_job(dmljob_obj):
-    weights = [w.tostring() for w in dmljob_obj.weights]
     rest = {
         'job_type': dmljob_obj.job_type,
         'serialized_model': dmljob_obj.serialized_model,
@@ -36,19 +37,18 @@ def serialize_job(dmljob_obj):
         # 'labeler': dmljob_obj.labeler # Removed because it's a function!
     }
     return {
-        'weights': weights,
+        'weights': serialize_weights(dmljob_obj.weights),
         'job_data': rest
     }
 
 def deserialize_job(serialized_job):
-    weights = [np.fromstring(w) for w in serialized_job['weights']]
     rest = serialized_job['job_data']
     return DMLJob(
         rest['job_type'],
         rest['serialized_model'],
         rest['model_type'],
         rest['config'],
-        weights,
+        desirialize_weights(serialized_job['weights']),
         rest['hyperparams'],
         # rest['labeler'] # Removed because it's a function!
     )

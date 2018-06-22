@@ -1,10 +1,19 @@
 import pandas as pd
 import os
 import shutil
+import logging
+
+
+logging.basicConfig(level=logging.INFO,
+                    format='[DatasetManager] %(asctime)s %(levelname)s %(message)s')
 
 class TransformedNotFoundError(FileNotFoundError):
     def __init__(self):
-        FileNotFoundError.__init__(self, "No transformed data found. Did you make sure to transform the data first?")
+        FileNotFoundError.__init__(
+            self,
+            "No transformed data found. " +
+            "Did you make sure to transform the data first?"
+        )
 
 class DatasetManager():
     def __init__(self, raw_filepath, name):
@@ -27,13 +36,13 @@ class DatasetManager():
         if self.tfp:
             return pd.read_csv(os.path.join(self.tfp, self.name))
         else:
+            logging.info("No transformed data to retrieve.")
             raise TransformedNotFoundError()
-    
+
     def reset(self):
         if self.tfp:
             shutil.rmtree(self.tfp)
             self.tfp = None
         else:
-            print("No transformed data to delete")
-
-
+            logging.info("No transformed data to delete.")
+            raise TransformedNotFoundError()

@@ -26,13 +26,30 @@ class DMLScheduler(object):
     This class schedules and manages the execution of DMLJobs using the DMLRunner.
     Note: currently runs in a single-threaded environment.
     Note2: only supports one dataset type.
+    Note3: Singleton.
+    NOTE: currently runs in a single-threaded environment.
+    NOTE2: only supports one dataset type.
 
     """
+    # Here will be the instance stored.
+    __instance = None
+
+    @staticmethod
+    def getInstance():
+        """ Static access method. """
+        if DMLScheduler.__instance == None:
+            DMLScheduler()
+        return DMLScheduler.__instance 
 
     def __init__(self):
+        """ Virtually private constructor. """
+        if DMLScheduler.__instance != None:
+            raise Exception("This class is a singleton!")
+        else:
+            DMLScheduler.__instance = self
         logging.info("Setting up scheduler...")
         self.queue = deque()
-        with open('config.json') as f:
+        with open('core/config.json') as f:
             config = json.load(f)
             dataset_path = config["dataset_path"]
             runner_config = config["runner_config"]
@@ -103,7 +120,7 @@ if __name__ == '__main__':
     # Schedule some jobs
     from core.utils.dmljob import DMLJob
 
-    scheduler = DMLScheduler()
+    scheduler = DMLScheduler.getInstance()
 
     initialize_job = DMLJob(
         "initialize",

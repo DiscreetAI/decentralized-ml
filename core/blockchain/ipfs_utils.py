@@ -58,8 +58,8 @@ def bytes322ipfs(bytes32):
 def ipfs2bytes32(ipfs_hash):
     bytes_array = base58.b58decode(ipfs_hash)
     return bytes_array[2:]
-def weights2bytes32(model):
-    addr = keras2ipfs(model)
+def weights2bytes32(weights):
+    addr = api.add_bytes(weights)
     return ipfs2bytes32(addr)
 def bytes322weights(model, bytes32):
     addr = bytes322ipfs(bytes32)

@@ -12,8 +12,8 @@ from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
-from blockchain.ipfs_utils import *
-
+from core.utils.keras import serialize_weights
+from blockchain.listener import DMLListener
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
@@ -42,7 +42,11 @@ class DMLRunner(object):
         self.config = config
         self.data_count = count_datapoints(dataset_path)
         self.current_job = None
-
+    def send_serialized_weights(weights, omega):
+        DMLListener.getInstance().send_payload(
+            {"weights" : serialize_weights(weights),
+            "omega" : }
+            )
     def run_job(self, job):
         """
         Identifies a DMLJob type and executes it.
@@ -55,16 +59,15 @@ class DMLRunner(object):
         logging.info("Running job (type: {0})...".format(job.job_type))
         self.current_job = job
         if job.job_type == 'train':
-            new_weights_path, omega, train_stats = self._train(
+            new_weights, omega, train_stats = self._train(
                 job.serialized_model,
                 job.model_type,
                 job.weights,
                 job.hyperparams,
                 job.labeler
             )
-            print(new_weights_path)
-            exit(1)
-            # TODO: Send the results to the aggregator through P2P.
+            # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
+            # through P2P.
             print(train_stats)
             return_obj = new_weights, omega, train_stats
         elif job.job_type == 'validate':
@@ -75,16 +78,21 @@ class DMLRunner(object):
                  job.hyperparams,
                  job.labeler
             )
-            # TODO: Send the results to the aggregator through P2P.
+            # TODO: Send the results to the developer through P2P (maybe).
+            # How are we getting this metadata (val_stats) back to the user?
+            # This has been assigned to Neelesh ^
             print(val_stats)
             return_obj = val_stats
         elif job.job_type == 'initialize':
+            # NOTE: This shouldn't be used in BETA/PROD right now, only DEV!!!
             initial_weights = self._initialize_model(
                 job.serialized_model,
                 job.model_type
             )
-            # TODO: Send the results to the aggregator through P2P.
-            print(initial_weights)
+            weights_in_bytes = serialize_weights(initial_weights)
+            # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
+            # through P2P.
+            #print(initial_weights)
             return_obj = initial_weights
         self.current_job = None
         logging.info("Finished running job!")
@@ -215,10 +223,21 @@ if __name__ == '__main__':
     )
     initial_weights = runner.run_job(initialize_job)
 
+    # TEST for FED AVG.
+    # from core.utils.keras import serialize_weights
+    # from core.fed_learning import federated_averaging
+    # print(initial_weights[0], initial_weights[-1])
+    # serialized_weights = serialize_weights(initial_weights)
+    # avg_weights = federated_averaging([serialized_weights, serialized_weights])
+    # print()
+    # print(avg_weights[0], initial_weights[-1])
+    # exit(1)
+    ####
+
     hyperparams = {
         'averaging_type': 'data_size',
         'batch_size': 50,
-        'epochs': 2,
+        'epochs': 1,
         'split': 0.8,
     }
 

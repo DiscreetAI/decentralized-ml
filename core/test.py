@@ -1,3 +1,5 @@
+"""Gotta move this somewhere else @panda. Lease expires on EOW."""
+
 import os, sys, inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
