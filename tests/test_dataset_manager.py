@@ -1,34 +1,59 @@
 import numpy as np
 import pandas as pd
 import os
-from DatasetManager import DatasetManager
+import sys
+sys.path.append('../core')
+print(os.listdir('../core'))
+from dataset_manager import DatasetManager, TransformedNotFoundError
 
-def standardize_df(df):
-    def standardize(x):
-        return (x-np.mean(x))/np.std(x)
-    return df.apply(standardize)
+'''
+Function for DatasetManager (DM for short)
 
+Might need to be changed when a proper test framework is introduced.
+'''
+def testDatasetManager():
+    #Sample transform function (takes dataframe, returns dataframe)
+    def standardize_df(df):
+        def standardize(x):
+            return (x-np.mean(x))/np.std(x)
+        return df.apply(standardize)
 
-dsm = DatasetManager('test', 'test.csv')
-raw = dsm.get_raw_data()
-print("Raw Data:")
-print(raw)
-print()
-print("Printing directory of test")
-print(os.listdir("test"))
-print()
+    #Check that DM instance has path to raw data and that path transformed data
+    # hasn't been made yet (since no transform has been done yet)
+    rfp = os.path.abspath('artifacts/dataset_manager_test_data')   
+    dsm = DatasetManager(rfp)
+    assert dsm.rfp == rfp
+    assert not dsm.tfp
 
-dsm.transform_data(standardize_df)
-transformed = dsm.get_transformed_data()
-print("Transformed Data")
-print(transformed)
-print()
-print("Printing directory of test")
-print(os.listdir("test"))
-print()
+    #Check get_raw_data actually returns the data in this directory
+    raw_dsm = dsm.get_raw_data()
+    assert raw_dsm['test.csv'].equals(pd.read_csv(rfp + '/test.csv')) and raw_dsm['test2.csv'].equals(pd.read_csv(rfp + '/test2.csv'))
+    
+    #Check that a new directory in the raw data filepath called 'transformed' is made and
+    # the DM instance has the filepath to this new directory
+    dsm.transform_data(standardize_df)
+    assert dsm.tfp == rfp + '/transformed'
+    assert os.path.isdir(rfp + '/transformed')
 
+    #Check that the data in this folder is the result of calling the transform function on 
+    # each csv in the raw data filepath
+    transform_dsm = dsm.get_transformed_data()
+    assert transform_dsm['test.csv'].round(3).equals(standardize_df(pd.read_csv(rfp + '/test.csv')).round(3)) and \
+           transform_dsm['test2.csv'].round(3).equals(standardize_df(pd.read_csv(rfp + '/test2.csv')).round(3))
 
-print("Called reset")
-dsm.reset()
-print("Trying to get transformed data:")
-transformed = dsm.get_transformed_data() # should error
+    #After resetting, check to make sure that getting the transformed data is impossible
+    dsm.reset()
+    try:
+        transformed = dsm.get_transformed_data() 
+        assert False
+    except TransformedNotFoundError:
+        pass
+
+    #Check the raw data filepath exists, the transformed data filepath doesn't, and the 'transformed' folder
+    # is gone from the raw data directory
+    assert dsm.rfp == rfp
+    assert not dsm.tfp
+    assert not os.path.isdir(rfp + '/transformed')
+
+#calling tests
+testDatasetManager()
