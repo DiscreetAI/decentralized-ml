@@ -144,16 +144,5 @@ class DMLListener(object):
         self.handle_newstatemachine("",[bytearray(b'\xa8*\x06\xd4\x92\x8b\xfe\xa5\tX\x8d\x818\xc9"\xba\t^d\x1c\xe9\xc8R\x93:\xf2h\x8aX|\x9a\x1a'), bytearray(b'\x8c\xb3NR\xce\xdf\xf8\xfd\xf9F\x18\x92.\x123[\xe8\xc4\x82\x857\xb8\xb8\x90\x88\xd5\x11\x0b-4#D')])
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-<<<<<<< HEAD
-    # Make a model 
     listener = DMLListener()
-=======
-    # Make a model
-    listener = ListenerEthereum()
->>>>>>> 2d6426d5e84e5713790b56de5e352e5e4bb93b27
-=======
-    # Make a model
-    listener = ListenerEthereum()
->>>>>>> 2d6426d5e84e5713790b56de5e352e5e4bb93b27
     listener.main()
