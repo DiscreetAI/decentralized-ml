@@ -1,6 +1,9 @@
 import numpy as np
-
-from core.utils.keras import deserialize_single_weights
+import os, sys, inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+from core.utils.keras import serialize_weights, deserialize_single_weights
 
 def federated_averaging(list_of_serialized_weights):
     """
@@ -26,3 +29,6 @@ def federated_averaging(list_of_serialized_weights):
             layer_weights_list.append(omegas[i] * deserialized_weight)
         averaged_weights.append(sum(layer_weights_list) / sum(omegas))
     return averaged_weights
+
+if __name__ == "__main__":
+    federated_averaging(serialize_weights([[1,2],[3,4]]))

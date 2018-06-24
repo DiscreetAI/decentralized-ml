@@ -63,7 +63,7 @@ def serialize_weights(weights):
 
 def serialize_single_weights(weight):
     memfile = io.BytesIO()
-    np.save(memfile, w)
+    np.save(memfile, weight)
     memfile.seek(0)
     serialized = json.dumps(memfile.read().decode('latin-1'))
     return serialized

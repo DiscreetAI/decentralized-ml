@@ -9,7 +9,6 @@ from core.blockchain.ipfs_utils import *
 from web3.auto import w3
 from core.scheduler import DMLScheduler
 from core.utils.dmljob import DMLJob, deserialize_job
-from core.runner import DMLRunner
 
 class DMLListener(object):
     """

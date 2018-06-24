@@ -13,7 +13,7 @@ import json
 import schedule
 
 from core.utils.dmljob import DMLJob
-from core.runner import DMLRunner
+from core.runner import *
 
 
 logging.basicConfig(level=logging.DEBUG,
