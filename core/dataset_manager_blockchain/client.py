@@ -1,5 +1,4 @@
 import os
-print(os.listdir())
 from blockchain.blockchain_utils import *
 from blockchain.ipfs_utils import *
 from eth_utils import is_address, to_checksum_address

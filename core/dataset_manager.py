@@ -6,7 +6,7 @@ import logging
 import datetime
 import string
 import random
-from blockchain.client import *
+from dataset_manager_blockchain.client import *
 
 
 logging.basicConfig(level=logging.INFO,
@@ -150,5 +150,53 @@ class DatasetManager():
             shutil.rmtree(self.tfp)
             self.tfp = None
         assert not os.path.isdir(os.path.join(self.rfp, 'transformed')) 
+
+    def check_key_length(key):
+        if len(key) > 30:
+            raise InvalidKeyError(key)
+
+    def post_dataset_with_md(self, name):
+        check_key_length(name)
+        value = {}
+        folders = []
+        for file in os.listdir(filepath):
+            if os.path.isdir(os.path.join(os.path.abspath(filepath), file)):
+                folders.append(file)
+        for folder in folders:
+            folder_dict = {}
+            folder_path = os.path.join(os.path.abspath(filepath), folder)
+            files = os.listdir(folder_path)
+            for file in files:
+                if file[:2] == 'md':
+                    file_path = os.path.join(folder_path, file)
+                    metadata = pd.read_csv(file_path)
+                    folder_dict['md'] = metadata.to_json()
+                else:
+                    file_path = os.path.join(folder_path, file)
+                    dataset = pd.read_csv(file_path)
+                    sample = dataset.sample(frac=0.1)
+                    folder_dict['ds'] = sample.to_json()
+            value[folder] = folder_dict
+        client.setter(name, value)
+
+    def post_dataset(self, name):
+        check_key_length(name)
+        value = {}
+        folders = []
+        for file in os.listdir(filepath):
+            if os.path.isdir(os.path.join(os.path.abspath(filepath), file)):
+                folders.append(file)
+        for folder in folders:
+            folder_dict = {}
+            folder_path = os.path.join(os.path.abspath(filepath), folder)
+            file = list(os.listdir(folder_path))[0]
+            file_path = os.path.join(folder_path, file)
+            dataset = pd.read_csv(file_path)
+            md = pd.DataFrame(dataset.describe())
+            sample = dataset.sample(frac=0.1)
+            folder_dict['ds'] = sample.to_json()
+            folder_dict['md'] = md.to_json()
+            value[folder] = folder_dict
+        client.setter(name, value)
 
 

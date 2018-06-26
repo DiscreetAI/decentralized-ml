@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import sys
 sys.path.append('../core')
+#print(sys.path)
 from dataset_manager import DatasetManager, TransformedNotFoundError
 
 '''
