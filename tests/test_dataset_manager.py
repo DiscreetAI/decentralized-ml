@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import sys
 sys.path.append('../core')
-print(os.listdir('../core'))
 from dataset_manager import DatasetManager, TransformedNotFoundError
 
 '''
@@ -27,7 +26,7 @@ def testDatasetManager():
 
     #Check get_raw_data actually returns the data in this directory
     raw_dsm = dsm.get_raw_data()
-    assert raw_dsm['test.csv'].equals(pd.read_csv(rfp + '/test.csv')) and raw_dsm['test2.csv'].equals(pd.read_csv(rfp + '/test2.csv'))
+    assert raw_dsm['test.csv'].equals(pd.read_csv(rfp + '/test/test.csv')) and raw_dsm['test2.csv'].equals(pd.read_csv(rfp + '/test2/test2.csv'))
     
     #Check that a new directory in the raw data filepath called 'transformed' is made and
     # the DM instance has the filepath to this new directory
@@ -38,8 +37,13 @@ def testDatasetManager():
     #Check that the data in this folder is the result of calling the transform function on 
     # each csv in the raw data filepath
     transform_dsm = dsm.get_transformed_data()
-    assert transform_dsm['test.csv'].round(3).equals(standardize_df(pd.read_csv(rfp + '/test.csv')).round(3)) and \
-           transform_dsm['test2.csv'].round(3).equals(standardize_df(pd.read_csv(rfp + '/test2.csv')).round(3))
+    keys = list(transform_dsm.keys())
+    key1 = keys[0]
+    key2 = keys[1]
+    assert (transform_dsm[key1].round(3).equals(standardize_df(pd.read_csv(rfp + '/test/test.csv')).round(3)) or \
+           transform_dsm[key1].round(3).equals(standardize_df(pd.read_csv(rfp + '/test2/test2.csv')).round(3))) and \
+           (transform_dsm[key2].round(3).equals(standardize_df(pd.read_csv(rfp + '/test/test.csv')).round(3)) or \
+           transform_dsm[key2].round(3).equals(standardize_df(pd.read_csv(rfp + '/test2/test2.csv')).round(3)))
 
     #After resetting, check to make sure that getting the transformed data is impossible
     dsm.reset()

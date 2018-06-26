@@ -3,6 +3,10 @@ import pandas as pd
 import os
 import shutil
 import logging
+import datetime
+import string
+import random
+from blockchain.client import *
 
 
 logging.basicConfig(level=logging.INFO,
@@ -39,13 +43,24 @@ class DatasetManager():
 
         3. Resetting, or removing the folder of transformed data (as if the initial transform never took place)
 
-    Each instance corresponds to a set of raw data and its corresponding transformed data (if it exists).
+    Each instance corresponds to a set of raw data and its corresponding transformed data (if it exists). After transformation,
+    the filepath to raw data would look something like:
+
+    main/
+        dataset1/
+            dataset1.csv
+            md_dataset1.csv
+        dataset2/
+            dataset2.csv
+            md_dataset2.csv
+        transformed/
+            06/10/16sgf.csv
+            06/10/16mlf.csv
     '''
     def __init__(self, raw_filepath):
         '''
         Take in an filepath to the raw data, no filepath to transformed exists yet
         '''
-        print(raw_filepath)
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath
@@ -54,7 +69,8 @@ class DatasetManager():
     def transform_data(self, transform_function):
         '''
         Taking in a transform function, transforming the data, and putting this transformed data 
-        in a new directory (called 'transformed') in the same directory as the raw data
+        in a new directory (called 'transformed') in the same directory as the raw data. File names 
+        consist of a timestamp with the addition of a few random characters.
         '''
         #1. Extracts all of the raw data from raw data filepath
         raw_data = self.get_raw_data() 
@@ -64,11 +80,16 @@ class DatasetManager():
         if not os.path.exists(self.tfp):
             os.makedirs(self.tfp)
             
-        #3. Tranforms data using provided transform function and puts data in 'transformed
-        transform_dict = {} 
+        #3. Tranforms data using provided transform function and puts data in 'transformed'. Names
+        # in this folder are generated using a timestamp joined with some random characters.
+        def random_string(length):
+            return ''.join(random.choice(string.ascii_letters) for m in range(length))
         for name,data in raw_data.items():
             transformed_data = transform_function(data) 
-            transformed_data.to_csv(os.path.join(self.tfp, name), index=False)
+            timestamp = str(datetime.datetime.now())
+            r_string = random_string(5)
+            new_name = timestamp + r_string
+            transformed_data.to_csv(os.path.join(self.tfp, new_name + '.csv'), index=False)
 
         assert os.path.isdir(os.path.join(self.rfp, 'transformed'))
 
@@ -79,10 +100,19 @@ class DatasetManager():
         filename of the csv (i.e. key.csv) and each value is a DataFrame of the actual data.
         '''
         raw_dict = {}
-        for file in os.listdir(self.rfp): 
-            if file[-4:] == '.csv':
-                data = pd.read_csv(os.path.join(self.rfp, file))
-                raw_dict[file] = data     
+        folders = []
+        for file in os.listdir(self.rfp):
+            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), file)):
+                folders.append(file)
+        for folder in folders:
+            folder_dict = {}
+            folder_path = os.path.join(os.path.abspath(self.rfp), folder)
+            files = os.listdir(folder_path)
+            for file in files:
+                if file[:2] != 'md':
+                    file_path = os.path.join(folder_path, file)
+                    dataset = pd.read_csv(file_path)
+                    raw_dict[file] = dataset     
         return raw_dict
 
     def get_transformed_data(self):
@@ -95,6 +125,7 @@ class DatasetManager():
 
         If filepath does not exist, throws TransformedNotFoundError
         '''
+    
         if self.tfp:
             transform_dict = {}
             for file in os.listdir(self.tfp): 
