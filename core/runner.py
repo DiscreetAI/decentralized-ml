@@ -13,7 +13,6 @@ from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
-from core.listener import *
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
