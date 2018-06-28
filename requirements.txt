@@ -1,3 +1,4 @@
+pytest==3.6.2
 numpy==1.14.0
 tensorflow==1.7.0
 Keras==2.1.5

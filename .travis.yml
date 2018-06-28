@@ -4,5 +4,7 @@ python:
 cache: pip
 install:
   - pip install -r requirements.txt
+before_script:
+  - git lfs pull
 script:
-  - python tests/test_dmlrunner.py
+  - pytest tests
