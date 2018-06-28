@@ -4,7 +4,6 @@ logs
 .DS_Store
 .ipynb_checkpoints/
 
-datasets/mnist
 datasets/shakespeare
 
 core/utils/weights
