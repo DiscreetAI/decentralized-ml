@@ -1,6 +1,4 @@
 import os
-from blockchain_utils import *
-from ipfs_utils import *
 from eth_utils import is_address, to_checksum_address
 
 abi = '''[{"constant":false,"inputs":[{"name":"name","type":"string"}],"name":"getter","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewEntry","type":"event"},{"constant":false,"inputs":[{"name":"name","type":"string"},{"name":"addr","type":"bytes32"}],"name":"setter","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"metaDb","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"}]'''

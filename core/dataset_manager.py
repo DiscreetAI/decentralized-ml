@@ -6,7 +6,15 @@ import logging
 import datetime
 import string
 import random
-from dataset_manager_blockchain.client import *
+import inspect
+import sys
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+
+from core.blockchain.client import *
+from core.blockchain.blockchain_utils import *
+from core.blockchain.ipfs_utils import *
 
 
 logging.basicConfig(level=logging.INFO,
@@ -16,11 +24,21 @@ class TransformedNotFoundError(Exception):
     '''
     TransformedNotFoundError
 
-    Just a customized exception for when the caller tries to access transformed data that doesn't exist.
+    Just a customized exception that's raised when the caller tries to access transformed data that doesn't exist.
     '''
     def __init__(self):
         Exception.__init__(self, "No transformed data found. Did you make sure to transform the data first?")
 
+class NoMetadataFoundError(Exception):
+    '''
+    NoMetadataFoundError
+
+    Just a customized exception that's raised when the caller post metadata that doesn't exist in rfp
+    '''
+
+    def __init__(self, dataset_folder):
+        Exception.__init__(self, \
+        "No metadata was found in the dataset folder: " + dataset_folder + " Consider using:\n post_dataset(self, name)")
 class DatasetManager():
     '''
     DatasetManager
@@ -61,10 +79,13 @@ class DatasetManager():
         '''
         Take in an filepath to the raw data, no filepath to transformed exists yet
         '''
+        print(raw_filepath)
+        print(os.listdir(raw_filepath))
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath
         self.tfp = None
+        #self.client = Client() uncomment when debugged
 
     def transform_data(self, transform_function):
         '''
@@ -152,10 +173,20 @@ class DatasetManager():
         assert not os.path.isdir(os.path.join(self.rfp, 'transformed')) 
 
     def check_key_length(key):
+        '''
+        Keys for datasets can only be at most 30 characters long
+        '''
         if len(key) > 30:
             raise InvalidKeyError(key)
 
     def post_dataset_with_md(self, name):
+        '''
+        Post samples of datasets on blockchain along with provided metadata under 
+        the provided name as the key
+
+        IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
+        '''
+        filepath = self.rfp
         check_key_length(name)
         value = {}
         folders = []
@@ -176,10 +207,19 @@ class DatasetManager():
                     dataset = pd.read_csv(file_path)
                     sample = dataset.sample(frac=0.1)
                     folder_dict['ds'] = sample.to_json()
+            if 'md' not in folder_dict:
+                raise NoMetadataFoundError(folder)
             value[folder] = folder_dict
-        client.setter(name, value)
+        self.client.setter(name, value)
 
     def post_dataset(self, name):
+        '''
+        Post samples of datasets on blockchain with automatically generated metadata 
+        under provided name as the key
+
+        IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
+        '''
+        filepath = self.rfp
         check_key_length(name)
         value = {}
         folders = []
@@ -197,6 +237,6 @@ class DatasetManager():
             folder_dict['ds'] = sample.to_json()
             folder_dict['md'] = md.to_json()
             value[folder] = folder_dict
-        client.setter(name, value)
+        self.client.setter(name, value)
 
 
