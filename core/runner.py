@@ -13,6 +13,7 @@ from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
+import core.scheduler as scheduler
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
@@ -41,11 +42,11 @@ class DMLRunner(object):
         self.config = config
         self.data_count = count_datapoints(dataset_path)
         self.current_job = None
-    def send_serialized_weights(weights, omega):
-        DMLListener.getInstance().send_payload({
-            "weights": serialize_weights(weights),
-            "omega": omega
-        })
+    # def send_serialized_weights(weights, omega):
+    #     DMLListener.getInstance().send_payload({
+    #         "weights": serialize_weights(weights),
+    #         "omega": omega
+    #     })
     def run_job(self, job):
         """
         Identifies a DMLJob type and executes it.
@@ -201,7 +202,7 @@ class DMLRunner(object):
 
 if __name__ == '__main__':
     config = {}
-
+    scheduler = scheduler.DMLScheduler.getInstance()
     runner = DMLRunner('datasets/mnist', config)
 
     from models.keras_perceptron import KerasPerceptron

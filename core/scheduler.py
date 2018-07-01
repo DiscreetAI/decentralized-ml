@@ -13,8 +13,7 @@ import json
 import schedule
 
 from core.utils.dmljob import DMLJob
-from core.runner import *
-
+import core.runner as runner
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Scheduler] %(asctime)s %(levelname)s %(message)s')
@@ -55,7 +54,7 @@ class DMLScheduler(object):
             scheduler_config = config["scheduler_config"]
             run_frequency_mins = scheduler_config["frequency_in_mins"]
             num_processes = scheduler_config["num_processes"]
-        self.current_runner = DMLRunner(dataset_path, runner_config)
+        self.current_runner = runner.DMLRunner(dataset_path, runner_config)
         #self.threading_pool = ThreadPool(num_processes)
         self._start_cron(run_frequency_mins)
         logging.info("Scheduler is set up!")

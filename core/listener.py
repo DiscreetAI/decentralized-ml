@@ -7,7 +7,7 @@ from core.blockchain.blockchain_utils import *
 from core.blockchain.ipfs_utils import *
 
 from web3.auto import w3
-from core.scheduler import DMLScheduler
+import core.scheduler as scheduler
 from core.utils.dmljob import DMLJob, deserialize_job
 
 class DMLListener(object):
@@ -34,7 +34,7 @@ class DMLListener(object):
             DMLListener.__instance = self
 
         # Connect scheduler
-        self.scheduler = DMLScheduler.getInstance()
+        self.scheduler = scheduler.DMLScheduler.getInstance()
         if clientAddress:
             self.web3 = Web3(IPCProvider())
             assert self.web3.isConnected()
