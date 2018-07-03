@@ -13,8 +13,6 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 from core.blockchain.client import *
-from core.blockchain.blockchain_utils import *
-from core.blockchain.ipfs_utils import *
 
 
 logging.basicConfig(level=logging.INFO,
@@ -79,13 +77,11 @@ class DatasetManager():
         '''
         Take in an filepath to the raw data, no filepath to transformed exists yet
         '''
-        print(raw_filepath)
-        print(os.listdir(raw_filepath))
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath
         self.tfp = None
-        #self.client = Client() uncomment when debugged
+        self.client = Client()
 
     def transform_data(self, transform_function):
         '''

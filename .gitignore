@@ -3,8 +3,9 @@ logs
 *.pyc
 .DS_Store
 .ipynb_checkpoints/
+__pycache__/
+.pytest_cache/
 
-datasets/mnist
 datasets/shakespeare
 
 core/utils/weights

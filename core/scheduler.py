@@ -38,7 +38,7 @@ class DMLScheduler(object):
         """ Static access method. """
         if DMLScheduler.__instance == None:
             DMLScheduler()
-        return DMLScheduler.__instance 
+        return DMLScheduler.__instance
 
     def __init__(self):
         """ Virtually private constructor. """

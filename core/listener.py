@@ -24,7 +24,7 @@ class DMLListener(object):
         """ Static access method. """
         if DMLListener.__instance == None:
             DMLScheduler()
-        return DMLListener.__instance 
+        return DMLListener.__instance
 
     def __init__(self, clientAddress=None):
         """ Virtually private constructor. """

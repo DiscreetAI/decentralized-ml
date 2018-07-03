@@ -1,4 +1,4 @@
-# Interoperable Federated Learning
+# Interoperable Federated Learning [![Build Status](https://travis-ci.org/georgymh/decentralized-ml.svg?branch=master)](https://travis-ci.org/georgymh/decentralized-ml)
 
 ![Federated Learning](materials/fed_learning.png)
 
