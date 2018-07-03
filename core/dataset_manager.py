@@ -183,7 +183,7 @@ class DatasetManager():
         IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
         '''
         filepath = self.rfp
-        check_key_length(name)
+        self.check_key_length(name)
         value = {}
         folders = []
         for file in os.listdir(filepath):
@@ -216,7 +216,7 @@ class DatasetManager():
         IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
         '''
         filepath = self.rfp
-        check_key_length(name)
+        self.check_key_length(name)
         value = {}
         folders = []
         for file in os.listdir(filepath):
