@@ -81,7 +81,7 @@ class DatasetManager():
             raise NotADirectoryError()
         self.rfp = raw_filepath
         self.tfp = None
-        self.client = Client()
+        #self.client = Client()
 
     def transform_data(self, transform_function):
         '''
