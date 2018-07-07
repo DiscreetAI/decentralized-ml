@@ -1,14 +1,7 @@
-# Add the parent directory to the PATH to allow imports.
-import os, sys, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-# from multiprocessing import Pool as ThreadPool
-# from multiprocessing import Process
-from collections import deque
 import logging
 import time
 import json
+from collections import deque
 
 import schedule
 

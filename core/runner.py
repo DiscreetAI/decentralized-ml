@@ -1,8 +1,3 @@
-# Add the parent directory to the PATH to allow imports.
-import os, sys, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
 import logging
 import random
 import uuid
@@ -13,7 +8,6 @@ from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
-import core.scheduler as scheduler
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
@@ -66,6 +60,7 @@ class DMLRunner(object):
                 job.hyperparams,
                 job.labeler
             )
+            from core.scheduler import DMLScheduler
             # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
             # through P2P.
             print(train_stats)
