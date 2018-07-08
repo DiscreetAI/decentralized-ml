@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import keras
 
-api = ipfsapi.connect('127.0.0.1', 5001)
+#api = ipfsapi.connect('127.0.0.1', 5001)
 CONFIG = None
 
 # print('starting to load model from IPFS')
