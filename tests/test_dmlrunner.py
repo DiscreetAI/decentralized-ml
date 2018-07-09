@@ -32,9 +32,9 @@ def make_model_json():
 def make_hyperparams():
     hyperparams = {
         'averaging_type': 'data_size',
-        'batch_size': 50,
+        'batch_size': 4,
         'epochs': 1,
-        'split': 0.001,
+        'split': 0.004,
     }
     return hyperparams
 
