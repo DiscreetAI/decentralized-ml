@@ -1,8 +1,3 @@
-# Add the parent directory to the PATH to allow imports.
-import os, sys, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
 import logging
 import random
 import uuid
@@ -41,11 +36,7 @@ class DMLRunner(object):
         self.config = config
         self.data_count = count_datapoints(dataset_path)
         self.current_job = None
-    def send_serialized_weights(weights, omega):
-        DMLListener.getInstance().send_payload({
-            "weights": serialize_weights(weights),
-            "omega": omega
-        })
+
     def run_job(self, job):
         """
         Identifies a DMLJob type and executes it.
@@ -201,7 +192,6 @@ class DMLRunner(object):
 
 if __name__ == '__main__':
     config = {}
-
     runner = DMLRunner('datasets/mnist', config)
 
     from models.keras_perceptron import KerasPerceptron

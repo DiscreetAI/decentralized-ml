@@ -1,8 +1,3 @@
-import os, sys, inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-
 from blockchain.blockchain_utils import *
 from blockchain.ipfs_utils import *
 
@@ -32,7 +27,7 @@ class DMLDeveloper(object):
         self.delegator = self.web3.eth.contract(
             address = self.web3.toChecksumAddress(TEMP_DELEGATOR_ADDR),
             abi = TEMP_DELEGATOR_ABI)
-    
+
     def deploy_with_model(self, model, [addrs]=self.clientAddress):
         '''
         Takes in a model and deploys it using default addresses.
@@ -45,7 +40,7 @@ class DMLDeveloper(object):
             "optimizer": model_optimizer
         }
         serialized_weights = serialize_weights(model.get_weights())
-        weights_bytes = weights2bytes32(serialized_weights)   
+        weights_bytes = weights2bytes32(serialized_weights)
         complete_json = {'serialized_model' : model_json,
                 'job_type' : 'train',
                 'model_type' : 'keras'}
@@ -57,7 +52,7 @@ class DMLDeveloper(object):
         As per our style philosophy, this method should only take in the arguments
         it directly needs to instantiate a StateMachine, which is why this takes in
         only the addresses as bytes.
-        Internal method only; should be called from higher-level functions that take 
+        Internal method only; should be called from higher-level functions that take
         user input directly.
         '''
 
@@ -94,7 +89,7 @@ class DMLDeveloper(object):
         tx_receipt = self.web3.eth.getTransactionReceipt(tx_hash)
         attr_dict = self.stateMachine.events.DoneTraining().processReceipt(tx_receipt)
         print(attr_dict)
-        
+
     def update_weights(self, model):
         '''
         Takes in a model.
@@ -109,7 +104,7 @@ class DMLDeveloper(object):
     def update_StateMachine(self, weightsAddrBytes):
         '''
         Takes in the Bytes32 referencing an IPFS Hash of a model weights file.
-        Updates StateMachine with its argument. 
+        Updates StateMachine with its argument.
         Asserts that the updated value in StateMachine is equal to its input.
         '''
         print(weightsAddrBytes)

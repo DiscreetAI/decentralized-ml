@@ -1,10 +1,10 @@
-import pytest
-
 import tests.context
 
+import pytest
 import numpy as np
-from custom.keras               import get_optimizer
+
 from core.runner                import DMLRunner
+from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob, serialize_job, deserialize_job
 from examples.labelers          import mnist_labeler
