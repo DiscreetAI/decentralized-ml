@@ -56,7 +56,6 @@ class DMLRunner(object):
                 job.hyperparams,
                 job.labeler
             )
-            from core.scheduler import DMLScheduler
             # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
             # through P2P.
             print(train_stats)
@@ -193,7 +192,6 @@ class DMLRunner(object):
 
 if __name__ == '__main__':
     config = {}
-    scheduler = scheduler.DMLScheduler.getInstance()
     runner = DMLRunner('datasets/mnist', config)
 
     from models.keras_perceptron import KerasPerceptron
