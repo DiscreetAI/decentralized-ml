@@ -36,11 +36,7 @@ class DMLRunner(object):
         self.config = config
         self.data_count = count_datapoints(dataset_path)
         self.current_job = None
-    # def send_serialized_weights(weights, omega):
-    #     DMLListener.getInstance().send_payload({
-    #         "weights": serialize_weights(weights),
-    #         "omega": omega
-    #     })
+
     def run_job(self, job):
         """
         Identifies a DMLJob type and executes it.

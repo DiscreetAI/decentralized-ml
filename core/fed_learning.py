@@ -1,5 +1,7 @@
 import numpy as np
+
 from core.utils.keras import serialize_weights, deserialize_single_weights
+
 
 def federated_averaging(list_of_serialized_weights):
     """
