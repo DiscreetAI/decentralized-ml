@@ -1,7 +1,12 @@
-import os
-from blockchain_utils import *
-from ipfs_utils import *
+import os, inspect, sys
 from eth_utils import is_address, to_checksum_address
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
+
+from core.blockchain.blockchain_utils import *
+from core.blockchain.ipfs_utils import *
 
 abi = '''[{"constant":false,"inputs":[{"name":"name","type":"string"}],"name":"getter","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewEntry","type":"event"},{"constant":false,"inputs":[{"name":"name","type":"string"},{"name":"addr","type":"bytes32"}],"name":"setter","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"metaDb","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"}]'''
 ALPHA_URL = 'http://54.153.84.146:8545'
