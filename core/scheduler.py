@@ -2,11 +2,11 @@ import logging
 import time
 import json
 from collections import deque
-
-import schedule
-
 from core.utils.dmljob import DMLJob
 from core.runner import DMLRunner
+from threading import Event, Timer
+from multiprocessing import Pool
+
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Scheduler] %(asctime)s %(levelname)s %(message)s')
@@ -14,13 +14,10 @@ logging.basicConfig(level=logging.DEBUG,
 class DMLScheduler(object):
     """
     DML Scheduler
-
     This class schedules and manages the execution of DMLJobs using the DMLRunner.
-    Note: currently runs in a single-threaded environment.
+    Note: now supports a multithreaded environment using multiprocessing.
     Note2: only supports one dataset type.
     Note3: Singleton.
-
-
     """
     # Here will be the instance stored.
     __instance = None
@@ -40,50 +37,74 @@ class DMLScheduler(object):
             DMLScheduler.__instance = self
         logging.info("Setting up scheduler...")
         self.queue = deque()
+        self.processed = []
         with open('core/config.json') as f:
             config = json.load(f)
-            dataset_path = config["dataset_path"]
-            runner_config = config["runner_config"]
+            self.dataset_path = config["dataset_path"]
+            self.runner_config = config["runner_config"]
             scheduler_config = config["scheduler_config"]
-            run_frequency_mins = scheduler_config["frequency_in_mins"]
-            num_processes = scheduler_config["num_processes"]
-        self.current_runner = DMLRunner(dataset_path, runner_config)
-        #self.threading_pool = ThreadPool(num_processes)
-        self._start_cron(run_frequency_mins)
+            self.frequency_in_mins = scheduler_config["frequency_in_mins"]
+            self.num_runners = scheduler_config["num_processes"]
+        self.pool = Pool(processes=self.num_runners)
+        self.runners = [self.create_runner() for _ in range(self.num_runners)]
+        self.current_jobs = [None]*self.num_runners
+        self.results = [None]*self.num_runners
+        self.event = Event()
         logging.info("Scheduler is set up!")
 
     def add_job(self, dml_job):
+        """ Add a job to the queue"""
         assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
         logging.info("Scheduling job...")
         self.queue.append(dml_job)
-        return self._run_next_job_if_necessary()
 
-    def _run_next_job_if_necessary(self):
-        if not self.current_runner.is_active() and self.queue:
-            # self.threading_pool.apply_async(self._run_next_job).get()
-            # Process(target=self._run_next_job).start()
-            return self._run_next_job()
+    def create_runner(self):
+        """ Creates new runner. """
+        return DMLRunner(self.dataset_path, self.runner_config)
 
-    def _run_next_job(self):
-        logging.info("Running next job...")
-        current_job = self.queue.popleft()
-        return_obj = self.current_runner.run_job(current_job)
-        logging.info("Job complete!")
-        return return_obj
+    def _runners_run_next_jobs(self):
+        """ Check each job to see if it has a job running. If not, have the runner run the
+        next job on the queue asynchronously of the others and collect the result of the job
+        that was running before (if applicable)
+        """
+        for i in range(self.num_runners):
+            runner = self.runners[i]
+            if not runner.is_active():
+                if self.current_jobs[i]:
+                    self.processed.append(self.current_jobs[i].get())
+                    self.current_jobs[i] = None
+                if self.queue:
+                    self.current_jobs[i] = self.pool.apply_async(runner.run_job, (self.queue.popleft(),))
 
-    def _start_cron(self, run_frequency_mins):
+    def _runners_run_next_jobs_as_event(self, period):
+        """ Trigger above method every period"""
+        self._runners_run_next_jobs()
+        if not self.event.is_set():
+            Timer(period*60, self._runners_run_next_jobs_as_event, [period]).start()
+
+    def _start_cron(self, period=None):
+        """ CRON job to run next jobs on runners, if applicable. Runs asynchronously."""
+        if not period:
+            period = self.frequency_in_mins
         logging.info("Starting cron...")
-        schedule.every(run_frequency_mins).minutes.do(self._run_next_job_if_necessary)
-        schedule.run_pending()
+        self._runners_run_next_jobs_as_event(period)
         logging.info("Cron started!")
 
-    # def __getstate__(self):
-    #     self_dict = self.__dict__.copy()
-    #     del self_dict['threading_pool']
-    #     return self_dict
-    #
-    # def __setstate__(self, state):
-    #     self.__dict__.update(state)
+
+    def reset(self):
+        """ Scheduler is a singleton, so need to get a new instance inplace """
+        logging.info("Resetting scheduler...")
+        self.queue = deque()
+        self.processed = []
+        self.event = Event()
+        logging.info("Scheduler resetted!")
+
+    def _stop_cron(self):
+        """ Tell the scheduler to stop scheduling jobs """
+        logging.info("Stopping cron...")
+        self.event.set()
+        logging.info("Cron stopped!")
+
 
 if __name__ == '__main__':
     # Set up model
