@@ -1,6 +1,8 @@
 import os
 
 import numpy as np
+import pandas as pd
+import keras
 
 
 def count_datapoints(dataset_path):
@@ -52,33 +54,26 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
     Returns an iterator of batches of size B containing all features of the data.
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
+
+    NOTE: labeler is now an integer that refers to the column index
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
+    assert isinstance(labeler, int), "The labeler must be an integer!"
     if iter_type == 'train':
         directories = os.listdir(dataset_path)
     elif iter_type == 'test':
         directories = reversed(os.listdir(dataset_path))
 
-    count = 0
+    num_batches = int(max_count/batch_size)
+    total_points = int(max_count/batch_size) * batch_size
     for filename in directories:
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
-        with open(full_path, 'r') as f:
-            batch = []
-            for line in f:
-                if count >= max_count:
-                    return
-                if len(batch) == batch_size:
-                    if batch_size == 1:
-                        tup = batch[0]
-                        yield (np.expand_dims(tup[0], axis=0), \
-                            np.expand_dims(tup[1], axis=0))
-                    else:
-                        X_list, y_list = list(), list()
-                        for x, _ in batch: X_list.append(x)
-                        for _, y in batch: y_list.append(y)
-                        yield (np.array(X_list), np.array(y_list))
-                    batch = []
-                line = labeler(line) if labeler else line
-                batch.append(line)
-                count += 1
+        file = pd.read_csv(full_path).head(total_points)
+        assert labeler >= 0 and labeler < len(file.columns)
+        column = list(file.columns)[labeler]
+        X, y = (file.drop(column, axis=1), pd.DataFrame(file[column]))
+        X_split, y_split = np.split(X, num_batches), np.split(y, num_batches)
+        y_split = [keras.utils.to_categorical(y, num_classes=10) for y in y_split]
+        for batch in zip(X_split,y_split):
+            yield(batch)

@@ -3,6 +3,7 @@ import tests.context
 import pytest
 import numpy as np
 
+
 from core.runner                import DMLRunner
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
@@ -56,7 +57,7 @@ def make_train_job(model_json, initial_weights, config, hyperparams):
         config,
         initial_weights,
         hyperparams,
-        mnist_labeler
+        0
     )
     return train_job
 
@@ -69,7 +70,7 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
         config,
         new_weights,
         hyperparams,
-        mnist_labeler
+        0
     )
     return validate_job
 
