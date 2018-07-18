@@ -55,7 +55,7 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
 
-    NOTE: labeler is now an integer that refers to the column index
+    NOTE: labeler is now a string that refers to a column name
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
     assert isinstance(labeler, str), "The labeler must be a string!"
