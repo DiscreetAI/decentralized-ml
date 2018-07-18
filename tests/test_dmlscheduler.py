@@ -7,7 +7,6 @@ from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob, serialize_job, deserialize_job
 from core.scheduler             import DMLScheduler
-from examples.labelers          import mnist_labeler
 
 
 def make_model_json():

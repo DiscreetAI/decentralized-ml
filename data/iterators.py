@@ -58,7 +58,7 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
     NOTE: labeler is now an integer that refers to the column index
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
-    assert isinstance(labeler, int), "The labeler must be an integer!"
+    assert isinstance(labeler, str), "The labeler must be a string!"
     if iter_type == 'train':
         directories = os.listdir(dataset_path)
     elif iter_type == 'test':
@@ -70,10 +70,8 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
         file = pd.read_csv(full_path).head(total_points)
-        assert labeler >= 0 and labeler < len(file.columns)
-        column = list(file.columns)[labeler]
-        X, y = (file.drop(column, axis=1), pd.DataFrame(file[column]))
+        assert labeler in file.columns, "Invalid column name for dataset"
+        X, y = (file.drop(labeler, axis=1), pd.DataFrame(file[labeler]))
         X_split, y_split = np.split(X, num_batches), np.split(y, num_batches)
-        y_split = [keras.utils.to_categorical(y, num_classes=10) for y in y_split]
         for batch in zip(X_split,y_split):
             yield(batch)

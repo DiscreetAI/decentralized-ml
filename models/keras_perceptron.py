@@ -36,7 +36,7 @@ class KerasPerceptron(GenericKerasModel):
         sgd = optimizers.SGD(lr=0.00001)
         self.model.compile(
             optimizer=sgd,
-            loss='categorical_crossentropy',
+            loss='sparse_categorical_crossentropy',
             metrics=['acc']
         )
 
