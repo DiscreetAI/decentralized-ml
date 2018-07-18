@@ -1,6 +1,8 @@
 import os
 
 import numpy as np
+import pandas as pd
+import keras
 
 
 def count_datapoints(dataset_path):
@@ -52,33 +54,24 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
     Returns an iterator of batches of size B containing all features of the data.
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
+
+    NOTE: labeler is now a string that refers to a column name
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
+    assert isinstance(labeler, str), "The labeler must be a string!"
     if iter_type == 'train':
         directories = os.listdir(dataset_path)
     elif iter_type == 'test':
         directories = reversed(os.listdir(dataset_path))
 
-    count = 0
+    num_batches = int(max_count/batch_size)
+    total_points = int(max_count/batch_size) * batch_size
     for filename in directories:
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
-        with open(full_path, 'r') as f:
-            batch = []
-            for line in f:
-                if count >= max_count:
-                    return
-                if len(batch) == batch_size:
-                    if batch_size == 1:
-                        tup = batch[0]
-                        yield (np.expand_dims(tup[0], axis=0), \
-                            np.expand_dims(tup[1], axis=0))
-                    else:
-                        X_list, y_list = list(), list()
-                        for x, _ in batch: X_list.append(x)
-                        for _, y in batch: y_list.append(y)
-                        yield (np.array(X_list), np.array(y_list))
-                    batch = []
-                line = labeler(line) if labeler else line
-                batch.append(line)
-                count += 1
+        file = pd.read_csv(full_path).head(total_points)
+        assert labeler in file.columns, "Invalid column name for dataset"
+        X, y = (file.drop(labeler, axis=1), pd.DataFrame(file[labeler]))
+        X_split, y_split = np.split(X, num_batches), np.split(y, num_batches)
+        for batch in zip(X_split,y_split):
+            yield(batch)

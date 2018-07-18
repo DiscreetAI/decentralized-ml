@@ -7,7 +7,6 @@ from core.runner                import DMLRunner
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob, serialize_job, deserialize_job
-from examples.labelers          import mnist_labeler
 
 
 def make_dataset_path():
@@ -56,7 +55,7 @@ def make_train_job(model_json, initial_weights, config, hyperparams):
         config,
         initial_weights,
         hyperparams,
-        mnist_labeler
+        "label"
     )
     return train_job
 
@@ -69,7 +68,7 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
         config,
         new_weights,
         hyperparams,
-        mnist_labeler
+        "label"
     )
     return validate_job
 
