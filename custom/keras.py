@@ -4,7 +4,9 @@ Based on https://github.com/keras-team/keras/blob/master/keras/engine/saving.py.
 """
 
 import json
+
 from keras import optimizers
+
 from keras.models import model_from_json
 
 

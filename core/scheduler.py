@@ -2,10 +2,11 @@ import logging
 import time
 import json
 from collections import deque
-from core.utils.dmljob import DMLJob
-from core.runner import DMLRunner
 from threading import Event, Timer
 from multiprocessing import Pool
+
+from core.utils.dmljob import DMLJob
+from core.runner import DMLRunner
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -104,61 +105,3 @@ class DMLScheduler(object):
         logging.info("Stopping cron...")
         self.event.set()
         logging.info("Cron stopped!")
-
-
-if __name__ == '__main__':
-    # Set up model
-    from models.keras_perceptron import KerasPerceptron
-    from custom.keras import get_optimizer
-    m = KerasPerceptron(is_training=True)
-    model_architecture = m.model.to_json()
-    model_optimizer = get_optimizer(m.model)
-    model_json = {
-        "architecture": model_architecture,
-        "optimizer": model_optimizer
-    }
-    print(model_json)
-
-    # Set up hyperparams
-    from examples.labelers import mnist_labeler
-    config = {}
-    hyperparams = {
-        'averaging_type': 'data_size',
-        'batch_size': 50,
-        'epochs': 1,
-        'split': 0.8,
-    }
-
-    # Schedule some jobs
-    from core.utils.dmljob import DMLJob
-
-    scheduler = DMLScheduler.getInstance()
-
-    initialize_job = DMLJob(
-        "initialize",
-        model_json,
-        "keras"
-    )
-    initial_weights = scheduler.add_job(initialize_job)
-
-    train_job = DMLJob(
-        "train",
-        model_json,
-        "keras",
-        config,
-        initial_weights,
-        hyperparams,
-        mnist_labeler
-    )
-    new_weights, _, _ = scheduler.add_job(train_job)
-
-    validate_job = DMLJob(
-        "validate",
-        model_json,
-        'keras',
-        config,
-        new_weights,
-        hyperparams,
-        mnist_labeler
-    )
-    scheduler.add_job(validate_job)

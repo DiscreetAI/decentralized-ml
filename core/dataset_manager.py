@@ -8,30 +8,30 @@ import os
 import numpy as np
 import pandas as pd
 
-# from core.blockchain.client import Client
-
 
 logging.basicConfig(level=logging.INFO,
                 format='[DatasetManager] %(asctime)s %(levelname)s %(message)s')
 
 class TransformedNotFoundError(Exception):
-    '''
-    TransformedNotFoundError
+    """
+    Transformed Not Found Error
 
     Just a customized exception that's raised when the caller tries to access
     transformed data that doesn't exist.
-    '''
+
+    """
     def __init__(self):
         Exception.__init__(self, "No transformed data found." +
                            "Did you make sure to transform the data first?")
 
 class NoMetadataFoundError(Exception):
-    '''
-    NoMetadataFoundError
+    """
+    No Metadata Found Error
 
     Just a customized exception that's raised when the caller post metadata that
     doesn't exist in rfp
-    '''
+
+    """
 
     def __init__(self, dataset_folder):
         Exception.__init__(self, \
@@ -39,8 +39,8 @@ class NoMetadataFoundError(Exception):
             " Consider using:\n post_dataset(self, name)")
 
 class DatasetManager():
-    '''
-    DatasetManager
+    """
+    Dataset Manager
 
 
     IMPORTANT: ALL FILEPATHS ARE ABSOLUTE FILEPATHS.
@@ -78,25 +78,25 @@ class DatasetManager():
         transformed/
             06/10/16sgf.csv
             06/10/16mlf.csv
-    '''
+
+    """
     def __init__(self, raw_filepath):
-        '''
+        """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
-        '''
+        """
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath
         self.tfp = None
-        #self.client = Client()
 
     def transform_data(self, transform_function):
-        '''
+        """
         Taking in a transform function, transforming the data, and putting this
         transformed data in a new directory (called 'transformed') in the same
         directory as the raw data. File names consist of a timestamp with the
         addition of a few random characters.
-        '''
+        """
         def random_string(length):
             return ''.join(
                 random.choice(string.ascii_letters) for m in range(length)
@@ -124,12 +124,12 @@ class DatasetManager():
         assert os.path.isdir(os.path.join(self.rfp, 'transformed'))
 
     def get_raw_data(self):
-        '''
+        """
         Extracts all raw data from raw data filepath. Assumes filepath contains
         csv files. Returns where each (key, value) represents a csv file. Each
         key is the filename of the csv (i.e. key.csv) and each value is a
         DataFrame of the actual data.
-        '''
+        """
         raw_dict = {}
         folders = []
         for file in os.listdir(self.rfp):
@@ -147,7 +147,7 @@ class DatasetManager():
         return raw_dict
 
     def get_transformed_data(self):
-        '''
+        """
         Extracts all transformed data from transform data filepath.
 
         If filepath exists, assumes filepath contains csvfiles. Returns where
@@ -155,7 +155,7 @@ class DatasetManager():
         csv (i.e. key.csv) and each value is a DataFrame of the actual data.
 
         If filepath does not exist, throws TransformedNotFoundError
-        '''
+        """
 
         if self.tfp:
             transform_dict = {}
@@ -168,7 +168,7 @@ class DatasetManager():
             raise TransformedNotFoundError()
 
     def reset(self):
-        '''
+        """
         Resets class as though transformed data never existed.
 
         If transform data filepath exists, then delete directory and all files
@@ -177,26 +177,26 @@ class DatasetManager():
 
         If transform data filepath does not exist (there was no transformed data
         to begin with), do nothing.
-        '''
+        """
         if self.tfp:
             shutil.rmtree(self.tfp)
             self.tfp = None
         assert not os.path.isdir(os.path.join(self.rfp, 'transformed'))
 
     def check_key_length(key):
-        '''
+        """
         Keys for datasets can only be at most 30 characters long.
-        '''
+        """
         if len(key) > 30:
             raise InvalidKeyError(key)
 
     def post_dataset_with_md(self, name):
-        '''
+        """
         Post samples of datasets on blockchain along with provided metadata
         under the provided name as the key
 
         IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
-        '''
+        """
         filepath = self.rfp
         self.check_key_length(name)
         value = {}
@@ -224,12 +224,12 @@ class DatasetManager():
         self.client.setter(name, value)
 
     def post_dataset(self, name):
-        '''
+        """
         Post samples of datasets on blockchain with automatically generated
         metadata under provided name as the key
 
         IMPORTANT: NOT FINISHED DEBUGGING, DO NOT USE
-        '''
+        """
         filepath = self.rfp
         self.check_key_length(name)
         value = {}

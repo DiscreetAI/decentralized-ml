@@ -34,7 +34,7 @@ def serialize_job(dmljob_obj):
         'model_type': dmljob_obj.model_type,
         'config': dmljob_obj.config,
         'hyperparams': dmljob_obj.hyperparams,
-        # 'labeler': dmljob_obj.labeler # Removed because it's a function!
+        'labeler': dmljob_obj.labeler
     }
     return {
         'weights': serialize_weights(dmljob_obj.weights),
@@ -50,5 +50,5 @@ def deserialize_job(serialized_job):
         rest['config'],
         desirialize_weights(serialized_job['weights']),
         rest['hyperparams'],
-        # rest['labeler'] # Removed because it's a function!
+        rest['labeler']
     )

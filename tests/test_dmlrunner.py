@@ -6,7 +6,7 @@ import numpy as np
 from core.runner                import DMLRunner
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
-from core.utils.dmljob          import DMLJob, serialize_job, deserialize_job
+from core.utils.dmljob          import DMLJob
 
 
 def make_dataset_path():

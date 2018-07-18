@@ -1,11 +1,14 @@
-import pytest
-import time
 import tests.context
+
+import time
 import logging
+
+import pytest
 import numpy as np
+
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
-from core.utils.dmljob          import DMLJob, serialize_job, deserialize_job
+from core.utils.dmljob          import DMLJob
 from core.scheduler             import DMLScheduler
 
 
@@ -46,8 +49,8 @@ def test_dmlscheduler_sanity():
 
 
 def test_dmlscheduler_speedup_naive():
-    """ Check that running 10 jobs with Ray takes less time to run them 
-        serially (i.e. there is a speedup) 
+    """ Check that running 10 jobs with Ray takes less time to run them
+        serially (i.e. there is a speedup)
     """
     scheduler.reset()
     slow = 0
@@ -116,11 +119,4 @@ def test_dmlscheduler_cron():
     while scheduler.processed:
         initial_weights = scheduler.processed.pop(0)
         assert type(initial_weights) == list
-        assert type(initial_weights[0]) == np.ndarray 
-    
-
-
-
-
-
-
+        assert type(initial_weights[0]) == np.ndarray

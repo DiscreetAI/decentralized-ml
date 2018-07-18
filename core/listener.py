@@ -1,3 +1,5 @@
+"""DEPRECATED. Needs to be rewritten after off-chain is designed."""
+
 from core.blockchain.blockchain_utils import *
 from core.blockchain.ipfs_utils import *
 
