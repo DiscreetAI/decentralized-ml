@@ -60,7 +60,8 @@ class ConfigurationManager(object):
 
 	def reset(self):
 		""" Used for cleanup during testing"""
-		os.remove(self.config_filepath)
+		if os.path.isfile(self.config_filepath):
+			os.remove(self.config_filepath)
 
 
 
