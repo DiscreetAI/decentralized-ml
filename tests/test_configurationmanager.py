@@ -7,7 +7,7 @@ cm = ConfigurationManager()
 
 def setup_default_sanity():
 	""" Ensure that a config file was created using default user input. """
-	cm.bootstrap(test=lambda x: '')
+	cm.bootstrap(test_input=lambda x: '')
 	assert hasattr(cm, 'config')
 
 def setup_default_worked():
@@ -20,7 +20,7 @@ def setup_default_worked():
 
 def setup_custom_sanity():
 	""" Ensure that a config file was created using custom user input. """
-	cm.bootstrap(test=lambda x: 'test')
+	cm.bootstrap(test_input=lambda x: 'test')
 	assert hasattr(cm, 'config')
 
 def setup_custom_worked():
@@ -47,7 +47,7 @@ def test_no_setup_repeat():
 	""" Verify that run_setup_mode is not run again when configuration already exists. Or more simply, that the 
 		configuration has not changed) """
 	cm.reset()
-	cm.bootstrap(test=lambda x: '')
+	cm.bootstrap(test_input=lambda x: '')
 	setup_default_worked()
-	cm.bootstrap(test=lambda x: 'test')
+	cm.bootstrap(test_input=lambda x: 'test')
 	setup_default_worked()
