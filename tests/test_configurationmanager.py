@@ -8,7 +8,7 @@ cm = ConfigurationManager()
 def setup_default_sanity():
 	""" Ensure that a config file was created using default user input. """
 	cm.bootstrap(test_input=lambda x: '')
-	assert hasattr(cm, 'config')
+	assert cm.config
 
 def setup_default_worked():
 	""" Actually verify that the config file created using default user input is correct. """
@@ -21,7 +21,7 @@ def setup_default_worked():
 def setup_custom_sanity():
 	""" Ensure that a config file was created using custom user input. """
 	cm.bootstrap(test_input=lambda x: 'test')
-	assert hasattr(cm, 'config')
+	assert cm.config
 
 def setup_custom_worked():
 	""" Actually verify that the config file created using custom user input is correct. """

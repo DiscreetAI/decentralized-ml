@@ -62,6 +62,7 @@ class ConfigurationManager(object):
 		""" Used for cleanup during testing"""
 		if os.path.isfile(self.config_filepath):
 			os.remove(self.config_filepath)
+			self.config = None
 
 
 
