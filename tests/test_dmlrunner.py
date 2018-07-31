@@ -1,4 +1,3 @@
-'''
 import tests.context
 
 import pytest
@@ -111,4 +110,3 @@ def test_dmlrunner_validate_job_returns_stats():
     validate_job = make_validate_job(model_json, new_weights, config, hyperparams)
     val_stats = runner.run_job(validate_job)
     assert type(val_stats) == dict
-'''

@@ -11,7 +11,6 @@ from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob
 from core.scheduler             import DMLScheduler
 
-'''
 
 def make_model_json():
     m = KerasPerceptron(is_training=True)
@@ -121,4 +120,3 @@ def test_dmlscheduler_cron():
         initial_weights = scheduler.processed.pop(0)
         assert type(initial_weights) == list
         assert type(initial_weights[0]) == np.ndarray
-'''
