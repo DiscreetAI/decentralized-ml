@@ -101,6 +101,10 @@ def test_bad_rfp():
     except NotADirectoryError:
         pass
 
+def test_read_dataset_from_config_manager():
+    dsm = DatasetManager()
+    assert dsm.rfp == 'datasets/mnist'
+
 '''
 uncomment when node is running
 

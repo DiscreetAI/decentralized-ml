@@ -8,6 +8,8 @@ from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
+from core.configuration import ConfigurationManager
+
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
@@ -27,14 +29,17 @@ class DMLRunner(object):
 
     """
 
-    def __init__(self, dataset_path, config):
+    def __init__(self):
         """
         Sets up the unique identifier of the DML Runner and the local dataset path.
         """
+        config_manager = ConfigurationManager.getInstance()
+        config_manager.bootstrap()
+        config = config_manager.config
         self.iden = str(uuid.uuid4())[:8]
-        self.dataset_path = dataset_path
-        self.config = config
-        self.data_count = count_datapoints(dataset_path)
+        self.dataset_path = config.get("GENERAL", "dataset_path")
+        self.config = dict(config.items("RUNNER"))
+        self.data_count = count_datapoints(self.dataset_path)
         self.current_job = None
 
     def run_job(self, job):

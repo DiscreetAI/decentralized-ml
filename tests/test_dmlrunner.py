@@ -75,7 +75,7 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
 
 def test_dmlrunner_initialize_job_returns_list_of_nparray():
     model_json = make_model_json()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner()
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     assert type(initial_weights) == list
@@ -86,7 +86,7 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats():
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner()
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
@@ -101,7 +101,7 @@ def test_dmlrunner_validate_job_returns_stats():
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner()
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)

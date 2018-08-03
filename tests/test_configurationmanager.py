@@ -3,6 +3,7 @@ import pytest
 import mock
 from core.configuration import ConfigurationManager
 
+
 cm = ConfigurationManager()
 
 def setup_default_sanity():

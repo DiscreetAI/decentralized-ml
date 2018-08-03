@@ -7,6 +7,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from core.configuration import ConfigurationManager
 
 
 logging.basicConfig(level=logging.INFO,
@@ -80,11 +81,16 @@ class DatasetManager():
             06/10/16mlf.csv
 
     """
-    def __init__(self, raw_filepath):
+    def __init__(self, raw_filepath = None):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
         """
+        if not raw_filepath:
+            config_manager = ConfigurationManager.getInstance()
+            config_manager.bootstrap()
+            config = config_manager.config
+            raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath
