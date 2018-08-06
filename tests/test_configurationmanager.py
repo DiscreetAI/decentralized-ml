@@ -1,17 +1,20 @@
 import tests.context
 import pytest
 import mock
+import os
 from core.configuration import ConfigurationManager
 
+def reset(cm):
+	""" Used for cleanup during testing"""
+	if os.path.isfile(cm.config_filepath):
+		os.remove(cm.config_filepath)
+		cm.config = None
 
-cm = ConfigurationManager()
-
-def setup_default_sanity():
+def setup_default_sanity(cm):
 	""" Ensure that a config file was created using default user input. """
-	cm.bootstrap(test_input=lambda x: '')
 	assert cm.config
 
-def setup_default_worked():
+def setup_default_worked(cm):
 	""" Actually verify that the config file created using default user input is correct. """
 	config = cm.config
 	assert config.get('GENERAL', 'dataset_path') == 'datasets/mnist'
@@ -19,12 +22,11 @@ def setup_default_worked():
 	assert config.getint('SCHEDULER', 'frequency_in_mins') == 1
 	assert config.get('RUNNER', 'weights_directory') == 'weights'
 
-def setup_custom_sanity():
+def setup_custom_sanity(cm):
 	""" Ensure that a config file was created using custom user input. """
-	cm.bootstrap(test_input=lambda x: 'test')
 	assert cm.config
 
-def setup_custom_worked():
+def setup_custom_worked(cm):
 	""" Actually verify that the config file created using custom user input is correct. """
 	config = cm.config
 	assert config.get('GENERAL', 'dataset_path') == 'test'
@@ -34,21 +36,33 @@ def setup_custom_worked():
 
 def test_complete_setup_default():
 	""" Verify configuration.ini from default user input is created and correct. """
-	cm.reset()
-	setup_default_sanity()
-	setup_default_worked()
+	cm = ConfigurationManager.get_instance(config_filepath='tests/artifacts/config_manager/configuration.ini', 
+										   input_function=lambda x: '')
+	
+	setup_default_sanity(cm)
+	setup_default_worked(cm)
+	reset(cm)
+	assert not os.path.isfile('tests/artifacts/config_manager/configuration.ini')
 
 def test_complete_setup_custom():
 	""" Verify configuration.ini from custom user input is created and correct. """
-	cm.reset()
-	setup_custom_sanity()
-	setup_custom_worked()
+	cm = ConfigurationManager.get_instance(config_filepath='tests/artifacts/config_manager/configuration.ini', 
+										   input_function=lambda x: 'test')
+
+	print(os.path.isfile('tests/artifacts/config_manager/configuration.ini'))
+	setup_custom_sanity(cm)
+	print(os.path.isfile('tests/artifacts/config_manager/configuration.ini'))
+	setup_custom_worked(cm)
+	reset(cm)
+	assert not os.path.isfile('tests/artifacts/config_manager/configuration.ini')
 
 def test_no_setup_repeat():
 	""" Verify that run_setup_mode is not run again when configuration already exists. Or more simply, that the 
 		configuration has not changed) """
-	cm.reset()
-	cm.bootstrap(test_input=lambda x: '')
-	setup_default_worked()
-	cm.bootstrap(test_input=lambda x: 'test')
-	setup_default_worked()
+	cm = ConfigurationManager.get_instance(config_filepath='tests/artifacts/config_manager/configuration.ini', 
+										   input_function=lambda x: '')
+	setup_default_worked(cm)
+	cm = ConfigurationManager.get_instance(config_filepath='tests/artifacts/config_manager/configuration.ini', 
+										   input_function=lambda x: 'test')
+	setup_default_worked(cm)
+	reset(cm)

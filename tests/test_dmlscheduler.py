@@ -31,8 +31,8 @@ def make_initialize_job(model_json):
     )
     return initialize_job
 
-scheduler = DMLScheduler()
 
+scheduler = DMLScheduler.get_instance(test=True)
 
 def test_dmlscheduler_sanity():
     """ Check that the scheduling/running functionality is maintained. """
@@ -45,7 +45,6 @@ def test_dmlscheduler_sanity():
     initial_weights = scheduler.processed.pop(0)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
-    scheduler.reset()
 
 
 def test_dmlscheduler_speedup_naive():

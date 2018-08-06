@@ -4,7 +4,7 @@ import datetime
 import string
 import random
 import os
-
+import tests.context
 import numpy as np
 import pandas as pd
 from core.configuration import ConfigurationManager
@@ -81,16 +81,19 @@ class DatasetManager():
             06/10/16mlf.csv
 
     """
-    def __init__(self, raw_filepath = None):
+
+    def __init__(self, test=True, test_config_filepath = 'tests/artifacts/dataset_manager/configuration.ini'):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
         """
-        if not raw_filepath:
-            config_manager = ConfigurationManager.getInstance()
-            config_manager.bootstrap()
-            config = config_manager.config
-            raw_filepath = config['GENERAL']['dataset_path']
+        if test:
+            config_manager = ConfigurationManager.get_instance(test_config_filepath)
+        else:
+            config_manager = ConfigurationManager.get_instance()
+        config_manager.bootstrap()
+        config = config_manager.config
+        raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath

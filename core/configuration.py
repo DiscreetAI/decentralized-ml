@@ -12,13 +12,19 @@ class ConfigurationManager(object):
 	__instance = None
 
 	@staticmethod
-	def getInstance():
-		""" Static access method. """
-		if ConfigurationManager.__instance == None:
-			ConfigurationManager()
+	def get_instance(config_filepath="core/configuration.ini", input_function=None):
+		""" Static access method. Always call this to get an instance of the class."""
+		input_function = input_function if input_function else input
+		if not ConfigurationManager.__instance:
+			ConfigurationManager(config_filepath, input_function)
+		else:
+			ConfigurationManager.__instance.config_filepath = config_filepath
+			ConfigurationManager.__instance.input_function = input_function
+			ConfigurationManager.__instance.config = None
+		ConfigurationManager.__instance.bootstrap()
 		return ConfigurationManager.__instance
 
-	def __init__(self, config_filepath="core/configuration.ini"):
+	def __init__(self, config_filepath, input_function):
 		""" Virtually private constructor. """
 		if ConfigurationManager.__instance != None:
 			raise Exception("This class is a singleton!")
@@ -27,18 +33,17 @@ class ConfigurationManager(object):
 			self.config_filepath = config_filepath
 			self.question_format = "{question} [default = {default}] "
 			self.config = None
+			self.input_function = input_function if input_function else input
 
-	def bootstrap(self, test_input=None):
+
+	def bootstrap(self):
 		""" Do nothing if config instance already exists. Otherwise, check if core/configuration.ini exists. If not, call 
 			run_setup_mode. Then load the config instance from configuration.ini
 
 			'test_input' is just an easy way to mock out user input for testing """
 		if not self.config:
-			user_input = test_input if test_input else input
-			print(os.listdir('core'))
 			if not os.path.isfile(self.config_filepath):
-				print("found")
-				self.run_setup_mode(user_input)
+				self.run_setup_mode(self.input_function)
 			self.config = configparser.ConfigParser()
 			self.config.read(self.config_filepath)
 
@@ -57,17 +62,3 @@ class ConfigurationManager(object):
 			config[section][key] = answer
 		with open(self.config_filepath, 'w') as configfile:
 			config.write(configfile)
-
-	def reset(self):
-		""" Used for cleanup during testing"""
-		if os.path.isfile(self.config_filepath):
-			os.remove(self.config_filepath)
-			self.config = None
-
-
-
-
-
-
-
-

@@ -29,12 +29,15 @@ class DMLRunner(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, test=False, test_config_filepath = 'tests/artifacts/configuration.ini'):
         """
         Sets up the unique identifier of the DML Runner and the local dataset path.
         """
-        config_manager = ConfigurationManager.getInstance()
-        config_manager.bootstrap()
+        
+        if test:
+            config_manager = ConfigurationManager.get_instance(config_filepath=test_config_filepath)
+        else:
+            config_manager = ConfigurationManager.get_instance()
         config = config_manager.config
         self.iden = str(uuid.uuid4())[:8]
         self.dataset_path = config.get("GENERAL", "dataset_path")
@@ -73,6 +76,7 @@ class DMLRunner(object):
                  job.hyperparams,
                  job.labeler
             )
+
             # TODO: Send the results to the developer through P2P (maybe).
             # How are we getting this metadata (val_stats) back to the user?
             # This has been assigned to Neelesh ^

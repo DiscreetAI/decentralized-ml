@@ -3,10 +3,7 @@ import pandas as pd
 import os
 import sys
 import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-#print(sys.path)
+import tests.context
 from core.dataset_manager import DatasetManager, TransformedNotFoundError, NoMetadataFoundError
 
 def dsm_initialization_test(dsm, rfp):
@@ -74,13 +71,16 @@ def test_end_to_end():
     def do_nothing(df):
         return df
 
-    rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data')  
+    print(os.getcwd())
+    rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
+    print(os.path.isdir('tests'))
+    print(os.listdir('.'))
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
     expected_test2_raw = pd.read_csv(rfp + '/test2/test2.csv')
     expected_test1_transformed = do_nothing(expected_test1_raw).round(3)
     expected_test2_transformed = do_nothing(expected_test2_raw).round(3)
 
-    dsm = DatasetManager(rfp)
+    dsm = DatasetManager(test=True)
     dsm_initialization_test(dsm, rfp)
 
     raw_dsm = dsm.get_raw_data()
@@ -93,17 +93,6 @@ def test_end_to_end():
     dsm.reset()
     reset_test(dsm, rfp)
     #dsm.post_dataset("my_test")
-
-def test_bad_rfp():
-    try:
-        dsm = DatasetManager("no/file/directory/here")
-        assert False
-    except NotADirectoryError:
-        pass
-
-def test_read_dataset_from_config_manager():
-    dsm = DatasetManager()
-    assert dsm.rfp == 'datasets/mnist'
 
 '''
 uncomment when node is running
