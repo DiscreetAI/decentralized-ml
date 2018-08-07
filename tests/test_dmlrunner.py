@@ -10,6 +10,15 @@ from core.utils.dmljob          import DMLJob
 from core.configuration         import ConfigurationManager
 
 
+@pytest.fixture
+def config_manager():
+    config_manager = ConfigurationManager.get_instance().reset()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/configuration.ini'
+    )
+    return config_manager
+
+
 def make_dataset_path():
     return 'datasets/mnist'
 
@@ -73,31 +82,21 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
     )
     return validate_job
 
-@pytest.fixture
-def cm():
-    if ConfigurationManager.has_instance():
-        print(ConfigurationManager.get_instance().config_filepath)
-        ConfigurationManager.get_instance().config = None
-        ConfigurationManager.get_instance().config_filepath = 'tests/artifacts/configuration.ini'
-        ConfigurationManager.get_instance().bootstrap()
-    else:
-        ConfigurationManager(config_filepath='tests/artifacts/configuration.ini')
-    
 
-def test_dmlrunner_initialize_job_returns_list_of_nparray(cm):
+def test_dmlrunner_initialize_job_returns_list_of_nparray(config_manager):
     model_json = make_model_json()
-    runner = DMLRunner()
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
 
-def test_dmlrunner_train_job_returns_weights_omega_and_stats():
+def test_dmlrunner_train_job_returns_weights_omega_and_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner()
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
@@ -108,11 +107,11 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats():
     assert type(train_stats) == dict
 
 
-def test_dmlrunner_validate_job_returns_stats():
+def test_dmlrunner_validate_job_returns_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner()
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)

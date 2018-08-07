@@ -31,7 +31,7 @@ class DMLScheduler(object):
             DMLScheduler()
         return DMLScheduler.__instance
 
-    def __init__(self):
+    def __init__(self, config_manager):
         """ Virtually private constructor. """
         if DMLScheduler.__instance != None:
             raise Exception("This class is a singleton!")
@@ -40,14 +40,12 @@ class DMLScheduler(object):
         logging.info("Setting up scheduler...")
         self.queue = deque()
         self.processed = []
-        config_manager = ConfigurationManager.get_instance()
-        config_manager.bootstrap()
-        config = config_manager.config
+        config = config_manager.get_config()
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
         self.num_runners = config.getint("SCHEDULER", "num_runners")
         self.pool = Pool(processes=self.num_runners)
-        self.runners = [DMLRunner() for _ in range(self.num_runners)]
+        self.runners = [DMLRunner(config_manager) for _ in range(self.num_runners)]
         self.current_jobs = [None]*self.num_runners
         self.results = [None]*self.num_runners
         self.event = Event()

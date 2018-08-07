@@ -82,13 +82,12 @@ class DatasetManager():
 
     """
 
-    def __init__(self):
+    def __init__(self, config_manager):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
         """
-        config_manager = ConfigurationManager.get_instance()
-        config = config_manager.config
+        config = config_manager.get_config()
         raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()

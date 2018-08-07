@@ -29,13 +29,11 @@ class DMLRunner(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, config_manager):
         """
         Sets up the unique identifier of the DML Runner and the local dataset path.
         """
-        
-        config_manager = ConfigurationManager.get_instance()
-        config = config_manager.config
+        config = config_manager.get_config()
         self.iden = str(uuid.uuid4())[:8]
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.config = dict(config.items("RUNNER"))

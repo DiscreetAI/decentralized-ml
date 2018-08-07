@@ -13,6 +13,12 @@ from core.scheduler             import DMLScheduler
 from core.configuration         import ConfigurationManager
 
 
+config_manager = ConfigurationManager.get_instance().reset()
+config_manager.bootstrap(
+    config_filepath='tests/artifacts/configuration.ini'
+)
+scheduler = DMLScheduler(config_manager)
+
 def make_model_json():
     m = KerasPerceptron(is_training=True)
     model_architecture = m.model.to_json()
@@ -32,9 +38,6 @@ def make_initialize_job(model_json):
     )
     return initialize_job
 
-
-ConfigurationManager(config_filepath='tests/artifacts/configuration.ini')
-scheduler = DMLScheduler()
 
 def test_dmlscheduler_sanity():
     """ Check that the scheduling/running functionality is maintained. """
