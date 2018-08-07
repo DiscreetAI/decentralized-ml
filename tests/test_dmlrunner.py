@@ -7,6 +7,7 @@ from core.runner                import DMLRunner
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob
+from core.configuration         import ConfigurationManager
 
 
 def make_dataset_path():
@@ -72,10 +73,20 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
     )
     return validate_job
 
+@pytest.fixture
+def cm():
+    if ConfigurationManager.has_instance():
+        print(ConfigurationManager.get_instance().config_filepath)
+        ConfigurationManager.get_instance().config = None
+        ConfigurationManager.get_instance().config_filepath = 'tests/artifacts/configuration.ini'
+        ConfigurationManager.get_instance().bootstrap()
+    else:
+        ConfigurationManager(config_filepath='tests/artifacts/configuration.ini')
+    
 
-def test_dmlrunner_initialize_job_returns_list_of_nparray():
+def test_dmlrunner_initialize_job_returns_list_of_nparray(cm):
     model_json = make_model_json()
-    runner = DMLRunner(test=True)
+    runner = DMLRunner()
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     assert type(initial_weights) == list
@@ -86,7 +97,7 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats():
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(test=True)
+    runner = DMLRunner()
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
@@ -101,7 +112,7 @@ def test_dmlrunner_validate_job_returns_stats():
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(test=True)
+    runner = DMLRunner()
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)

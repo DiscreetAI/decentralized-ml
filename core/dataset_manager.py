@@ -82,16 +82,12 @@ class DatasetManager():
 
     """
 
-    def __init__(self, test=True, test_config_filepath = 'tests/artifacts/dataset_manager/configuration.ini'):
+    def __init__(self):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
         """
-        if test:
-            config_manager = ConfigurationManager.get_instance(test_config_filepath)
-        else:
-            config_manager = ConfigurationManager.get_instance()
-        config_manager.bootstrap()
+        config_manager = ConfigurationManager.get_instance()
         config = config_manager.config
         raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):

@@ -25,16 +25,14 @@ class DMLScheduler(object):
     __instance = None
 
     @staticmethod
-    def get_instance(test=False):
+    def get_instance():
         """ Static access method. """
         if DMLScheduler.__instance == None:
-            DMLScheduler(test)
-        else:
-            DMLScheduler.__instance.reset()
+            DMLScheduler()
         return DMLScheduler.__instance
 
-    def __init__(self, test, test_config_filepath='tests/artifacts/configuration.ini'):
-        """ Virtually private constructor. Always use get_instance to get an instance."""
+    def __init__(self):
+        """ Virtually private constructor. """
         if DMLScheduler.__instance != None:
             raise Exception("This class is a singleton!")
         else:
@@ -42,17 +40,14 @@ class DMLScheduler(object):
         logging.info("Setting up scheduler...")
         self.queue = deque()
         self.processed = []
-        if test:
-            config_manager = ConfigurationManager.get_instance(config_filepath=test_config_filepath)
-        else:
-            config_manager = ConfigurationManager.get_instance()
+        config_manager = ConfigurationManager.get_instance()
         config_manager.bootstrap()
         config = config_manager.config
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
         self.num_runners = config.getint("SCHEDULER", "num_runners")
         self.pool = Pool(processes=self.num_runners)
-        self.runners = [DMLRunner(test=test) for _ in range(self.num_runners)]
+        self.runners = [DMLRunner() for _ in range(self.num_runners)]
         self.current_jobs = [None]*self.num_runners
         self.results = [None]*self.num_runners
         self.event = Event()

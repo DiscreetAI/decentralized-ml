@@ -12,19 +12,17 @@ class ConfigurationManager(object):
 	__instance = None
 
 	@staticmethod
-	def get_instance(config_filepath="core/configuration.ini", input_function=None):
-		""" Static access method. Always call this to get an instance of the class."""
-		input_function = input_function if input_function else input
-		if not ConfigurationManager.__instance:
-			ConfigurationManager(config_filepath, input_function)
-		else:
-			ConfigurationManager.__instance.config_filepath = config_filepath
-			ConfigurationManager.__instance.input_function = input_function
-			ConfigurationManager.__instance.config = None
-		ConfigurationManager.__instance.bootstrap()
+	def has_instance():
 		return ConfigurationManager.__instance
 
-	def __init__(self, config_filepath, input_function):
+	@staticmethod
+	def get_instance():
+		""" Static access method. Always call this to get an instance of the class."""
+		if not ConfigurationManager.__instance:
+			ConfigurationManager()
+		return ConfigurationManager.__instance
+
+	def __init__(self, config_filepath="core/configuration.ini", input_function=None):
 		""" Virtually private constructor. """
 		if ConfigurationManager.__instance != None:
 			raise Exception("This class is a singleton!")
@@ -34,21 +32,25 @@ class ConfigurationManager(object):
 			self.question_format = "{question} [default = {default}] "
 			self.config = None
 			self.input_function = input_function if input_function else input
+			self.bootstrap()
 
 
 	def bootstrap(self):
 		""" Do nothing if config instance already exists. Otherwise, check if core/configuration.ini exists. If not, call 
 			run_setup_mode. Then load the config instance from configuration.ini
 
-			'test_input' is just an easy way to mock out user input for testing """
+			Returns True if new config object was created (for testing) """
 		if not self.config:
 			if not os.path.isfile(self.config_filepath):
-				self.run_setup_mode(self.input_function)
-			self.config = configparser.ConfigParser()
-			self.config.read(self.config_filepath)
+				self.run_setup_mode(self.config_filepath, self.input_function)
+			else:
+				self.config = configparser.ConfigParser()
+				self.config.read(self.config_filepath)
+			return True
+		return False
 
 
-	def run_setup_mode(self, user_input):
+	def run_setup_mode(self, config_filepath, user_input):
 		""" Create configuration.ini with the user_input function. In testing, this is a deterministic lambda function. 
 			Otherwise, the user_input function actually draws upon user input. """
 		config = configparser.ConfigParser()
@@ -62,3 +64,4 @@ class ConfigurationManager(object):
 			config[section][key] = answer
 		with open(self.config_filepath, 'w') as configfile:
 			config.write(configfile)
+		self.config = config

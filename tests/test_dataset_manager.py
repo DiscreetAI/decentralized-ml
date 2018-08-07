@@ -4,7 +4,18 @@ import os
 import sys
 import inspect
 import tests.context
+import pytest
+from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager, TransformedNotFoundError, NoMetadataFoundError
+
+@pytest.fixture
+def cm():
+    if ConfigurationManager.has_instance():
+        ConfigurationManager.get_instance().config = None
+        ConfigurationManager.get_instance().config_filepath = 'tests/artifacts/dataset_manager/configuration.ini'
+        ConfigurationManager.get_instance().bootstrap()
+    else:
+        ConfigurationManager(config_filepath='tests/artifacts/dataset_manager/configuration.ini')
 
 def dsm_initialization_test(dsm, rfp):
     '''
@@ -66,21 +77,19 @@ def transform_not_found_exception_test(dsm):
         pass
     
 
-def test_end_to_end():
+def test_end_to_end(cm):
     #Sample transform function (takes dataframe, returns dataframe)
     def do_nothing(df):
         return df
 
-    print(os.getcwd())
+    
     rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
-    print(os.path.isdir('tests'))
-    print(os.listdir('.'))
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
     expected_test2_raw = pd.read_csv(rfp + '/test2/test2.csv')
     expected_test1_transformed = do_nothing(expected_test1_raw).round(3)
     expected_test2_transformed = do_nothing(expected_test2_raw).round(3)
 
-    dsm = DatasetManager(test=True)
+    dsm = DatasetManager()
     dsm_initialization_test(dsm, rfp)
 
     raw_dsm = dsm.get_raw_data()

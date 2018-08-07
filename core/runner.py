@@ -29,15 +29,12 @@ class DMLRunner(object):
 
     """
 
-    def __init__(self, test=False, test_config_filepath = 'tests/artifacts/configuration.ini'):
+    def __init__(self):
         """
         Sets up the unique identifier of the DML Runner and the local dataset path.
         """
         
-        if test:
-            config_manager = ConfigurationManager.get_instance(config_filepath=test_config_filepath)
-        else:
-            config_manager = ConfigurationManager.get_instance()
+        config_manager = ConfigurationManager.get_instance()
         config = config_manager.config
         self.iden = str(uuid.uuid4())[:8]
         self.dataset_path = config.get("GENERAL", "dataset_path")
