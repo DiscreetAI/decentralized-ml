@@ -32,12 +32,9 @@ class ConfigurationManager(object):
 		"""
 		Virtually private constructor.
 		"""
-		if ConfigurationManager.__instance != None:
-			raise Exception("This class is a singleton. Please use get_instance().")
-		else:
-			self.question_format = "{question} [default = {default}] "
-			self._config = None
-			ConfigurationManager.__instance = self
+		self.question_format = "{question} [default = {default}] "
+		self._config = None
+		ConfigurationManager.__instance = self
 
 	def reset(self):
 		"""
