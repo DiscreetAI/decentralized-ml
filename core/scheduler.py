@@ -7,6 +7,7 @@ from multiprocessing import Pool
 
 from core.utils.dmljob import DMLJob
 from core.runner import DMLRunner
+from core.configuration import ConfigurationManager
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -24,13 +25,13 @@ class DMLScheduler(object):
     __instance = None
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         """ Static access method. """
         if DMLScheduler.__instance == None:
             DMLScheduler()
         return DMLScheduler.__instance
 
-    def __init__(self):
+    def __init__(self, config_manager):
         """ Virtually private constructor. """
         if DMLScheduler.__instance != None:
             raise Exception("This class is a singleton!")
@@ -39,15 +40,12 @@ class DMLScheduler(object):
         logging.info("Setting up scheduler...")
         self.queue = deque()
         self.processed = []
-        with open('core/config.json') as f:
-            config = json.load(f)
-            self.dataset_path = config["dataset_path"]
-            self.runner_config = config["runner_config"]
-            scheduler_config = config["scheduler_config"]
-            self.frequency_in_mins = scheduler_config["frequency_in_mins"]
-            self.num_runners = scheduler_config["num_processes"]
+        config = config_manager.get_config()
+        self.dataset_path = config.get("GENERAL", "dataset_path")
+        self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
+        self.num_runners = config.getint("SCHEDULER", "num_runners")
         self.pool = Pool(processes=self.num_runners)
-        self.runners = [self.create_runner() for _ in range(self.num_runners)]
+        self.runners = [DMLRunner(config_manager) for _ in range(self.num_runners)]
         self.current_jobs = [None]*self.num_runners
         self.results = [None]*self.num_runners
         self.event = Event()
@@ -58,10 +56,6 @@ class DMLScheduler(object):
         assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
         logging.info("Scheduling job...")
         self.queue.append(dml_job)
-
-    def create_runner(self):
-        """ Creates new runner. """
-        return DMLRunner(self.dataset_path, self.runner_config)
 
     def _runners_run_next_jobs(self):
         """ Check each job to see if it has a job running. If not, have the runner run the

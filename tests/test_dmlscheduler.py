@@ -2,7 +2,7 @@ import tests.context
 
 import time
 import logging
-
+import os
 import pytest
 import numpy as np
 
@@ -10,7 +10,14 @@ from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob
 from core.scheduler             import DMLScheduler
+from core.configuration         import ConfigurationManager
 
+
+config_manager = ConfigurationManager()
+config_manager.bootstrap(
+    config_filepath='tests/artifacts/configuration.ini'
+)
+scheduler = DMLScheduler(config_manager)
 
 def make_model_json():
     m = KerasPerceptron(is_training=True)
@@ -31,8 +38,6 @@ def make_initialize_job(model_json):
     )
     return initialize_job
 
-scheduler = DMLScheduler()
-
 
 def test_dmlscheduler_sanity():
     """ Check that the scheduling/running functionality is maintained. """
@@ -45,13 +50,13 @@ def test_dmlscheduler_sanity():
     initial_weights = scheduler.processed.pop(0)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
-    scheduler.reset()
 
 
 def test_dmlscheduler_speedup_naive():
     """ Check that running 10 jobs with Ray takes less time to run them
         serially (i.e. there is a speedup)
     """
+    scheduler = DMLScheduler.get_instance()
     scheduler.reset()
     slow = 0
 
@@ -79,6 +84,7 @@ def test_dmlscheduler_speedup_naive():
 
 def test_dmlscheduler_arbitrary_scheduling():
     """ Manually schedule events and check that all jobs are completed """
+    scheduler = DMLScheduler.get_instance()
     scheduler.reset()
     model_json = make_model_json()
     first = make_initialize_job(model_json)
@@ -106,6 +112,7 @@ def test_dmlscheduler_arbitrary_scheduling():
 
 def test_dmlscheduler_cron():
     """ Test that scheduler works """
+    scheduler = DMLScheduler.get_instance()
     scheduler.reset()
     model_json = make_model_json()
     for _ in range(3):

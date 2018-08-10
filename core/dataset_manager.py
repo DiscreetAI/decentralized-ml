@@ -4,9 +4,10 @@ import datetime
 import string
 import random
 import os
-
+import tests.context
 import numpy as np
 import pandas as pd
+from core.configuration import ConfigurationManager
 
 
 logging.basicConfig(level=logging.INFO,
@@ -80,11 +81,14 @@ class DatasetManager():
             06/10/16mlf.csv
 
     """
-    def __init__(self, raw_filepath):
+
+    def __init__(self, config_manager):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
         """
+        config = config_manager.get_config()
+        raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):
             raise NotADirectoryError()
         self.rfp = raw_filepath

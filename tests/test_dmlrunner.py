@@ -7,6 +7,16 @@ from core.runner                import DMLRunner
 from custom.keras               import get_optimizer
 from models.keras_perceptron    import KerasPerceptron
 from core.utils.dmljob          import DMLJob
+from core.configuration         import ConfigurationManager
+
+
+@pytest.fixture
+def config_manager():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/configuration.ini'
+    )
+    return config_manager
 
 
 def make_dataset_path():
@@ -73,20 +83,20 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
     return validate_job
 
 
-def test_dmlrunner_initialize_job_returns_list_of_nparray():
+def test_dmlrunner_initialize_job_returns_list_of_nparray(config_manager):
     model_json = make_model_json()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
 
-def test_dmlrunner_train_job_returns_weights_omega_and_stats():
+def test_dmlrunner_train_job_returns_weights_omega_and_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
@@ -97,11 +107,11 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats():
     assert type(train_stats) == dict
 
 
-def test_dmlrunner_validate_job_returns_stats():
+def test_dmlrunner_validate_job_returns_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
     config = make_config()
-    runner = DMLRunner(make_dataset_path(), make_config())
+    runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job)
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)

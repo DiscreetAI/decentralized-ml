@@ -3,11 +3,19 @@ import pandas as pd
 import os
 import sys
 import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-#print(sys.path)
+import tests.context
+import pytest
+from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager, TransformedNotFoundError, NoMetadataFoundError
+
+
+@pytest.fixture
+def config_manager():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration.ini'
+    )
+    return config_manager
 
 def dsm_initialization_test(dsm, rfp):
     '''
@@ -37,7 +45,7 @@ def transformation_happened_test(dsm, rfp):
 
 def accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed):
     '''
-    Check that the data in this folder is the result of calling the transform function on 
+    Check that the data in this folder is the result of calling the transform function on
     each csv in the raw data filepath
     '''
     transform_dsm = dsm.get_transformed_data()
@@ -63,29 +71,29 @@ def transform_not_found_exception_test(dsm):
     After resetting, check to make sure that getting the transformed data is impossible
     '''
     try:
-        transformed = dsm.get_transformed_data() 
+        transformed = dsm.get_transformed_data()
         assert False
     except TransformedNotFoundError:
         pass
-    
 
-def test_end_to_end():
+
+def test_end_to_end(config_manager):
     #Sample transform function (takes dataframe, returns dataframe)
     def do_nothing(df):
         return df
 
-    rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data')  
+    rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
     expected_test2_raw = pd.read_csv(rfp + '/test2/test2.csv')
     expected_test1_transformed = do_nothing(expected_test1_raw).round(3)
     expected_test2_transformed = do_nothing(expected_test2_raw).round(3)
 
-    dsm = DatasetManager(rfp)
+    dsm = DatasetManager(config_manager)
     dsm_initialization_test(dsm, rfp)
 
     raw_dsm = dsm.get_raw_data()
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
-    
+
     dsm.transform_data(do_nothing)
     transformation_happened_test(dsm, rfp)
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)
@@ -94,25 +102,16 @@ def test_end_to_end():
     reset_test(dsm, rfp)
     #dsm.post_dataset("my_test")
 
-def test_bad_rfp():
-    try:
-        dsm = DatasetManager("no/file/directory/here")
-        assert False
-    except NotADirectoryError:
-        pass
-
 '''
 uncomment when node is running
 
 def test_bad_metadata_post():
     try:
-        rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data') 
+        rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data')
         dsm = DatasetManager(rfp)
-        dsm.post_dataset_with_md("my_test") 
+        dsm.post_dataset_with_md("my_test")
         assert False
     except NoMetadataFoundError:
         pass
- 
+
 '''
-
-
