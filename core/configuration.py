@@ -16,25 +16,12 @@ class ConfigurationManager(object):
 
 	"""
 
-	__instance = None
-
-	@staticmethod
-	def get_instance():
-		"""
-		Static access method. Always call this to get an instance of the class.
-		"""
-		if not ConfigurationManager.__instance:
-			ConfigurationManager()
-		return ConfigurationManager.__instance
-
-
 	def __init__(self):
 		"""
 		Virtually private constructor.
 		"""
 		self.question_format = "{question} [default = {default}] "
 		self._config = None
-		ConfigurationManager.__instance = self
 
 	def reset(self):
 		"""

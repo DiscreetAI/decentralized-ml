@@ -12,7 +12,7 @@ from core.configuration         import ConfigurationManager
 
 @pytest.fixture
 def config_manager():
-    config_manager = ConfigurationManager.get_instance().reset()
+    config_manager = ConfigurationManager()
     config_manager.bootstrap(
         config_filepath='tests/artifacts/configuration.ini'
     )

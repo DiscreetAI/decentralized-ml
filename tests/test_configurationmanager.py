@@ -35,8 +35,7 @@ def setup_custom_worked(cm, custom_string):
 
 def test_complete_setup_default():
 	""" Verify configuration.ini from default user input is created and correct. """
-	config_manager = ConfigurationManager.get_instance()
-	config_manager.reset()
+	config_manager = ConfigurationManager()
 	config_manager.bootstrap(
 		config_filepath='tests/artifacts/config_manager/configuration.ini',
 		input_function=lambda x: ''
@@ -48,8 +47,7 @@ def test_complete_setup_default():
 
 def test_complete_setup_custom():
 	""" Verify configuration.ini from custom user input is created and correct. """
-	config_manager = ConfigurationManager.get_instance()
-	config_manager.reset()
+	config_manager = ConfigurationManager()
 	custom_string = 'test'
 	config_manager.bootstrap(
 		config_filepath='tests/artifacts/config_manager/configuration2.ini',
@@ -63,8 +61,7 @@ def test_complete_setup_custom():
 def test_no_setup_repeat():
 	""" Verify that run_setup_mode is not run again when configuration already exists. Or more simply, that the
 		configuration has not changed) """
-	config_manager = ConfigurationManager.get_instance()
-	config_manager.reset()
+	config_manager = ConfigurationManager()
 	config_manager.bootstrap(
 		config_filepath='tests/artifacts/config_manager/configuration3.ini',
 		input_function=lambda x: ''

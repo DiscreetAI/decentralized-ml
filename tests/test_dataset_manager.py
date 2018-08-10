@@ -11,7 +11,7 @@ from core.dataset_manager import DatasetManager, TransformedNotFoundError, NoMet
 
 @pytest.fixture
 def config_manager():
-    config_manager = ConfigurationManager.get_instance().reset()
+    config_manager = ConfigurationManager()
     config_manager.bootstrap(
         config_filepath='tests/artifacts/dataset_manager/configuration.ini'
     )

@@ -13,7 +13,7 @@ from core.scheduler             import DMLScheduler
 from core.configuration         import ConfigurationManager
 
 
-config_manager = ConfigurationManager.get_instance().reset()
+config_manager = ConfigurationManager()
 config_manager.bootstrap(
     config_filepath='tests/artifacts/configuration.ini'
 )
