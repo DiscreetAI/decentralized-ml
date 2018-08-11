@@ -7,6 +7,9 @@ import pandas as pd
 class DBManager(object):
 
 	def __init__(self, config_filepath = 'database_config.json'):
+		"""
+		Set up DBManager with corresponding database credentials
+		"""
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			POSTGRES = json.load(f)
@@ -16,14 +19,24 @@ class DBManager(object):
 		self._reset()
 
 	def get_labels(self):
+		"""
+		Get category_labels table
+		"""
 		return pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
 
 	def add_labels(self, data_providers, categories):
+		"""
+		Append category labels to the category_labels table, where categories[i] corresponds to the labeled category
+		for data_providers[i]
+		"""
 		rows = {'data_provider': data_providers, 'category': categories} 
 		label = pd.DataFrame(data=rows)
 		label.to_sql(name=self.table_name, con=self.db.engine, if_exists='append', index=False)
 
 	def get_data_providers_with_category(self, category):
+		"""
+		Get a list of data providers with the given category.
+		"""
 		return pd.read_sql_query("select * from {table_name} where category = '{category}'"
 			.format(category=category, table_name=self.table_name), self.db.engine)
 
