@@ -1,5 +1,6 @@
 import os
 import tests.context
+import psycopg2
 import pytest
 import pandas as pd
 from core.DBManager import DBManager
