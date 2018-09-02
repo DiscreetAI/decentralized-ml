@@ -48,7 +48,7 @@ def deserialize_job(serialized_job):
         rest['serialized_model'],
         rest['model_type'],
         rest['config'],
-        desirialize_weights(serialized_job['weights']),
+        deserialize_weights(serialized_job['weights']),
         rest['hyperparams'],
         rest['labeler']
     )
