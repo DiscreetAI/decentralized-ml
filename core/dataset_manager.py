@@ -4,9 +4,11 @@ import datetime
 import string
 import random
 import os
-import tests.context
+
 import numpy as np
 import pandas as pd
+
+import core.utils.context
 from core.configuration import ConfigurationManager
 
 
