@@ -1,6 +1,7 @@
 import logging
 import random
 import uuid
+import time
 
 from custom.keras import model_from_serialized, get_optimizer
 from data.iterators import count_datapoints
@@ -13,6 +14,7 @@ from core.configuration import ConfigurationManager
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[Runner] %(asctime)s %(levelname)s %(message)s')
+
 
 class DMLRunner(object):
     """
@@ -38,7 +40,6 @@ class DMLRunner(object):
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.config = dict(config.items("RUNNER"))
         self.data_count = count_datapoints(self.dataset_path)
-        self.current_job = None
 
     def run_job(self, job):
         """
@@ -48,9 +49,7 @@ class DMLRunner(object):
         """
         assert job.job_type in ['train', 'validate', 'initialize'], \
             'DMLJob type ({0}) is not valid'.format(job.job_type)
-        if self.is_active(): return
         logging.info("Running job (type: {0})...".format(job.job_type))
-        self.current_job = job
         if job.job_type == 'train':
             new_weights, omega, train_stats = self._train(
                 job.serialized_model,
@@ -91,12 +90,6 @@ class DMLRunner(object):
         self.current_job = None
         logging.info("Finished running job!")
         return return_obj # Returning is only for debugging purposes.
-
-    def is_active(self):
-        """
-        Returns whether the runner is running a job.
-        """
-        return self.current_job != None
 
     def _train(self, serialized_model, model_type, initial_weights, hyperparams,
         labeler):
