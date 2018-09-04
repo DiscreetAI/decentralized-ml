@@ -132,8 +132,10 @@ class DatasetManager():
             timestamp = str(datetime.datetime.now())
             r_string = random_string(5)
             new_name = timestamp + r_string
-            transformed_data.to_csv(os.path.join(new_folder, new_name + '.csv'),
-                                    index=False)
+            transformed_data.to_csv(
+                os.path.join(new_folder, new_name + '.csv'),
+                index=False
+            )
 
         assert os.path.isdir(os.path.join(self.rfp, 'transformed'))
 
