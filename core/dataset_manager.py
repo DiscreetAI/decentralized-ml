@@ -156,7 +156,7 @@ class DatasetManager():
                 if file[:2] != 'md':
                     file_path = os.path.join(folder_path, file)
                     dataset = pd.read_csv(file_path)
-                    raw_dict[file] = dataset
+                    raw_dict[file[:-4]] = dataset
         return raw_dict
 
     def get_transformed_data(self):
