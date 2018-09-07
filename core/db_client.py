@@ -17,7 +17,6 @@ class DBClient(object):
 		app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 		self.db = SQLAlchemy(app)
 		self.table_name = POSTGRES['table_name']
-		self._reset()
 
 	def get_labels(self):
 		"""
