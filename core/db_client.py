@@ -22,21 +22,28 @@ class DBClient(object):
 		"""
 		Get category_labels table
 		"""
-		return pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
+		labels = pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
+		return labels
 
 	def add_labels(self, data_providers, categories):
 		"""
-		Append category labels to the category_labels table, where categories[i] corresponds to the labeled category
-		for data_providers[i]
+		Append new category labels to the category_labels table and replace old labels, where categories[i] corresponds 
+		to the labeled category for data_providers[i]
 		"""
-		rows = {'data_provider': data_providers, 'category': categories} 
-		label = pd.DataFrame(data=rows)
-		label.to_sql(name=self.table_name, con=self.db.engine, if_exists='append', index=False)
+		labels = pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
+		index = labels.index
+		labels = labels.set_index('data_provider')
+		for data_provider, category in zip(data_providers, categories):
+			labels.loc[data_provider] = category
+		labels['data_provider'] = labels.index
+		labels.index = list(range(len(labels.index)))
+		labels.to_sql(name=self.table_name, con=self.db.engine, if_exists='replace', index=False)
 
 	def get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category.
 		"""
+		self.get_labels()
 		return pd.read_sql_query("select * from {table_name} where category = '{category}'"
 			.format(category=category, table_name=self.table_name), self.db.engine)
 
