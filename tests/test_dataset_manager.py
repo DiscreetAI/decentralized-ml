@@ -30,8 +30,8 @@ def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     Check get_raw_data actually returns the data in this directory
     '''
     raw_data = dsm.get_raw_data()
-    actual_test1_raw = raw_data['test1.csv']
-    actual_test2_raw = raw_data['test2.csv']
+    actual_test1_raw = raw_data['test1']
+    actual_test2_raw = raw_data['test2']
     assert expected_test1_raw.equals(actual_test1_raw)
     assert expected_test2_raw.equals(actual_test2_raw)
 
