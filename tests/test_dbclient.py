@@ -25,10 +25,10 @@ def check_get_data_providers_with_category(db_client):
 	assert list(actual['category']) == ['social_media']
 
 def test_end_to_end(db_client):
-	db_client._reset()
+	db_client.reset()
 	check_empty_category_labels(db_client)
 	db_client.add_labels(['Facebook Profile Data'], ['social_media'])
 	check_add_works(db_client)
 	db_client.add_labels(['Fitbit Calories Burned'], ['fitness'])
 	check_get_data_providers_with_category(db_client)
-	db_client._reset()
+	db_client.reset()

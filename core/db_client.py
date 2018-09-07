@@ -41,7 +41,7 @@ class DBClient(object):
 		return pd.read_sql_query("select * from {table_name} where category = '{category}'"
 			.format(category=category, table_name=self.table_name), self.db.engine)
 
-	def _reset(self):
+	def reset(self):
 		label = pd.DataFrame(columns=['data_provider', 'category'])
 		label.to_sql(name=self.table_name, con=self.db.engine, if_exists='replace', index=False)
 		
