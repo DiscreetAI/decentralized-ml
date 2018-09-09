@@ -83,7 +83,7 @@ class DMLScheduler(object):
         self.event = Event()
         logging.info("Scheduler resetted!")
 
-    def _runners_run_next_jobs(self):
+    def runners_run_next_jobs(self):
         """
         Check each job to see if it has a job running. If not, have the runner
         run the next job on the queue asynchronously of the others and collect
@@ -113,7 +113,7 @@ class DMLScheduler(object):
         Trigger above method every period.
         """
         logging.info("Running cron job...")
-        self._runners_run_next_jobs()
+        self.runners_run_next_jobs()
         if not self.event.is_set():
             Timer(
                 period_in_mins * 60,

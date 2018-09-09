@@ -46,10 +46,10 @@ def test_dmlscheduler_sanity():
     model_json = make_model_json()
     initialize_job = make_initialize_job(model_json)
     scheduler.add_job(initialize_job)
-    scheduler._runners_run_next_jobs()
+    scheduler.runners_run_next_jobs()
     while not scheduler.processed:
         time.sleep(0.1)
-        scheduler._runners_run_next_jobs()
+        scheduler.runners_run_next_jobs()
     initial_weights = scheduler.processed.pop(0)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
@@ -69,7 +69,7 @@ def test_dmlscheduler_speedup_naive():
         scheduler.add_job(initialize_job)
         start = time.time()
         while len(scheduler.processed) < 1:
-            scheduler._runners_run_next_jobs()
+            scheduler.runners_run_next_jobs()
         slow += time.time() - start
         scheduler.reset()
 
@@ -79,7 +79,7 @@ def test_dmlscheduler_speedup_naive():
         scheduler.add_job(initialize_job)
     start = time.time()
     while len(scheduler.processed) < 5:
-        scheduler._runners_run_next_jobs()
+        scheduler.runners_run_next_jobs()
     fast = time.time() - start
 
     assert fast*1.1 < slow
@@ -96,17 +96,17 @@ def test_dmlscheduler_arbitrary_scheduling():
     scheduler.add_job(first)
     scheduler.add_job(second)
     while len(scheduler.processed) == 0:
-        scheduler._runners_run_next_jobs()
+        scheduler.runners_run_next_jobs()
     third = make_initialize_job(model_json)
     fourth = make_initialize_job(model_json)
     scheduler.add_job(third)
     scheduler.add_job(fourth)
     while len(scheduler.processed) < 4:
-        scheduler._runners_run_next_jobs()
+        scheduler.runners_run_next_jobs()
     fifth = make_initialize_job(model_json)
     scheduler.add_job(fifth)
     while len(scheduler.processed) < 5:
-        scheduler._runners_run_next_jobs()
+        scheduler.runners_run_next_jobs()
     assert len(scheduler.processed) == 5
     while scheduler.processed:
         initial_weights = scheduler.processed.pop(0)
