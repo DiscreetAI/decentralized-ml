@@ -4,5 +4,5 @@
     "db": "datasharkdb",
     "host": "datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com",
     "port": "5432",
-    "table_name": "category_labels"
+    "table_name": "category_labels_test"
 }
