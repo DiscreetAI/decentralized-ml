@@ -16,86 +16,107 @@ logging.basicConfig(level=logging.DEBUG,
 class DMLScheduler(object):
     """
     DML Scheduler
-    This class schedules and manages the execution of DMLJobs using the DMLRunner.
-    Note: now supports a multithreaded environment using multiprocessing.
-    Note2: only supports one dataset type.
-    Note3: Singleton.
-    """
-    # Here will be the instance stored.
-    __instance = None
 
-    @staticmethod
-    def get_instance():
-        """ Static access method. """
-        if DMLScheduler.__instance == None:
-            DMLScheduler()
-        return DMLScheduler.__instance
+    This class schedules and manages the execution of DMLJobs using the
+    DMLRunner.
+
+    NOTE: Supports a multithreaded environment using multiprocessing.
+    NOTE2: Only supports one dataset type.
+
+    """
 
     def __init__(self, config_manager):
-        """ Virtually private constructor. """
-        if DMLScheduler.__instance != None:
-            raise Exception("This class is a singleton!")
-        else:
-            DMLScheduler.__instance = self
+        """
+        Initializes the instance.
+        """
         logging.info("Setting up scheduler...")
         self.queue = deque()
+        self.event = Event()
         self.processed = []
+        self.history = []
+
         config = config_manager.get_config()
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
         self.num_runners = config.getint("SCHEDULER", "num_runners")
+
         self.pool = Pool(processes=self.num_runners)
         self.runners = [DMLRunner(config_manager) for _ in range(self.num_runners)]
-        self.current_jobs = [None]*self.num_runners
-        self.results = [None]*self.num_runners
-        self.event = Event()
+        self.current_jobs = [None for _ in range(self.num_runners)]
         logging.info("Scheduler is set up!")
 
     def add_job(self, dml_job):
-        """ Add a job to the queue"""
+        """
+        Add a job to the queue.
+        """
         assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
         logging.info("Scheduling job...")
         self.queue.append(dml_job)
 
-    def _runners_run_next_jobs(self):
-        """ Check each job to see if it has a job running. If not, have the runner run the
-        next job on the queue asynchronously of the others and collect the result of the job
-        that was running before (if applicable)
+    def start_cron(self, period_in_mins=None):
         """
-        for i in range(self.num_runners):
-            runner = self.runners[i]
-            if not runner.is_active():
-                if self.current_jobs[i]:
-                    self.processed.append(self.current_jobs[i].get())
-                    self.current_jobs[i] = None
-                if self.queue:
-                    self.current_jobs[i] = self.pool.apply_async(runner.run_job, (self.queue.popleft(),))
-
-    def _runners_run_next_jobs_as_event(self, period):
-        """ Trigger above method every period"""
-        self._runners_run_next_jobs()
-        if not self.event.is_set():
-            Timer(period*60, self._runners_run_next_jobs_as_event, [period]).start()
-
-    def _start_cron(self, period=None):
-        """ CRON job to run next jobs on runners, if applicable. Runs asynchronously."""
-        if not period:
-            period = self.frequency_in_mins
+        CRON job to run next jobs on runners, if applicable. Runs asynchronously.
+        """
+        if not period_in_mins:
+            period_in_mins = self.frequency_in_mins
         logging.info("Starting cron...")
-        self._runners_run_next_jobs_as_event(period)
+        self._runners_run_next_jobs_as_event(period_in_mins)
         logging.info("Cron started!")
 
-
-    def reset(self):
-        """ Scheduler is a singleton, so need to get a new instance inplace """
-        logging.info("Resetting scheduler...")
-        self.queue = deque()
-        self.processed = []
-        self.event = Event()
-        logging.info("Scheduler resetted!")
-
-    def _stop_cron(self):
-        """ Tell the scheduler to stop scheduling jobs """
+    def stop_cron(self):
+        """
+        Tell the scheduler to stop scheduling jobs.
+        """
         logging.info("Stopping cron...")
         self.event.set()
         logging.info("Cron stopped!")
+
+    def reset(self, reset_history=False):
+        """
+        Resets the scheduler.
+        """
+        logging.info("Resetting scheduler...")
+        self.queue = deque()
+        self.processed = []
+        if reset_history:
+            self.history = []
+        self.event = Event()
+        logging.info("Scheduler resetted!")
+
+    def runners_run_next_jobs(self):
+        """
+        Check each job to see if it has a job running. If not, have the runner
+        run the next job on the queue asynchronously of the others and collect
+        the result of the job that was running before (if applicable).
+        """
+        for i, runner in enumerate(self.runners):
+            # Check if there's any finished jobs and proccess them.
+            if self.current_jobs[i]:
+                # If the job finished...
+                finished_job = self.current_jobs[i].get()
+                self.processed.append(finished_job)
+                self.history.append(finished_job)
+                self.current_jobs[i] = None
+
+            # Check if there's any queued jobs and schedule them.
+            if self.queue:
+                # If there's something to be scheduled...
+                job_to_run = self.queue.popleft()
+                # self.current_jobs[i] = runner.run_job(job_to_run)
+                self.current_jobs[i] = self.pool.apply_async(
+                    runner.run_job,
+                    (job_to_run,)
+                )
+
+    def _runners_run_next_jobs_as_event(self, period_in_mins):
+        """
+        Trigger above method every period.
+        """
+        logging.info("Running cron job...")
+        self.runners_run_next_jobs()
+        if not self.event.is_set():
+            Timer(
+                period_in_mins * 60,
+                self._runners_run_next_jobs_as_event,
+                [period_in_mins]
+            ).start()
