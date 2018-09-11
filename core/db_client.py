@@ -12,6 +12,8 @@ class DBClient(object):
 	- Needed here so that DL2 Notebook can retrieve labels
 	- Unsure whether DL2 Notebook will use this DBClient (through Virtual Worker instance of UNIX Service) or have its own instance, TBD
 	- Will most likely replace RDS DB with DynamoDB for performance reasons, but I'll figure that out after MVP
+
+	TODO: authenthication needs to be set up for DB
 	"""
 	def __init__(self, config_filepath = 'database_config.json'):
 		"""
