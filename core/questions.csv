@@ -3,3 +3,4 @@ Where is the dataset path?,GENERAL,dataset_path,datasets/mnist
 How many runners should the scheduler manage?,SCHEDULER,num_runners,4
 How often should the scheduler run in minutes?,SCHEDULER,frequency_in_mins,1
 Where is the weights directory?,RUNNER,weights_directory,weights
+What is the RDS DB's password?,GENERAL,db_password,None
