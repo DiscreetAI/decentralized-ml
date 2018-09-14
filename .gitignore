@@ -1,5 +1,6 @@
 MNIST-data
 logs
+core/configuration.ini
 *.pyc
 .DS_Store
 .ipynb_checkpoints/

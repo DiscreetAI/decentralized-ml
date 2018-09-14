@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 import pandas as pd
 import os
+import time
 
 
 class DBClient(object):
@@ -22,19 +23,26 @@ class DBClient(object):
 		"""
 		app = Flask(__name__)
 		with open(config_filepath) as f:
-			POSTGRES = json.load(f)
-		print(os.environ)
-		POSTGRES['pw'] = os.environ['DB_PASS']
-		app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % POSTGRES
+			db_config = json.load(f)
+		db_config['pw'] = os.environ['DB_PASS']
+		app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % db_config
 		app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 		self.db = SQLAlchemy(app)
-		self.table_name = POSTGRES['table_name']
+		self.table_name = db_config['table_name']
+		self.num_tries = db_config['num_tries']
+		self.wait_time = db_config['wait_time']
 
 	def get_labels(self):
 		"""
 		Get category_labels table
 		"""
-		return pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
+		for _ in range(self.num_tries):
+			try:
+				return pd.read_sql_query("select * from {table_name}".format(table_name=self.table_name), self.db.engine)
+			except Exception as e:
+				time.sleep(self.wait_time)
+				continue
+		raise Exception('Getting labels failed.')
 
 	def add_labels(self, data_providers, categories):
 		"""
@@ -48,12 +56,27 @@ class DBClient(object):
 			labels.loc[data_provider] = category
 		labels['data_provider'] = labels.index
 		labels.index = list(range(len(labels.index)))
-		labels.to_sql(name=self.table_name, con=self.db.engine, if_exists='replace', index=False)
+		for _ in range(self.num_tries):
+			try:
+				labels.to_sql(name=self.table_name, con=self.db.engine, if_exists='replace', index=False)
+				return
+			except Exception as e:
+				time.sleep(self.wait_time)
+				continue
+		raise Exception('Adding labels failed.')
+		
 
 	def get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category.
 		"""
-		return pd.read_sql_query("select * from {table_name} where category = '{category}'"
-			.format(category=category, table_name=self.table_name), self.db.engine)
+		for _ in range(self.num_tries):
+			try:
+				return pd.read_sql_query("select * from {table_name} where category = '{category}'"
+					.format(category=category, table_name=self.table_name), self.db.engine)
+			except Exception as e:
+				time.sleep(self.wait_time)
+				continue
+		raise Exception('Adding labels failed.')
+		
 		
