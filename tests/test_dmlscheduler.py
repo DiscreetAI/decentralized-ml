@@ -50,37 +50,7 @@ def test_dmlscheduler_sanity():
     initial_weights = scheduler.processed.pop(0)
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
-
-
-def test_dmlscheduler_speedup_naive():
-    """ Check that running 10 jobs with Ray takes less time to run them
-        serially (i.e. there is a speedup)
-    """
-    scheduler = DMLScheduler.get_instance()
-    scheduler.reset()
-    slow = 0
-
-    model_json = make_model_json()
-    for _ in range(5):
-        initialize_job = make_initialize_job(model_json)
-        scheduler.add_job(initialize_job)
-        start = time.time()
-        while len(scheduler.processed) < 1:
-            scheduler._runners_run_next_jobs()
-        slow += time.time() - start
-        scheduler.reset()
-
-    for _ in range(5):
-        model_json = make_model_json()
-        initialize_job = make_initialize_job(model_json)
-        scheduler.add_job(initialize_job)
-    start = time.time()
-    while len(scheduler.processed) < 5:
-        scheduler._runners_run_next_jobs()
-    fast = time.time() - start
-
-    assert fast*1.1 < slow
-    scheduler.reset()
+    
 
 def test_dmlscheduler_arbitrary_scheduling():
     """ Manually schedule events and check that all jobs are completed """
