@@ -52,7 +52,7 @@ class DBClient(object):
 		Append new category labels to the category_labels table and replace old labels, where categories[i] corresponds 
 		to the labeled category for data_providers[i]
 		"""
-		labels = self.get_labels()
+		labels = self._get_labels()
 		index = labels.index
 		labels = labels.set_index('data_provider')
 		for data_provider, category in zip(data_providers, categories):

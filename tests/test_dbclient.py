@@ -17,14 +17,14 @@ def check_empty_category_labels(db_client):
 	Check that retrieving labels works
 	"""
 	expected = pd.DataFrame(columns=['data_provider', 'category'])
-	actual = db_client.get_labels()
+	actual = db_client._get_labels()
 	assert expected.equals(actual)
 
 def check_add_works(db_client):
 	"""
 	Check that adding labels works
 	"""
-	actual = db_client.get_labels()
+	actual = db_client._get_labels()
 	assert list(actual['data_provider']) == ['Facebook Profile Data']
 	assert list(actual['category']) == ['social_media']
 
@@ -32,7 +32,7 @@ def check_get_data_providers_with_category(db_client):
 	"""
 	Check that retrieving labels with specified category works.
 	"""
-	actual = db_client.get_data_providers_with_category('social_media')
+	actual = db_client._get_data_providers_with_category('social_media')
 	assert list(actual['data_provider']) == ['Facebook Profile Data']
 	assert list(actual['category']) == ['social_media']
 
