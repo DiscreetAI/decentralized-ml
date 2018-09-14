@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import json
 import pandas as pd
+import os
 
 
 class DBClient(object):
@@ -22,6 +23,8 @@ class DBClient(object):
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			POSTGRES = json.load(f)
+		print(os.environ)
+		POSTGRES['pw'] = os.environ['DB_PASS']
 		app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % POSTGRES
 		app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 		self.db = SQLAlchemy(app)
