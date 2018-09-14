@@ -32,9 +32,12 @@ class DBClient(object):
 		self.num_tries = db_config['num_tries']
 		self.wait_time = db_config['wait_time']
 
-	def get_labels(self):
+	def _get_labels(self):
 		"""
 		Get category_labels table
+
+		NOTE: Functionality needs to be tested so that add_labels can be tested, but this method should
+		not be used for the UNIX Service.
 		"""
 		for _ in range(self.num_tries):
 			try:
@@ -66,9 +69,12 @@ class DBClient(object):
 		raise Exception('Adding labels failed.')
 		
 
-	def get_data_providers_with_category(self, category):
+	def _get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category.
+		
+		NOTE: Functionality needs to be tested so that add_labels can be tested, but this method should
+		not be used for the UNIX Service.
 		"""
 		for _ in range(self.num_tries):
 			try:
