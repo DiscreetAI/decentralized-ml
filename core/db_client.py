@@ -37,7 +37,7 @@ class DBClient(object):
 		Get category_labels table
 
 		NOTE: Functionality needs to be tested so that add_labels can be tested, but this method should
-		not be used for the UNIX Service.
+		not be used for the UNIX Service. Will be used for DL2 Notebook.
 		"""
 		for _ in range(self.num_tries):
 			try:
@@ -74,7 +74,7 @@ class DBClient(object):
 		Get a list of data providers with the given category.
 		
 		NOTE: Functionality needs to be tested so that add_labels can be tested, but this method should
-		not be used for the UNIX Service.
+		not be used for the UNIX Service. Will be used for DL2 Notebook.
 		"""
 		for _ in range(self.num_tries):
 			try:
