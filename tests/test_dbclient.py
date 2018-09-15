@@ -38,7 +38,7 @@ def check_get_data_providers_with_category(db_client):
 
 def reset(db_client):
 	"""
-	Clean up before and after tests
+	Clean up before and after tests.
 	"""
 	label = pd.DataFrame(columns=['data_provider', 'category'])
 	label.to_sql(name=db_client.table_name, con=db_client.db.engine, if_exists='replace', index=False)
