@@ -6,6 +6,7 @@ import os
 import time
 
 
+
 class DBClient(object):
 	"""
 	DBClient
@@ -23,10 +24,12 @@ class DBClient(object):
 		"""
 		Set up DBClient with corresponding database credentials
 		"""
+
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			db_config = json.load(f)
 		db_config['pw'] = os.environ['DB_PASS']
+		print(os.environ['DB_PASS'])
 		app.config['SQLALCHEMY_DATABASE_URI'] =  \
 			'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % db_config
 		app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -43,12 +46,14 @@ class DBClient(object):
 		tested, but this method should not be used for the UNIX Service. Will 
 		be used for DL2 Notebook.
 		"""
+		print(self.table_name)
 		query = "select * from {table_name}".format(table_name=self.table_name)
 		for _ in range(self.num_tries):
 			try:
 				return pd.read_sql_query(query, self.db.engine)
 			except Exception as e:
 				time.sleep(self.wait_time)
+				print("no")
 				continue
 		raise Exception('Getting labels failed.')
 
