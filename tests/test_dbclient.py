@@ -10,7 +10,9 @@ def db_client():
 	"""
 	Maintain instance of DB Client
 	"""
-	return DBClient(config_filepath='tests/artifacts/db_client/database_config.json')
+	return DBClient(
+		config_filepath='tests/artifacts/db_client/database_config.json'
+	)
 
 def check_empty_category_labels(db_client):
 	"""
@@ -41,7 +43,12 @@ def reset(db_client):
 	Clean up before and after tests.
 	"""
 	label = pd.DataFrame(columns=['data_provider', 'category'])
-	label.to_sql(name=db_client.table_name, con=db_client.db.engine, if_exists='replace', index=False)
+	label.to_sql(
+		name=db_client.table_name, 
+		con=db_client.db.engine, 
+		if_exists='replace', 
+		index=False
+	)
 
 def test_end_to_end(db_client):
 	reset(db_client)
