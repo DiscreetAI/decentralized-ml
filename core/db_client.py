@@ -6,7 +6,6 @@ import os
 import time
 
 
-
 class DBClient(object):
 	"""
 	DBClient
