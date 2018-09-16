@@ -16,6 +16,10 @@ What is Federated Learning? [Watch this video](https://www.youtube.com/watch?v=g
 To try out the project, just clone or download it and then run the following instructions on CLI:
 
 ```
+export DB_PASS="datashark"
+```
+
+```
 python setup.py develop
 ```
 
@@ -32,3 +36,5 @@ After this, the service will be running on your machine and you can stop it at a
 After you got the service running, there are several things you can do...
 
 *Coming soon.*
+
+
