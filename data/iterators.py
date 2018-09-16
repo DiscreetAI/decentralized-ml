@@ -102,6 +102,7 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
         f = reverse_readline(full_path)
+        next(iter(f)) #first line contains header, so ignore it
         batch = []
         for line in f:
             if count >= max_count:
