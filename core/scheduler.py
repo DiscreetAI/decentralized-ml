@@ -90,7 +90,7 @@ class DMLScheduler(object):
         the result of the job that was running before (if applicable).
         """
         for i, runner in enumerate(self.runners):
-            # Check if there's any finished jobs and proccess them.
+            # Check if there's any finished jobs and process them.
             if self.current_jobs[i]:
                 # If the job finished...
                 finished_job = self.current_jobs[i].get()

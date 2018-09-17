@@ -51,17 +51,22 @@ class DMLRunner(object):
             'DMLJob type ({0}) is not valid'.format(job.job_type)
         logging.info("Running job (type: {0})...".format(job.job_type))
         if job.job_type == 'train':
-            new_weights, omega, train_stats = self._train(
-                job.serialized_model,
-                job.model_type,
-                job.weights,
-                job.hyperparams,
-                job.labeler
-            )
-            # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
-            # through P2P.
-            print(train_stats)
-            return_obj = new_weights, omega, train_stats
+            try:
+                new_weights, omega, train_stats = self._train(
+                    job.serialized_model,
+                    job.model_type,
+                    job.weights,
+                    job.hyperparams,
+                    job.labeler
+                )
+                # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
+                # through P2P.
+                print(train_stats)
+                return_obj = {
+                    "new_weights": new_weights,
+                    "omega": omega, 
+                    "train_stats": train_stats
+                }
         elif job.job_type == 'validate':
             val_stats = self._validate(
                  job.serialized_model,
@@ -76,6 +81,9 @@ class DMLRunner(object):
             # This has been assigned to Neelesh ^
             print(val_stats)
             return_obj = val_stats
+            return_obj = {
+                "val_stats": val_stats,
+            }
         elif job.job_type == 'initialize':
             # NOTE: This shouldn't be used in BETA/PROD right now, only DEV!!!
             initial_weights = self._initialize_model(
@@ -86,7 +94,9 @@ class DMLRunner(object):
             # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
             # through P2P.
             #print(initial_weights)
-            return_obj = initial_weights
+            return_obj = {
+                "initial_weights": initial_weights,
+            }
         self.current_job = None
         logging.info("Finished running job!")
         return return_obj # Returning is only for debugging purposes.
