@@ -88,20 +88,39 @@ class DMLScheduler(object):
         Check each job to see if it has a job running. If not, have the runner
         run the next job on the queue asynchronously of the others and collect
         the result of the job that was running before (if applicable).
+
+        If job that runner is running fails, then put the job back in queue. 
+        If job failed more than num_tries times, don't put the job back in 
+        thw queue.
         """
         for i, runner in enumerate(self.runners):
             # Check if there's any finished jobs and process them.
             if self.current_jobs[i]:
-                # If the job finished...
-                finished_job = self.current_jobs[i].get()
-                self.processed.append(finished_job)
-                self.history.append(finished_job)
-                self.current_jobs[i] = None
+                #If the job results are available
+                finished_job_results = self.current_jobs[i].get()
+                if finished_job_results['successful']:
+                    # If the job finished successfully...
+                    self.processed.append(finished_job)
+                    self.history.append(finished_job)
+                    self.current_jobs[i] = None
+                else:
+                    #If some error occurred
+                    job_to_run = self.current_jobs[i]
+                    job_to_run.num_tries_left -= 1
+                    if job_to_run.num_tries_left:
+                        #Still has tries remaining, so put back in queue
+                        self.add_job(job_to_run)
+                    else:
+                        #Record error, ignore failed job
+                        logging.error(finished_job_results['error'])
+                        self.current_jobs[i] = None
+
 
             # Check if there's any queued jobs and schedule them.
             if self.queue:
                 # If there's something to be scheduled...
                 job_to_run = self.queue.popleft()
+                job_to_run.num_tries_left = 3
                 # self.current_jobs[i] = runner.run_job(job_to_run)
                 self.current_jobs[i] = self.pool.apply_async(
                     runner.run_job,
