@@ -119,7 +119,6 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
                     yield (np.expand_dims(tup[0], axis=0), \
                         np.expand_dims(tup[1], axis=0))
                 else:
-                    num_batches += 1
                     X_list, y_list = list(), list()
                     for x, _ in batch: X_list.append(x)
                     for _, y in batch: y_list.append(y)
