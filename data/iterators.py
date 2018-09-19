@@ -43,7 +43,6 @@ def create_test_dataset_iterator(dataset_path, count, split=0.2, batch_size=1, \
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
     """
-
     if infinite:
         while True:
             yield from _create_dataset_iterator(dataset_path, count*split, "test", \
@@ -104,7 +103,6 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
         directories = reversed(os.listdir(dataset_path))
 
     count = 0
-    num_batches = 0
     batch = []
     for filename in directories:
         if not filename.endswith(".csv"): continue
