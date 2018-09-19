@@ -49,6 +49,7 @@ class DBClient(object):
 			try:
 				return pd.read_sql_query(query, self.db.engine)
 			except Exception as e:
+				print(e)
 				time.sleep(self.wait_time)
 				continue
 		raise Exception('Getting labels failed.')
