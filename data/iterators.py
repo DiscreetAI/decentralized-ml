@@ -97,6 +97,8 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
     NOTE: labeler is now a string that refers to a column name
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
+   
+    assert batch_size > 0, "Invalid batch size provided."
     if iter_type == 'train':
         directories = os.listdir(dataset_path)
     elif iter_type == 'test':
@@ -105,6 +107,7 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
     count = 0
     batch = []
     for filename in directories:
+        print(count)
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
         if iter_type == 'test':
@@ -124,9 +127,21 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
                     for _, y in batch: y_list.append(y)
                     yield (np.array(X_list), np.array(y_list))
                 batch = []
+
             if count >= max_count:
+                if batch_size == 1:
+                    tup = batch[0]
+                    yield (np.expand_dims(tup[0], axis=0), \
+                        np.expand_dims(tup[1], axis=0))
+                else:
+                    X_list, y_list = list(), list()
+                    for x, _ in batch: X_list.append(x)
+                    for _, y in batch: y_list.append(y)
+                    yield (np.array(X_list), np.array(y_list))
                 return
+                
             line = line.split(",")
+            assert labeler >= 0 and labeler < len(line), "Labeler is out of bounds."
             line = line[0:labeler] + line[labeler + 1:], line[labeler]
             batch.append(line)
             count += 1
