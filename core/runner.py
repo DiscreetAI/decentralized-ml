@@ -52,7 +52,6 @@ class DMLRunner(object):
         logging.info("Running job (type: {0})...".format(job.job_type))
         try:
             if job.job_type == 'train':
-                try:
                     new_weights, omega, train_stats = self._train(
                         job.serialized_model,
                         job.model_type,
