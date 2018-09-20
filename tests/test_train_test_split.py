@@ -143,7 +143,7 @@ def test_invalid_batch_size(dataset_path):
 
 def test_labeler_out_of_bounds(dataset_path):
 	"""
-	Test that assertion fails with invalid batch size.
+	Test that assertion fails with invalid labeler.
 	"""
 	count = count_datapoints(dataset_path)
 
