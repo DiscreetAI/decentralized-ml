@@ -70,7 +70,7 @@ def test_large_batch_size(dataset_path):
 	train_iterator = create_train_dataset_iterator(
 			dataset_path,
 			count,
-			batch_size=7,
+			batch_size=2000,
 			labeler=0,
 			infinite=False 
 		)
@@ -79,7 +79,7 @@ def test_large_batch_size(dataset_path):
 	test_iterator = create_test_dataset_iterator(
 			dataset_path,
 			count,
-			batch_size=7,
+			batch_size=2000,
 			labeler=0,
 			infinite=False
 		)
