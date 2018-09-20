@@ -100,6 +100,7 @@ class DMLScheduler(object):
 				finished_job_results = self.current_jobs[i].get()
 				if finished_job_results['successful']:
 					# If the job finished successfully...
+					finished_job = finished_job_results['return_obj']
 					self.processed.append(finished_job)
 					self.history.append(finished_job)
 					self.current_jobs[i] = None

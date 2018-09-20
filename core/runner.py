@@ -62,10 +62,8 @@ class DMLRunner(object):
                     # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
                     # through P2P.
                     print(train_stats)
-                    return_obj = {
-                        "new_weights": new_weights,
-                        "omega": omega, 
-                        "train_stats": train_stats,
+                    results = {
+                        "return_obj": (new_weights, omega, train_stats),
                         "successful": True
                     }
             elif job.job_type == 'validate':
@@ -82,8 +80,8 @@ class DMLRunner(object):
                 # This has been assigned to Neelesh ^
                 print(val_stats)
                 return_obj = val_stats
-                return_obj = {
-                    "val_stats": val_stats,
+                results = {
+                    "return_obj": val_stats,
                     "successful": True
                 }
             elif job.job_type == 'initialize':
@@ -96,18 +94,20 @@ class DMLRunner(object):
                 # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
                 # through P2P.
                 #print(initial_weights)
-                return_obj = {
-                    "initial_weights": initial_weights,
+                results = {
+                    "return_obj": initial_weights,
                     "successful": True
                 }
         except Exception as e:
-            return_obj = {
+            results = {
                 "successful": False,
                 "error_message": e
             }
+            print(e)
         self.current_job = None
         logging.info("Finished running job!")
-        return return_obj # Returning is only for debugging purposes.
+        print(results)
+        return results # Returning is only for debugging purposes.
 
     def _train(self, serialized_model, model_type, initial_weights, hyperparams,
         labeler):
