@@ -39,6 +39,7 @@ class DMLScheduler(object):
 		self.dataset_path = config.get("GENERAL", "dataset_path")
 		self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
 		self.num_runners = config.getint("SCHEDULER", "num_runners")
+		self.max_tries = config.getint("SCHEDULER", "max_tries")
 
 		self.pool = Pool(processes=self.num_runners)
 		self.runners = [DMLRunner(config_manager) for _ in range(self.num_runners)]
@@ -112,7 +113,7 @@ class DMLScheduler(object):
 						#Still has tries remaining, so put back in queue
 						self.add_job(job_to_run)
 					else:
-						#Record error, ignore failed job
+						#Log error, ignore failed job
 						logging.error(finished_job_results['error'])
 						self.current_jobs[i] = None
 
@@ -121,7 +122,7 @@ class DMLScheduler(object):
 			if self.queue:
 				# If there's something to be scheduled...
 				job_to_run = self.queue.popleft()
-				job_to_run.num_tries_left = 3
+				job_to_run.num_tries_left = self.max_tries
 				# self.current_jobs[i] = runner.run_job(job_to_run)
 				self.current_jobs[i] = self.pool.apply_async(
 					runner.run_job,
