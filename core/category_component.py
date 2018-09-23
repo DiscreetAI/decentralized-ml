@@ -58,12 +58,12 @@ class CategoryComponent(object):
     	I cannot visualize a need for a dictionary, yet.
     	3. the name of this function is not that descriptive
 		"""
-		try:
-        	data_providers_df = self.DBClient._get_data_providers_with_category(category)
-        	data_providers_ed = bc.get_data_providers_ED(data_providers_df)
-        	return {'Status': 'SUCCESS', 'Directory': data_providers_ed}
-    	except Exception as e:
-    		return {'Status': 'FAILURE', 'Error': 'Invalid category'}
+                try:
+                        data_providers_df = self.DBClient._get_data_providers_with_category(category)
+                        data_providers_ed = bc.get_data_providers_ED(data_providers_df)
+                        return {'Status': 'SUCCESS', 'Directory': data_providers_ed}
+                except Exception as e:
+                        return {'Status': 'FAILURE', 'Error': 'Invalid category'}
 
 
 
