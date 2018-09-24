@@ -27,7 +27,7 @@ class CategoryComponent(object):
 		except Exception as e:
 			return {'Status': False, 'Error': e}
 		if data_providers_df.empty: 
-			return {'Success': False, 'Error': 'Category:' + category + 'has no data providers.'}
+			return {'Success': False, 'Error': 'Category: {} has no data providers.'.format(category)}
 		return {'Success': True, 'Directory': bc.get_data_providers_ED(data_providers_df)}
 
 
