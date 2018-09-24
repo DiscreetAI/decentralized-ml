@@ -25,7 +25,7 @@ class CategoryComponent(object):
 		try:
 			data_providers_df = self.DBClient._get_data_providers_with_category(category)
 		except Exception as e:
-			return {'Status': False, 'Error': e}
+			return {'Success': False, 'Error': e}
 		if data_providers_df.empty: 
 			return {'Success': False, 'Error': 'Category: {} has no data providers.'.format(category)}
 		return {'Success': True, 'Directory': bc.get_data_providers_ED(data_providers_df)}
