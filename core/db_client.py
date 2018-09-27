@@ -4,7 +4,11 @@ import json
 import pandas as pd
 import os
 import time
+import logging
 
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[DBClient] %(asctime)s %(levelname)s %(message)s')
 
 class DBClient(object):
 	"""
@@ -49,6 +53,7 @@ class DBClient(object):
 			try:
 				return pd.read_sql_query(query, self.db.engine)
 			except Exception as e:
+				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
 		raise Exception('Getting labels failed.')
@@ -76,6 +81,7 @@ class DBClient(object):
 				)
 				return
 			except Exception as e:
+				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
 		raise Exception('Adding labels failed.')
@@ -97,6 +103,7 @@ class DBClient(object):
 			try:
 				return pd.read_sql_query(query, self.db.engine)
 			except Exception as e:
+				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
 		raise Exception('Adding labels failed.')

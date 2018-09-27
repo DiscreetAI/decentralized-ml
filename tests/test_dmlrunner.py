@@ -65,7 +65,7 @@ def make_train_job(model_json, initial_weights, config, hyperparams):
         config,
         initial_weights,
         hyperparams,
-        "label"
+        0
     )
     return train_job
 
@@ -78,7 +78,7 @@ def make_validate_job(model_json, new_weights, config, hyperparams):
         config,
         new_weights,
         hyperparams,
-        "label"
+        0
     )
     return validate_job
 
