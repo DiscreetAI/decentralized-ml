@@ -11,6 +11,8 @@ def count_datapoints(dataset_path):
     Counts and returns the number of datapoints in the `dataset_path` directory.
     One line in a file inside the directory is equivalent to one datapoint.
     """
+    assert os.path.isdir(dataset_path), "Dataset path is invalid."
+
     count = 0
     for filename in os.listdir(dataset_path):
         if not filename.endswith(".csv"): continue
@@ -90,24 +92,24 @@ def reverse_readline(filename, buf_size=8192):
 
 def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, labeler):
     """
-    Returns an iterator of batches of size B containing all features of the data.
+    Returns an iterator of batches of size B containing all features of the 
+    data. If batch_size > max_count, then the datapoints for the dataset 
+    will be single batch of data (the iterator only iterates over one item.
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
 
     NOTE: labeler is now a string that refers to a column name
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
-   
+    assert os.path.isdir(dataset_path), "Dataset path is invalid."
     assert batch_size > 0, "Invalid batch size provided."
     if iter_type == 'train':
         directories = os.listdir(dataset_path)
     elif iter_type == 'test':
         directories = reversed(os.listdir(dataset_path))
-
     count = 0
     batch = []
     for filename in directories:
-        print(count)
         if not filename.endswith(".csv"): continue
         full_path = os.path.join(dataset_path, filename)
         if iter_type == 'test':
