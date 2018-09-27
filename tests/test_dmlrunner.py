@@ -87,7 +87,7 @@ def test_dmlrunner_initialize_job_returns_list_of_nparray(config_manager):
     model_json = make_model_json()
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
-    initial_weights = runner.run_job(initialize_job)
+    initial_weights = runner.run_job(initialize_job)['return_obj']
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
@@ -98,9 +98,9 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats(config_manager):
     config = make_config()
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
-    initial_weights = runner.run_job(initialize_job)
+    initial_weights = runner.run_job(initialize_job)['return_obj']
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
-    new_weights, omega, train_stats = runner.run_job(train_job)
+    new_weights, omega, train_stats = runner.run_job(train_job)['return_obj']
     assert type(new_weights) == list
     assert type(new_weights[0]) == np.ndarray
     assert type(omega) == int or type(omega) == float
@@ -113,10 +113,10 @@ def test_dmlrunner_validate_job_returns_stats(config_manager):
     config = make_config()
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(make_model_json())
-    initial_weights = runner.run_job(initialize_job)
+    initial_weights = runner.run_job(initialize_job)['return_obj']
     train_job = make_train_job(model_json, initial_weights, config, hyperparams)
-    new_weights, omega, train_stats = runner.run_job(train_job)
+    new_weights, omega, train_stats = runner.run_job(train_job)['return_obj']
     hyperparams['split'] = 1 - hyperparams['split']
     validate_job = make_validate_job(model_json, new_weights, config, hyperparams)
-    val_stats = runner.run_job(validate_job)
+    val_stats = runner.run_job(validate_job)['return_obj']
     assert type(val_stats) == dict
