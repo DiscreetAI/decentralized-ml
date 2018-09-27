@@ -106,7 +106,6 @@ class DMLRunner(object):
             print(e)
         self.current_job = None
         logging.info("Finished running job!")
-        print(results)
         return results # Returning is only for debugging purposes.
 
     def _train(self, serialized_model, model_type, initial_weights, hyperparams,
