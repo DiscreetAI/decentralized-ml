@@ -66,8 +66,6 @@ def test_end_to_end(config_manager):
 
     rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
     tfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data/transformed'
-    shutil.rmtree(tfp)
-    os.makedirs(tfp)
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
     expected_test2_raw = pd.read_csv(rfp + '/test2/test2.csv')
     expected_test1_transformed = drop_duplicates(expected_test1_raw).reset_index(drop=True)
