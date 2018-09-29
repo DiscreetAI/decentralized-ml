@@ -15,32 +15,6 @@ from core.configuration import ConfigurationManager
 logging.basicConfig(level=logging.INFO,
                 format='[DatasetManager] %(asctime)s %(levelname)s %(message)s')
 
-class TransformedNotFoundError(Exception):
-    """
-    Transformed Not Found Error
-
-    Just a customized exception that's raised when the caller tries to access
-    transformed data that doesn't exist.
-
-    """
-    def __init__(self):
-        Exception.__init__(self, "No transformed data found." +
-                           "Did you make sure to transform the data first?")
-
-class NoMetadataFoundError(Exception):
-    """
-    No Metadata Found Error
-
-    Just a customized exception that's raised when the caller post metadata that
-    doesn't exist in rfp
-
-    """
-
-    def __init__(self, dataset_folder):
-        Exception.__init__(self, \
-            "No metadata was found in the dataset folder: " + dataset_folder +
-            " Consider using:\n post_dataset(self, name)")
-
 class DatasetManager():
     """
     Dataset Manager
@@ -64,8 +38,7 @@ class DatasetManager():
 
         2. Returning the raw data and transformed data (if it exists)
 
-        3. Resetting, or removing the folder of transformed data (as if the
-        initial transform never took place)
+        3. Resetting data in transformed folder to the raw data.
 
     Each instance corresponds to a set of raw data and its corresponding
     transformed data (if it exists). After transformation, the filepath to raw
@@ -97,6 +70,7 @@ class DatasetManager():
             raise NotADirectoryError()
         self.rfp = raw_filepath
         self.tfp = None
+        self.transform_data(lambda x: x)
 
     def transform_data(self, transform_function):
         """
@@ -113,10 +87,10 @@ class DatasetManager():
         #1. Extracts all of the raw data from raw data filepath
         raw_data = self.get_raw_data()
 
-        #2. Creates a new directory in raw data filepath called 'transformed'
+        #2. Clears 'transformed' of all files
         self.tfp = os.path.join(self.rfp, "transformed")
-        if not os.path.exists(self.tfp):
-            os.makedirs(self.tfp)
+        shutil.rmtree(self.tfp)
+        os.makedirs(self.tfp)
 
         #3. Tranforms data using provided transform function and puts data in
         #'transformed'. Names in this folder are generated using a timestamp
@@ -153,6 +127,7 @@ class DatasetManager():
             folder_path = os.path.join(os.path.abspath(self.rfp), folder)
             files = os.listdir(folder_path)
             for file in files:
+                if not file.endswith(".csv"): continue
                 if file[:2] != 'md':
                     file_path = os.path.join(folder_path, file)
                     dataset = pd.read_csv(file_path)
@@ -163,40 +138,27 @@ class DatasetManager():
         """
         Extracts all transformed data from transform data filepath.
 
-        If filepath exists, assumes filepath contains csvfiles. Returns where
+        Assumes filepath contains csvfiles. Returns where
         each (key, value) represents a csv file. Each key is the filename of the
         csv (i.e. key.csv) and each value is a DataFrame of the actual data.
-
-        If filepath does not exist, throws TransformedNotFoundError
         """
-
-        if self.tfp:
-            transform_dict = {}
-            for folder in os.listdir(self.tfp):
-                folder_path = os.path.join(self.tfp, folder)
-                for file in os.listdir(folder_path):
-                    if file[-4:] == '.csv':
-                        data = pd.read_csv(os.path.join(folder_path, file))
-                        transform_dict[file] = data
-            return transform_dict
-        else:
-            raise TransformedNotFoundError()
+        transform_dict = {}
+        for folder in os.listdir(self.tfp):
+            folder_path = os.path.join(self.tfp, folder)
+            for file in os.listdir(folder_path):
+                if file[-4:] == '.csv':
+                    data = pd.read_csv(os.path.join(folder_path, file))
+                    transform_dict[file] = data
+        return transform_dict
 
     def reset(self):
         """
         Resets class as though transformed data never existed.
 
-        If transform data filepath exists, then delete directory and all files
-        in that directory. Update filepath to None (transform data filepath no
-        longer exists)
-
-        If transform data filepath does not exist (there was no transformed data
-        to begin with), do nothing.
+        If transform data filepath exists, then replace files in directory 
+        with raw data files.
         """
-        if self.tfp:
-            shutil.rmtree(self.tfp)
-            self.tfp = None
-        assert not os.path.isdir(os.path.join(self.rfp, 'transformed'))
+        self.transform_data(lambda x: x)
 
     def check_key_length(key):
         """
