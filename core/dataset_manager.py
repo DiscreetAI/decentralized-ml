@@ -86,13 +86,9 @@ class DatasetManager():
 
         #1. Extracts all of the raw data from raw data filepath
         raw_data = self.get_raw_data()
-
-        #2. Clears 'transformed' of all files
         self.tfp = os.path.join(self.rfp, "transformed")
-        shutil.rmtree(self.tfp)
-        os.makedirs(self.tfp)
 
-        #3. Tranforms data using provided transform function and puts data in
+        #2. Tranforms data using provided transform function and puts data in
         #'transformed'. Names in this folder are generated using a timestamp
         #joined with some random characters.
         for name,data in raw_data.items():
@@ -102,13 +98,11 @@ class DatasetManager():
             transformed_data = transform_function(data)
             timestamp = str(datetime.datetime.now())
             r_string = random_string(5)
-            new_name = timestamp + r_string
+            new_name = timestamp + r_string + '.csv'
             transformed_data.to_csv(
                 os.path.join(new_folder, new_name + '.csv'),
                 index=False
             )
-
-        assert os.path.isdir(os.path.join(self.rfp, 'transformed'))
 
     def get_raw_data(self):
         """
