@@ -98,7 +98,7 @@ class DatasetManager():
             transformed_data = transform_function(data)
             timestamp = str(datetime.datetime.now())
             r_string = random_string(5)
-            new_name = timestamp + r_string + '.csv'
+            new_name = timestamp + r_string
             transformed_data.to_csv(
                 os.path.join(new_folder, new_name + '.csv'),
                 index=False
