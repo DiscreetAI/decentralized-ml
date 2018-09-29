@@ -81,6 +81,8 @@ def test_end_to_end(config_manager):
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)
     dsm.reset()
     reset_test(dsm, rfp, tfp)
+    shutil.rmtree(tfp)
+    os.makedirs(tfp)
     #dsm.post_dataset("my_test")
 
 '''
