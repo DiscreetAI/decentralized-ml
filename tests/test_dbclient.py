@@ -55,6 +55,13 @@ def reset(db_client, data_provider_list):
     )
 
 def test_end_to_end(db_client):
+    labels = pd.DataFrame(columns=['category', 'data_provider'])
+    labels.to_sql(
+        name=db_client.table_name, 
+        con=db_client.db.engine, 
+        if_exists='append', 
+        index= False
+    )
     def random_string(length):
         return ''.join(
             random.choice(string.ascii_letters) for m in range(length)
