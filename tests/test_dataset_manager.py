@@ -5,8 +5,9 @@ import sys
 import inspect
 import tests.context
 import pytest
+import shutil
 from core.configuration import ConfigurationManager
-from core.dataset_manager import DatasetManager, TransformedNotFoundError, NoMetadataFoundError
+from core.dataset_manager import DatasetManager
 
 
 @pytest.fixture
@@ -23,25 +24,16 @@ def dsm_initialization_test(dsm, rfp):
     hasn't been made yet (since no transform has been done yet)
     '''
     assert dsm.rfp == rfp
-    assert not dsm.tfp
 
 def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     '''
-    Check get_raw_data actually returns the data in this directory
+    Check _get_raw_data actually returns the data in this directory
     '''
-    raw_data = dsm.get_raw_data()
+    raw_data = dsm._get_raw_data()
     actual_test1_raw = raw_data['test1']
     actual_test2_raw = raw_data['test2']
     assert expected_test1_raw.equals(actual_test1_raw)
     assert expected_test2_raw.equals(actual_test2_raw)
-
-def transformation_happened_test(dsm, rfp):
-    '''
-    Check that a new directory in the raw data filepath called 'transformed' is made and
-    the DM instance has the filepath to this new directory
-    '''
-    assert dsm.tfp == rfp + '/transformed'
-    assert os.path.isdir(rfp + '/transformed')
 
 def accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed):
     '''
@@ -50,56 +42,41 @@ def accurate_transform_test(dsm, expected_test1_transformed, expected_test2_tran
     '''
     transform_dsm = dsm.get_transformed_data()
     keys = list(transform_dsm.keys())
-    actual_test1_transformed = transform_dsm[keys[0]].round(3)
-    actual_test2_transformed = transform_dsm[keys[1]].round(3)
+    actual_test1_transformed = transform_dsm[keys[0]]
+    actual_test2_transformed = transform_dsm[keys[1]]
     assert expected_test1_transformed.equals(actual_test1_transformed) or \
         expected_test1_transformed.equals(actual_test2_transformed)
     assert expected_test2_transformed.equals(actual_test2_transformed) or \
         expected_test2_transformed.equals(actual_test1_transformed)
 
-def reset_test(dsm, rfp):
+def clean_up_test(dsm, rfp):
     '''
     Check the raw data filepath exists, the transformed data filepath doesn't, and the 'transformed' folder
     is gone from the raw data directory
     '''
     assert dsm.rfp == rfp
-    assert not dsm.tfp
+    assert dsm.tfp == None
     assert not os.path.isdir(rfp + '/transformed')
-
-def transform_not_found_exception_test(dsm):
-    '''
-    After resetting, check to make sure that getting the transformed data is impossible
-    '''
-    try:
-        transformed = dsm.get_transformed_data()
-        assert False
-    except TransformedNotFoundError:
-        pass
-
 
 def test_end_to_end(config_manager):
     #Sample transform function (takes dataframe, returns dataframe)
-    def do_nothing(df):
-        return df
+    def drop_duplicates(df):
+        return df.drop_duplicates()
 
     rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
+    tfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data/transformed'
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
     expected_test2_raw = pd.read_csv(rfp + '/test2/test2.csv')
-    expected_test1_transformed = do_nothing(expected_test1_raw).round(3)
-    expected_test2_transformed = do_nothing(expected_test2_raw).round(3)
+    expected_test1_transformed = drop_duplicates(expected_test1_raw).reset_index(drop=True)
+    expected_test2_transformed = drop_duplicates(expected_test2_raw).reset_index(drop=True)
 
     dsm = DatasetManager(config_manager)
     dsm_initialization_test(dsm, rfp)
-
-    raw_dsm = dsm.get_raw_data()
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
-
-    dsm.transform_data(do_nothing)
-    transformation_happened_test(dsm, rfp)
+    dsm.transform_data(drop_duplicates)
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)
-
-    dsm.reset()
-    reset_test(dsm, rfp)
+    dsm.clean_up()
+    clean_up_test(dsm, rfp) #leave commented out until we figure out reset
     #dsm.post_dataset("my_test")
 
 '''
