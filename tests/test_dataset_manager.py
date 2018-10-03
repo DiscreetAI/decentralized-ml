@@ -27,9 +27,9 @@ def dsm_initialization_test(dsm, rfp):
 
 def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     '''
-    Check get_raw_data actually returns the data in this directory
+    Check _get_raw_data actually returns the data in this directory
     '''
-    raw_data = dsm.get_raw_data()
+    raw_data = dsm._get_raw_data()
     actual_test1_raw = raw_data['test1']
     actual_test2_raw = raw_data['test2']
     assert expected_test1_raw.equals(actual_test1_raw)
@@ -72,7 +72,6 @@ def test_end_to_end(config_manager):
 
     dsm = DatasetManager(config_manager)
     dsm_initialization_test(dsm, rfp)
-    raw_dsm = dsm.get_raw_data()
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
     dsm.transform_data(drop_duplicates)
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)

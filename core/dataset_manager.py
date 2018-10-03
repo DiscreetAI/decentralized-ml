@@ -91,7 +91,7 @@ class DatasetManager():
             )
 
         #1. Extracts all of the raw data from raw data filepath
-        raw_data = self.get_raw_data()
+        raw_data = self._get_raw_data()
         self.tfp = os.path.join(self.rfp, "transformed")
 
         #2. Tranforms data using provided transform function and puts data in
@@ -110,7 +110,7 @@ class DatasetManager():
                 index=False
             )
 
-    def get_raw_data(self):
+    def _get_raw_data(self):
         """
         Extracts all raw data from raw data filepath. Assumes filepath contains
         csv files. Returns where each (key, value) represents a csv file. Each
@@ -151,7 +151,7 @@ class DatasetManager():
                     transform_dict[file] = data
         return transform_dict
 
-    def reset(self):
+    def clean_up(self):
         """
         Resets class as though transformed data never existed.
 
@@ -162,6 +162,7 @@ class DatasetManager():
         """
         if self.tfp:
             shutil.rmtree(self.tfp)
+            self.tfp = None
 
     def check_key_length(key):
         """
