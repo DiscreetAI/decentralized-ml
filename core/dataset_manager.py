@@ -74,8 +74,7 @@ class DatasetManager():
         """
         config = config_manager.get_config()
         raw_filepath = config['GENERAL']['dataset_path']
-        if not os.path.isdir(raw_filepath):
-            assert False, "The dataset filepath provided is not valid."
+        assert os.path.isdir(raw_filepath), "The dataset filepath provided is not valid."
         self.rfp = raw_filepath
         self.tfp = None
 
