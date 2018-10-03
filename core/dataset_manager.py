@@ -38,7 +38,8 @@ class DatasetManager():
 
         2. Returning the raw data and transformed data (if it exists)
 
-        3. Resetting data in transformed folder to the raw data.
+        3. Resetting data in transformed folder to the raw data. (NOT IN USE
+        UNTIL WE FIGURE OUT SESSIONS)
 
     Each instance corresponds to a set of raw data and its corresponding
     transformed data (if it exists). After transformation, the filepath to raw
@@ -57,6 +58,13 @@ class DatasetManager():
             dataset2/
                 06/10/16mlf.csv
 
+    The Dataset Manager will be initialized in the Bootstrapper. At the start
+    of each session, transform_data will be called with the identity transform
+    (essentially copying over the raw data) as a default transform before
+    training.
+
+    TODO: Will each session have its own instance of Dataset Manager? Or will 
+    Dataset Manager maps session ids to transformed datasets?
     """
 
     def __init__(self, config_manager):
@@ -67,10 +75,9 @@ class DatasetManager():
         config = config_manager.get_config()
         raw_filepath = config['GENERAL']['dataset_path']
         if not os.path.isdir(raw_filepath):
-            raise NotADirectoryError()
+            assert False, "The dataset filepath provided is not valid."
         self.rfp = raw_filepath
         self.tfp = None
-        self.transform_data(lambda x: x)
 
     def transform_data(self, transform_function):
         """
@@ -151,8 +158,11 @@ class DatasetManager():
 
         If transform data filepath exists, then replace files in directory 
         with raw data files.
+
+        DO NOT USE, NEED TO FIGURE OUT HOW TO USE DSM WITH SESSIONS
         """
-        self.transform_data(lambda x: x)
+        if self.tfp:
+            shutil.rmtree(self.tfp)
 
     def check_key_length(key):
         """

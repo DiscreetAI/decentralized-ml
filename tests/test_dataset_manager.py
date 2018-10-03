@@ -18,13 +18,12 @@ def config_manager():
     )
     return config_manager
 
-def dsm_initialization_test(dsm, rfp, tfp):
+def dsm_initialization_test(dsm, rfp):
     '''
     Check that DM instance has path to raw data and that path transformed data
     hasn't been made yet (since no transform has been done yet)
     '''
     assert dsm.rfp == rfp
-    assert dsm.tfp == tfp
 
 def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     '''
@@ -72,15 +71,14 @@ def test_end_to_end(config_manager):
     expected_test2_transformed = drop_duplicates(expected_test2_raw).reset_index(drop=True)
 
     dsm = DatasetManager(config_manager)
-    dsm_initialization_test(dsm, rfp, tfp)
+    dsm_initialization_test(dsm, rfp)
     raw_dsm = dsm.get_raw_data()
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
     dsm.transform_data(drop_duplicates)
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)
-    dsm.reset()
-    reset_test(dsm, rfp, tfp)
+    # dsm.reset()
+    # reset_test(dsm, rfp, tfp) #leave commented out until we figure out reset
     shutil.rmtree(tfp)
-    os.makedirs(tfp)
     #dsm.post_dataset("my_test")
 
 '''
