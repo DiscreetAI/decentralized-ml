@@ -71,6 +71,11 @@ class DatasetManager():
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
+
+        For now, throw an exception if a valid dataset path is not provided.
+
+        TODO: In the event of a invalid dataset path, log a useful message 
+        for the user and don't terminate the service
         """
         config = config_manager.get_config()
         raw_filepath = config['GENERAL']['dataset_path']
