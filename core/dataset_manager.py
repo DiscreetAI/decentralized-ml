@@ -162,7 +162,8 @@ class DatasetManager():
         """
         if self.tfp:
             shutil.rmtree(self.tfp)
-            self.tfp = None
+        assert not os.path.isdir(self.tfp)
+        self.tfp = None
 
     def check_key_length(key):
         """
