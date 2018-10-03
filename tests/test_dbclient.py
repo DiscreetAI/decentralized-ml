@@ -68,6 +68,7 @@ def test_end_to_end(db_client):
         if_exists='append', 
         index= False
     )
+    
     def random_string(length):
         return ''.join(
             random.choice(string.ascii_letters) for m in range(length)
