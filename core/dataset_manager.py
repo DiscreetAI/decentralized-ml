@@ -157,8 +157,6 @@ class DatasetManager():
 
         If transform data filepath exists, then replace files in directory 
         with raw data files.
-
-        DO NOT USE, NEED TO FIGURE OUT HOW TO USE DSM WITH SESSIONS
         """
         if self.tfp:
             shutil.rmtree(self.tfp)

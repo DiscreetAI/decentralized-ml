@@ -49,14 +49,14 @@ def accurate_transform_test(dsm, expected_test1_transformed, expected_test2_tran
     assert expected_test2_transformed.equals(actual_test2_transformed) or \
         expected_test2_transformed.equals(actual_test1_transformed)
 
-def reset_test(dsm, rfp, tfp):
+def clean_up_test(dsm, rfp):
     '''
     Check the raw data filepath exists, the transformed data filepath doesn't, and the 'transformed' folder
     is gone from the raw data directory
     '''
     assert dsm.rfp == rfp
-    assert dsm.tfp == tfp
-    assert os.path.isdir(rfp + '/transformed')
+    assert dsm.tfp == None
+    assert not os.path.isdir(rfp + '/transformed')
 
 def test_end_to_end(config_manager):
     #Sample transform function (takes dataframe, returns dataframe)
@@ -75,9 +75,8 @@ def test_end_to_end(config_manager):
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
     dsm.transform_data(drop_duplicates)
     accurate_transform_test(dsm, expected_test1_transformed, expected_test2_transformed)
-    # dsm.reset()
-    # reset_test(dsm, rfp, tfp) #leave commented out until we figure out reset
-    shutil.rmtree(tfp)
+    dsm.clean_up()
+    clean_up_test(dsm, rfp) #leave commented out until we figure out reset
     #dsm.post_dataset("my_test")
 
 '''

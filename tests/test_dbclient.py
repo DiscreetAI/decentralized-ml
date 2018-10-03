@@ -56,17 +56,18 @@ def reset(db_client, data_provider_list):
 
 def test_end_to_end(db_client):
     """
-    NOTE: "get" tests sometimes fail because the table gets deleted. Just
-    uncomment the block of code below to readd the table before the test 
-    if that happens.
+    NOTE: "get" tests sometimes fail because the table gets randomly
+    deleted. The block of code below before random_string is a temporary fix.
+
+    TODO: Why does the RDS DB keep deleting tables????
     """
-    # labels = pd.DataFrame(columns=['category', 'data_provider'])
-    # labels.to_sql(
-    #     name=db_client.table_name, 
-    #     con=db_client.db.engine, 
-    #     if_exists='append', 
-    #     index= False
-    # )
+    labels = pd.DataFrame(columns=['category', 'data_provider'])
+    labels.to_sql(
+        name=db_client.table_name, 
+        con=db_client.db.engine, 
+        if_exists='append', 
+        index= False
+    )
     def random_string(length):
         return ''.join(
             random.choice(string.ascii_letters) for m in range(length)
