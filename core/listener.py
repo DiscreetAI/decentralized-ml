@@ -82,7 +82,7 @@ class DMLListener(object):
             'job_data' : {
                 'job_type' : 'train',
                 'serialized_model' : model_json,
-                'model_type' : 'keras'
+                'framework_type' : 'keras'
             }
         }
         # model = self._initialize_model(model_json, 'keras')
@@ -122,7 +122,7 @@ class DMLListener(object):
             'job_data' : {
                 'job_type' : 'train',
                 'serialized_model' : self.model_json,
-                'model_type' : 'keras'
+                'framework_type' : 'keras'
             }
         }
         new_job = deserialize_job(job_dict)

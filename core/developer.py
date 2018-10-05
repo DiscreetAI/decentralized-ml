@@ -45,7 +45,7 @@ class DMLDeveloper(object):
         weights_bytes = weights2bytes32(serialized_weights)
         complete_json = {'serialized_model' : model_json,
                 'job_type' : 'train',
-                'model_type' : 'keras'}
+                'framework_type' : 'keras'}
         json_bytes = json2bytes32(complete_json)
         return self.deploy_StateMachine(addrs, [json_bytes, weights_bytes])
 
