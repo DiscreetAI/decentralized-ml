@@ -54,10 +54,10 @@ class DMLRunner(object):
             if job.job_type == 'train':
                     new_weights, omega, train_stats = self._train(
                         job.serialized_model,
-                        job.model_type,
+                        job.framework_type,
                         job.weights,
                         job.hyperparams,
-                        job.labeler
+                        job.label_index
                     )
                     # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
                     # through P2P.
@@ -69,10 +69,10 @@ class DMLRunner(object):
             elif job.job_type == 'validate':
                 val_stats = self._validate(
                      job.serialized_model,
-                     job.model_type,
+                     job.framework_type,
                      job.weights,
                      job.hyperparams,
-                     job.labeler
+                     job.label_index
                 )
 
                 # TODO: Send the results to the developer through P2P (maybe).
@@ -88,7 +88,7 @@ class DMLRunner(object):
                 # NOTE: This shouldn't be used in BETA/PROD right now, only DEV!!!
                 initial_weights = self._initialize_model(
                     job.serialized_model,
-                    job.model_type
+                    job.framework_type
                 )
                 weights_in_bytes = serialize_weights(initial_weights)
                 # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
@@ -108,7 +108,7 @@ class DMLRunner(object):
         logging.info("Finished running job!")
         return results # Returning is only for debugging purposes.
 
-    def _train(self, serialized_model, model_type, initial_weights, hyperparams,
+    def _train(self, serialized_model, framework_type, initial_weights, hyperparams,
         labeler):
         """
         Trains the specified machine learning model on all the local data,
@@ -141,9 +141,9 @@ class DMLRunner(object):
                 batch_size=batch_size, labeler=labeler)
 
         # Train the model the right way based on the model type.
-        assert model_type in ['keras'], \
-            "Model type '{0}' is not supported.".format(model_type)
-        if model_type == 'keras':
+        assert framework_type in ['keras'], \
+            "Model type '{0}' is not supported.".format(framework_type)
+        if framework_type == 'keras':
             new_weights_path, train_stats = train_keras_model(serialized_model,
                 initial_weights, dataset_iterator, \
                 self.data_count*hyperparams['split'], hyperparams, self.config)
@@ -152,7 +152,7 @@ class DMLRunner(object):
         if avg_type == 'data_size':
             omega = self.data_count * hyperparams['split']
         elif avg_type == 'val_acc':
-            val_stats = self._validate(serialized_model, model_type, new_weights,
+            val_stats = self._validate(serialized_model, framework_type, new_weights,
                 hyperparams, labeler, custom_iterator=test_dataset_iterator)
             omega = val_stats['val_metric']['acc']
             train_stats.update(val_stats)
@@ -160,7 +160,7 @@ class DMLRunner(object):
         # Return the results.
         return new_weights_path, omega, train_stats
 
-    def _validate(self, serialized_model, model_type, weights, hyperparams,
+    def _validate(self, serialized_model, framework_type, weights, hyperparams,
         labeler, custom_iterator=None):
         """
         Validates on all the local data the specified machine learning model at
@@ -181,23 +181,23 @@ class DMLRunner(object):
             dataset_iterator = custom_iterator
 
         # Validate the model the right way based on the model type.
-        assert model_type in ['keras'], \
-            "Model type '{0}' is not supported.".format(model_type)
-        if model_type == 'keras':
+        assert framework_type in ['keras'], \
+            "Model type '{0}' is not supported.".format(framework_type)
+        if framework_type == 'keras':
             val_stats = validate_keras_model(serialized_model, weights,
                 dataset_iterator, self.data_count*(1-hyperparams['split']))
 
         # Return the validation stats.
         return val_stats
 
-    def _initialize_model(self, serialized_model, model_type):
+    def _initialize_model(self, serialized_model, framework_type):
         """
         Initializes and returns the model weights as specified in the model.
         """
-        assert model_type in ['keras'], \
-            "Model type '{0}' is not supported.".format(model_type)
+        assert framework_type in ['keras'], \
+            "Model type '{0}' is not supported.".format(framework_type)
         logging.info("Initializing model...")
-        if model_type == 'keras':
+        if framework_type == 'keras':
             model = model_from_serialized(serialized_model)
             model.summary()
             initial_weights = model.get_weights()

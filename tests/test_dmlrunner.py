@@ -23,10 +23,6 @@ def make_dataset_path():
     return 'datasets/mnist'
 
 
-def make_config():
-    return {}
-
-
 def make_model_json():
     m = KerasPerceptron(is_training=True)
     model_architecture = m.model.to_json()
@@ -57,12 +53,11 @@ def make_initialize_job(model_json):
     return initialize_job
 
 
-def make_train_job(model_json, initial_weights, config, hyperparams):
+def make_train_job(model_json, initial_weights, hyperparams):
     train_job = DMLJob(
         "train",
         model_json,
         "keras",
-        config,
         initial_weights,
         hyperparams,
         0
@@ -70,12 +65,11 @@ def make_train_job(model_json, initial_weights, config, hyperparams):
     return train_job
 
 
-def make_validate_job(model_json, new_weights, config, hyperparams):
+def make_validate_job(model_json, new_weights, hyperparams):
     validate_job = DMLJob(
         "validate",
         model_json,
         'keras',
-        config,
         new_weights,
         hyperparams,
         0
@@ -95,11 +89,10 @@ def test_dmlrunner_initialize_job_returns_list_of_nparray(config_manager):
 def test_dmlrunner_train_job_returns_weights_omega_and_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
-    config = make_config()
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job)['return_obj']
-    train_job = make_train_job(model_json, initial_weights, config, hyperparams)
+    train_job = make_train_job(model_json, initial_weights, hyperparams)
     new_weights, omega, train_stats = runner.run_job(train_job)['return_obj']
     assert type(new_weights) == list
     assert type(new_weights[0]) == np.ndarray
@@ -110,13 +103,12 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats(config_manager):
 def test_dmlrunner_validate_job_returns_stats(config_manager):
     model_json = make_model_json()
     hyperparams = make_hyperparams()
-    config = make_config()
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job)['return_obj']
-    train_job = make_train_job(model_json, initial_weights, config, hyperparams)
+    train_job = make_train_job(model_json, initial_weights, hyperparams)
     new_weights, omega, train_stats = runner.run_job(train_job)['return_obj']
     hyperparams['split'] = 1 - hyperparams['split']
-    validate_job = make_validate_job(model_json, new_weights, config, hyperparams)
+    validate_job = make_validate_job(model_json, new_weights, hyperparams)
     val_stats = runner.run_job(validate_job)['return_obj']
     assert type(val_stats) == dict
