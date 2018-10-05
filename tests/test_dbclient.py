@@ -6,15 +6,19 @@ import pandas as pd
 import string
 import random
 from core.db_client import DBClient
+from core.configuration import ConfigurationManager
+
 
 @pytest.fixture
 def db_client():
     """
     Maintain instance of DB Client
     """
-    return DBClient(
-        config_filepath='tests/artifacts/db_client/database_config.json'
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/db_client/configuration.ini'
     )
+    return DBClient(config_manager)
 
 def check_empty_category_labels(db_client):
     """

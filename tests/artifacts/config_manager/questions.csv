@@ -11,3 +11,10 @@ SECRET,DB_CLIENT,port,5432
 SECRET,DB_CLIENT,table_name,category_labels
 SECRET,DB_CLIENT,max_tries,3
 SECRET,DB_CLIENT,wait_time,10
+SECRET,DB_CLIENT_2,user,datashark
+SECRET,DB_CLIENT_2,db,datasharkdb
+SECRET,DB_CLIENT_2,host,datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com
+SECRET,DB_CLIENT_2,port,5432
+SECRET,DB_CLIENT_2,table_name,category_labels
+SECRET,DB_CLIENT_2,max_tries,3
+SECRET,DB_CLIENT_2,wait_time,10

@@ -23,22 +23,25 @@ class DBClient(object):
 
 	TODO: authenthication needs to be set up for DB
 	"""
-	def __init__(self, config_filepath = 'database_config.json'):
+	def __init__(self, config_manager):
 		"""
 		Set up DBClient with corresponding database credentials
 		"""
-
+		config = config_manager._config
 		app = Flask(__name__)
-		with open(config_filepath) as f:
-			db_config = json.load(f)
-		db_config['pw'] = os.environ['DB_PASS']
 		app.config['SQLALCHEMY_DATABASE_URI'] =  \
-			'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % db_config
+			'postgresql://{user}:{pw}@{host}:{port}/{db}'.format(
+				user=config.get('DB_CLIENT', 'user'),
+				pw=os.environ['DB_PASS'],
+				host=config.get('DB_CLIENT', 'host'),
+				port=config.getint('DB_CLIENT', 'port'),
+				db=config.get('DB_CLIENT', 'db')
+			)
 		app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 		self.db = SQLAlchemy(app)
-		self.table_name = db_config['table_name']
-		self.num_tries = db_config['num_tries']
-		self.wait_time = db_config['wait_time']
+		self.table_name = config.get('DB_CLIENT', 'table_name')
+		self.num_tries = config.getint('DB_CLIENT', 'max_tries')
+		self.wait_time = config.getint('DB_CLIENT', 'wait_time')
 
 	def _get_labels(self):
 		"""
