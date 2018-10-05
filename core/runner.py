@@ -57,7 +57,7 @@ class DMLRunner(object):
                         job.model_type,
                         job.weights,
                         job.hyperparams,
-                        job.labeler
+                        job.label_index
                     )
                     # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
                     # through P2P.
@@ -72,7 +72,7 @@ class DMLRunner(object):
                      job.model_type,
                      job.weights,
                      job.hyperparams,
-                     job.labeler
+                     job.label_index
                 )
 
                 # TODO: Send the results to the developer through P2P (maybe).

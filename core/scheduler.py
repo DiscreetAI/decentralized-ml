@@ -82,7 +82,7 @@ class DMLScheduler(object):
 		if reset_history:
 			self.history = []
 		self.event = Event()
-		logging.info("Scheduler resetted!")
+		logging.info("Scheduler reset!")
 
 	def runners_run_next_jobs(self):
 		"""
@@ -90,8 +90,8 @@ class DMLScheduler(object):
 		run the next job on the queue asynchronously of the others and collect
 		the result of the job that was running before (if applicable).
 
-		If job that runner is running fails, then put the job back in queue. 
-		If job failed more than num_tries times, don't put the job back in 
+		If job that runner is running fails, then put the job back in queue.
+		If job failed more than num_tries times, don't put the job back in
 		thw queue.
 		"""
 		for i, runner in enumerate(self.runners):

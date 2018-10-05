@@ -19,6 +19,7 @@ config_manager.bootstrap(
 )
 scheduler = DMLScheduler(config_manager)
 
+
 def make_model_json():
     m = KerasPerceptron(is_training=True)
     model_architecture = m.model.to_json()
@@ -54,7 +55,7 @@ def test_dmlscheduler_sanity():
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
-    
+
 def test_dmlscheduler_arbitrary_scheduling():
     """
     Manually schedule events and check that all jobs are completed.
