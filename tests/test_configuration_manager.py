@@ -50,14 +50,20 @@ def setup_custom_worked(cm, custom_string):
     """
     Actually verify that the config file created using custom user input is correct.
     
-    Also verify that values in secret sections aren't custom_string
+    Also verify that values in secret sections still have assigned values
     """
     config = cm.get_config()
     assert config.get('GENERAL', 'dataset_path') == custom_string
     assert config.get('SCHEDULER', 'num_runners') == custom_string
     assert config.get('SCHEDULER', 'frequency_in_mins') == custom_string
     assert config.get('RUNNER', 'weights_directory') == custom_string
-    assert all([item != custom_string for item in list(cm._config.items('DB_CLIENT'))])
+    assert config.get('DB_CLIENT', 'user') == 'datashark'
+    assert config.get('DB_CLIENT', 'db') == 'datasharkdb'
+    assert config.get('DB_CLIENT', 'host') == 'datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com'
+    assert config.get('DB_CLIENT', 'port') == '5432'
+    assert config.get('DB_CLIENT', 'table_name') == 'category_labels'
+    assert config.getint('DB_CLIENT', 'max_tries') == 3
+    assert config.getint('DB_CLIENT', 'wait_time') == 10
 
 def test_complete_setup_default():
     """
@@ -75,7 +81,9 @@ def test_complete_setup_default():
 
 
 def test_complete_setup_custom():
-    """ Verify configuration.ini from custom user input is created and correct. """
+    """
+    Verify configuration.ini from custom user input is created and correct.
+    """
     config_manager = ConfigurationManager()
     custom_string = 'test'
     config_manager.bootstrap(
@@ -89,8 +97,10 @@ def test_complete_setup_custom():
 
 
 def test_no_setup_repeat():
-    """ Verify that run_setup_mode is not run again when configuration already exists. Or more simply, that the
-        configuration has not changed) """
+    """
+    Verify that run_setup_mode is not run again when configuration already
+    exists. Or more simply, that the configuration has not changed) 
+    """
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
         config_filepath='tests/artifacts/config_manager/configuration3.ini',
