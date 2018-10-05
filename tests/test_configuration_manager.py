@@ -30,8 +30,6 @@ def comments_test(config_filepath):
 def setup_default_worked(cm):
     """
     Actually verify that the config file created using default user input is correct.
-    
-    Also verify that secret sections have their assigned values.
     """
     config = cm.get_config()
     assert config.get('GENERAL', 'dataset_path') == 'datasets/mnist'
@@ -49,21 +47,25 @@ def setup_default_worked(cm):
 def setup_custom_worked(cm, custom_string):
     """
     Actually verify that the config file created using custom user input is correct.
-    
-    Also verify that values in secret sections still have assigned values
     """
     config = cm.get_config()
     assert config.get('GENERAL', 'dataset_path') == custom_string
     assert config.get('SCHEDULER', 'num_runners') == custom_string
     assert config.get('SCHEDULER', 'frequency_in_mins') == custom_string
     assert config.get('RUNNER', 'weights_directory') == custom_string
-    assert config.get('DB_CLIENT', 'user') == 'datashark'
-    assert config.get('DB_CLIENT', 'db') == 'datasharkdb'
-    assert config.get('DB_CLIENT', 'host') == 'datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com'
-    assert config.get('DB_CLIENT', 'port') == '5432'
-    assert config.get('DB_CLIENT', 'table_name') == 'category_labels'
-    assert config.getint('DB_CLIENT', 'max_tries') == 3
-    assert config.getint('DB_CLIENT', 'wait_time') == 10
+
+def verify_secret_section_values(cm, secret_section):
+    """
+    Verify that values in DB_CLIENT and DB_CLIENT_2 still have assigned values
+    """
+    config = cm.get_config()
+    assert config.get(secret_section, 'user') == 'datashark'
+    assert config.get(secret_section, 'db') == 'datasharkdb'
+    assert config.get(secret_section, 'host') == 'datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com'
+    assert config.get(secret_section, 'port') == '5432'
+    assert config.get(secret_section, 'table_name') == 'category_labels'
+    assert config.getint(secret_section, 'max_tries') == 3
+    assert config.getint(secret_section, 'wait_time') == 10
 
 def test_complete_setup_default():
     """
@@ -76,6 +78,7 @@ def test_complete_setup_default():
     )
     check_config_exists(config_manager)
     setup_default_worked(config_manager)
+    verify_secret_section_values(config_manager,'DB_CLIENT')
     comments_test('tests/artifacts/config_manager/configuration.ini')
     os.remove(config_manager.config_filepath)
 
@@ -92,6 +95,7 @@ def test_complete_setup_custom():
     )
     check_config_exists(config_manager)
     setup_custom_worked(config_manager, custom_string)
+    verify_secret_section_values(config_manager,'DB_CLIENT')
     comments_test('tests/artifacts/config_manager/configuration2.ini')
     os.remove(config_manager.config_filepath)
 
@@ -109,4 +113,19 @@ def test_no_setup_repeat():
     check_config_exists(config_manager)
     assert not config_manager.bootstrap()
     setup_default_worked(config_manager)
+    verify_secret_section_values(config_manager, 'DB_CLIENT')
+    os.remove(config_manager.config_filepath)
+
+def test_multiple_secret_sections():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/config_manager/configuration4.ini',
+        question_filepath='tests/artifacts/config_manager/questions.csv',
+        input_function=lambda x: ''
+    )
+    check_config_exists(config_manager)
+    setup_default_worked(config_manager)
+    verify_secret_section_values(config_manager, 'DB_CLIENT')
+    verify_secret_section_values(config_manager, 'DB_CLIENT_2')
+    comments_test('tests/artifacts/config_manager/configuration4.ini')
     os.remove(config_manager.config_filepath)
