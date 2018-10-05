@@ -4,3 +4,10 @@ How many runners should the scheduler manage?,SCHEDULER,num_runners,4
 How often should the scheduler run in minutes?,SCHEDULER,frequency_in_mins,1
 Where is the weights directory?,RUNNER,weights_directory,weights
 What is the max number of times a job should run?,SCHEDULER,max_tries,3
+SECRET,DB_CLIENT,user,datashark
+SECRET,DB_CLIENT,db,datasharkdb
+SECRET,DB_CLIENT,host,datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com
+SECRET,DB_CLIENT,port,5432
+SECRET,DB_CLIENT,table_name,category_labels
+SECRET,DB_CLIENT,max_tries,3
+SECRET,DB_CLIENT,wait_time,10
