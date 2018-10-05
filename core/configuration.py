@@ -81,7 +81,7 @@ class ConfigurationManager(object):
             lines = f.readlines()
         stripped = [line.strip() for line in lines]
         for secret_section in secret_sections:
-            lines.insert(trimmed.index("[{}]".format(secret_section)), secret_section_message)
+            lines.insert(stripped.index("[{}]".format(secret_section)), secret_section_message)
         with open(config_filepath, "w") as f:
             f.write("".join(lines))
         self._config = config
