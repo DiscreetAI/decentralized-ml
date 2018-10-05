@@ -41,7 +41,7 @@ def setup_default_worked(cm):
     assert config.get('DB_CLIENT', 'user') == 'datashark'
     assert config.get('DB_CLIENT', 'db') == 'datasharkdb'
     assert config.get('DB_CLIENT', 'host') == 'datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com'
-    assert config.get('DB_CLIENT', 'port') == '5432'
+    assert config.getint('DB_CLIENT', 'port') == 5432
     assert config.get('DB_CLIENT', 'table_name') == 'category_labels'
     assert config.getint('DB_CLIENT', 'max_tries') == 3
     assert config.getint('DB_CLIENT', 'wait_time') == 10
