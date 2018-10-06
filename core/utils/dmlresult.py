@@ -8,12 +8,15 @@ class DMLResult(object):
     and it's passed to the Communication Manager on success or back to the
     Scheduler on error.
 
+    TODO: Right now the DMLResult object is passing around the DMLJob that
+    originated the results, but we can do better.
+
     """
 
     def __init__(
         self,
         status,
-        job,
+        job_type,
         results={},
         error_message="",
     ):
@@ -22,12 +25,12 @@ class DMLResult(object):
 
         Args:
             status (str): status of the job [successful|failed].
-            job (DMLJob): job that finished running.
+            job_type (str): job type of the job that finished running.
             results (dict): results from running the job.
             error_message (str): error message of why the job failed (if it did).
         """
         self.status = status
-        self.job = job
+        self.job_type = job_type
         self.results = results
         self.error_message = error_message
 
@@ -44,7 +47,7 @@ def serialize_result(dmlresult_job):
     """
     return {
         'status': dmlresult_job.status,
-        'job': serialize_job(dmlresult_job.job),
+        'job_type': dmlresult_job.job_type,
         'results': dmlresult_job.results,
         'error_message': dmlresult_job.error_message,
     }
@@ -62,7 +65,7 @@ def deserialize_result(serialized_result):
     """
     return DMLResult(
         status=serialized_result['status'],
-        job=deserialize_job(serialized_result['job']),
+        job_type=serialized_result['job_type'],
         results=serialized_result['results'],
         error_message=serialized_result['error_message'],
     )
