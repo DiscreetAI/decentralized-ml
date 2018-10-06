@@ -51,7 +51,8 @@ def test_dmlscheduler_sanity():
     while not scheduler.processed:
         time.sleep(0.1)
         scheduler.runners_run_next_jobs()
-    initial_weights = scheduler.processed.pop(0)
+    output = scheduler.processed.pop(0)
+    initial_weights = output.results['initial_weights']
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
@@ -80,7 +81,8 @@ def test_dmlscheduler_arbitrary_scheduling():
         scheduler.runners_run_next_jobs()
     assert len(scheduler.processed) == 5
     while scheduler.processed:
-        initial_weights = scheduler.processed.pop(0)
+        output = scheduler.processed.pop(0)
+        initial_weights = output.results['initial_weights']
         assert type(initial_weights) == list
         assert type(initial_weights[0]) == np.ndarray
 
@@ -100,6 +102,7 @@ def test_dmlscheduler_cron():
     scheduler.stop_cron()
     assert len(scheduler.processed) == 3
     while scheduler.processed:
-        initial_weights = scheduler.processed.pop(0)
+        output = scheduler.processed.pop(0)
+        initial_weights = output.results['initial_weights']
         assert type(initial_weights) == list
         assert type(initial_weights[0]) == np.ndarray
