@@ -10,6 +10,7 @@ from data.iterators import create_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
 from core.configuration import ConfigurationManager
+from core.utils.dmlresult import DMLResult
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -52,20 +53,26 @@ class DMLRunner(object):
         logging.info("Running job (type: {0})...".format(job.job_type))
         try:
             if job.job_type == 'train':
-                    new_weights, omega, train_stats = self._train(
-                        job.serialized_model,
-                        job.framework_type,
-                        job.weights,
-                        job.hyperparams,
-                        job.label_index
-                    )
-                    # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
-                    # through P2P.
-                    print(train_stats)
-                    results = {
-                        "return_obj": (new_weights, omega, train_stats),
-                        "successful": True
-                    }
+                new_weights, omega, train_stats = self._train(
+                    job.serialized_model,
+                    job.framework_type,
+                    job.weights,
+                    job.hyperparams,
+                    job.label_index
+                )
+                # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
+                # through P2P.
+                # logging.info(train_stats)
+                results = DMLResult(
+                    status='successful',
+                    job_type=job.job_type,
+                    results={
+                        'new_weights': new_weights,
+                        'omega': omega,
+                        'train_stats': train_stats,
+                    },
+                    error_message="",
+                )
             elif job.job_type == 'validate':
                 val_stats = self._validate(
                      job.serialized_model,
@@ -78,12 +85,15 @@ class DMLRunner(object):
                 # TODO: Send the results to the developer through P2P (maybe).
                 # How are we getting this metadata (val_stats) back to the user?
                 # This has been assigned to Neelesh ^
-                print(val_stats)
-                return_obj = val_stats
-                results = {
-                    "return_obj": val_stats,
-                    "successful": True
-                }
+                # logging.info(val_stats)
+                results = DMLResult(
+                    status='successful',
+                    job_type=job.job_type,
+                    results={
+                        'val_stats': val_stats,
+                    },
+                    error_message="",
+                )
             elif job.job_type == 'initialize':
                 # NOTE: This shouldn't be used in BETA/PROD right now, only DEV!!!
                 initial_weights = self._initialize_model(
@@ -93,20 +103,26 @@ class DMLRunner(object):
                 weights_in_bytes = serialize_weights(initial_weights)
                 # TODO: Send (weights_in_bytes) to all nodes/aggregator/developer
                 # through P2P.
-                #print(initial_weights)
-                results = {
-                    "return_obj": initial_weights,
-                    "successful": True
-                }
+                # logging.info(initial_weights)
+                results = DMLResult(
+                    status='successful',
+                    job_type=job.job_type,
+                    results={
+                        'initial_weights': initial_weights,
+                    },
+                    error_message="",
+                )
         except Exception as e:
-            results = {
-                "successful": False,
-                "error_message": e
-            }
-            print(e)
+            logging.error(str(e))
+            results = DMLResult(
+                status='failed',
+                job_type=job.job_type,
+                error_message=str(e),
+                results={},
+            )
         self.current_job = None
         logging.info("Finished running job!")
-        return results # Returning is only for debugging purposes.
+        return results
 
     def _train(self, serialized_model, framework_type, initial_weights, hyperparams,
         labeler):
@@ -199,6 +215,6 @@ class DMLRunner(object):
         logging.info("Initializing model...")
         if framework_type == 'keras':
             model = model_from_serialized(serialized_model)
-            model.summary()
+            # model.summary()
             initial_weights = model.get_weights()
         return initial_weights

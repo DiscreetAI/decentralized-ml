@@ -24,9 +24,9 @@ class DMLJob(object):
         Initializes a DML Result object.
 
         Args:
-            job_type (string): the job type.
+            job_type (str): the job type.
             serialized_model (dict): the model to train in a serialized format.
-            framework_type (string): the type of framework the model is in [keras].
+            framework_type (str): the type of framework the model is in [keras].
             weights (list): list of np.arrays representing the weghts of a model.
             hyperparams (dict): hyperparameters for training/validating a model.
             label_index (int): index that represents which column of the

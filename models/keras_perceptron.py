@@ -29,7 +29,7 @@ class KerasPerceptron(GenericKerasModel):
         model.add(Dense(self.n_hidden1, input_shape=(self.n_input,), activation='relu'))
         model.add(Dense(self.n_hidden2, activation='relu'))
         model.add(Dense(self.n_classes, activation='linear'))
-        model.summary()
+        # model.summary()
         return model
 
     def compile_model(self):
