@@ -13,7 +13,6 @@ def get_category():
     """
     def orchestrate(sender):
         category_text = category_widget.value.strip().lower()
-        print(category_text)
         db_client = DBClient()
         category_component = CategoryComponent(db_client)
         cc_dict = category_component.get_ed_with_category(category_text)
