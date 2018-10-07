@@ -26,7 +26,6 @@ class DBClient(object):
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			db_config = json.load(f)
-		print(os.environ)
 		db_config['pw'] = os.environ['DB_PASS']
 		app.config['SQLALCHEMY_DATABASE_URI'] =  \
 			'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s' % db_config

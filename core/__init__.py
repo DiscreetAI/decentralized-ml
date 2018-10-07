@@ -1,5 +1,5 @@
 from ipywidgets import widgets
-from IPython.display import display
+from IPython.display import display, Image
 from core.category_component import CategoryComponent
 from core.db_client import DBClient
 
@@ -24,7 +24,9 @@ def get_ed_directories():
 		"""
 		category_text = category_widget.value.strip().lower()
 		cc_dict = category_component.get_ed_with_category(category_text)
-		# TODO: finish what to do with the cc_dict
+		# TODO: should handle the case with cc_dict, failure or success
+		# if this is SUCCESS then there should a visualization happening
+		# otherwise some failure handler
 
 	category_widget = widgets.Text(
 		value=None,
