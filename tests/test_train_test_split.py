@@ -1,4 +1,4 @@
-from data.iterators import count_datapoints, create_train_dataset_iterator, create_test_dataset_iterator
+from data.iterators import count_datapoints, create_mapping, create_train_dataset_iterator, create_test_dataset_iterator
 import pandas as pd
 import os
 import pytest
@@ -28,11 +28,13 @@ def test_train_test_split(dataset_path):
     """
 
     count = count_datapoints(dataset_path)
+    mapping = create_mapping(count)
 
     #Set up iterator for training set
     train_iterator = create_train_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=7,
             labeler=0,
             infinite=False 
@@ -42,6 +44,7 @@ def test_train_test_split(dataset_path):
     test_iterator = create_test_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=7,
             labeler=0,
             infinite=False
@@ -75,12 +78,14 @@ def test_large_batch_size(dataset_path):
     Same as above, except test with batch_size > count (datapoints)
     """
     count = count_datapoints(dataset_path)
+    mapping = create_mapping(count)
     batch_size = count * random.randint(1, 5)
 
     #Set up iterator for training set
     train_iterator = create_train_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=batch_size,
             labeler=0,
             infinite=False 
@@ -90,6 +95,7 @@ def test_large_batch_size(dataset_path):
     test_iterator = create_test_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=batch_size,
             labeler=0,
             infinite=False
@@ -124,11 +130,13 @@ def test_infinite_works(dataset_path):
     """
 
     count = count_datapoints(dataset_path)
+    mapping = create_mapping(count)
 
     #Set up iterator for training set
     train_iterator = create_train_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=4,
             labeler=0,
             infinite=True
@@ -138,6 +146,7 @@ def test_infinite_works(dataset_path):
     test_iterator = create_test_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=4,
             labeler=0,
             infinite=True
@@ -181,11 +190,13 @@ def test_invalid_batch_size(dataset_path):
     Test that assertion fails with invalid batch size.
     """
     count = count_datapoints(dataset_path)
-
+    mapping = create_mapping(count)
+    
     #Set up iterator for training set
     train_iterator = create_train_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=-1,
             labeler=0,
             infinite=False 
@@ -195,6 +206,7 @@ def test_invalid_batch_size(dataset_path):
     test_iterator = create_test_dataset_iterator(
             dataset_path,
             count,
+            mapping,
             batch_size=-1,
             labeler=0,
             infinite=False
@@ -215,23 +227,26 @@ def test_labeler_out_of_bounds(dataset_path):
     Test that assertion fails with invalid labeler.
     """
     count = count_datapoints(dataset_path)
+    mapping = create_mapping(count)
 
     #Set up iterator for training set
     train_iterator = create_train_dataset_iterator(
             dataset_path,
             count,
-            batch_size=7,
+            mapping,
+            batch_size=4,
             labeler=get_num_columns(dataset_path)*2,
-            infinite=False 
+            infinite=True
         )
 
     #Set up iterator for test set.
     test_iterator = create_test_dataset_iterator(
             dataset_path,
             count,
-            batch_size=7,
+            mapping,
+            batch_size=4,
             labeler=get_num_columns(dataset_path)*2,
-            infinite=False
+            infinite=True
         )
 
     #Assertion should fail here.
@@ -248,6 +263,6 @@ def test_invalid_dataset_path():
     dataset_path = "bad/dataset/path"
     try:
         count_datapoints(dataset_path)
-        assert False, "Assetion for dataset path should have failed."
+        assert False, "Assertion for dataset path should have failed."
     except AssertionError as e:
         assert(str(e) == "Dataset path is invalid.")

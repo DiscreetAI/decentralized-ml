@@ -7,6 +7,7 @@ from custom.keras import model_from_serialized, get_optimizer
 from data.iterators import count_datapoints
 from data.iterators import create_train_dataset_iterator
 from data.iterators import create_test_dataset_iterator
+from data.iterators import create_mapping
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
 from core.configuration import ConfigurationManager
@@ -41,6 +42,7 @@ class DMLRunner(object):
         self.dataset_path = config.get("GENERAL", "dataset_path")
         self.config = dict(config.items("RUNNER"))
         self.data_count = count_datapoints(self.dataset_path)
+        self.mapping = create_mapping(self.data_count)
 
     def run_job(self, job):
         """
@@ -147,14 +149,16 @@ class DMLRunner(object):
         logging.info("Training model...")
         if avg_type == 'data_size':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=hyperparams['split'], \
-                batch_size=batch_size, labeler=labeler)
+                count=self.data_count, mapping=self.mapping, \
+                split=hyperparams['split'], batch_size=batch_size, \
+                labeler=labeler)
         elif avg_type == 'val_acc':
             dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, batch_size=batch_size, labeler=labeler)
-            test_dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=hyperparams['split'], \
+                count=self.data_count, mapping=self.mapping, \
                 batch_size=batch_size, labeler=labeler)
+            test_dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
+                count=self.data_count, mapping=self.mapping, \
+                split=hyperparams['split'], batch_size=batch_size, labeler=labeler)
 
         # Train the model the right way based on the model type.
         assert framework_type in ['keras'], \
@@ -191,8 +195,9 @@ class DMLRunner(object):
         batch_size = hyperparams['batch_size']
         if custom_iterator is None:
             dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=(1-hyperparams['split']), \
-                batch_size=batch_size, labeler=labeler)
+                count=self.data_count, mapping=self.mapping, \
+                split=(1-hyperparams['split']), batch_size=batch_size, \
+                labeler=labeler)
         else:
             dataset_iterator = custom_iterator
 
