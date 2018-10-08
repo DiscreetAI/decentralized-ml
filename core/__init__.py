@@ -25,7 +25,8 @@ def get_category_name():
 		"""
 		This method is triggered by the button.on_click event
     	It uses the current value of category_widget variable
-    	to get the dictionary with ed.
+    	to get the dictionary with ed and stores the value in
+    	a global var.
 		"""
 		sender.disabled = True
 		category_text = category_widget.value.strip().lower()
