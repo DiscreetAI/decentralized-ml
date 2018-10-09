@@ -3,7 +3,7 @@ from IPython.display import display, Image
 from core.category_component import CategoryComponent
 from core.db_client import DBClient
 
-class EDDirectories(object):
+class Orchestrator(object):
 	"""
 	ED Directories Class Front-End
 
