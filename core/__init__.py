@@ -5,13 +5,13 @@ from core.db_client import DBClient
 
 class Orchestrator(object):
 	"""
-	ED Directories Class Front-End
+	Orchestrator Class
 
 	- 
 	""" 
 	def __init__(self):
 		"""
-		Initialize EDDirectories instance.
+		Initialize Orchestrator instance.
 		"""
 		self.db_client = DBClient()
 		self.category_component = CategoryComponent(db_client)
