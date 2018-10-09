@@ -14,8 +14,8 @@ class CategoryComponent(object):
 		@param DBClient obj DBClient: object to be used for querying
 		"""
 		self.DBClient = DBClient
-
-    def get_ed_with_category(self, category):
+		
+	def get_ed_with_category(self, category):
 		"""
 		Return ED for each data provider with the given category.
 
@@ -29,7 +29,3 @@ class CategoryComponent(object):
 		if data_providers_df.empty: 
 			return {'Success': False, 'Error': 'Category: {} has no data providers.'.format(category)}
 		return {'Success': True, 'Directory': bc.get_data_providers_ED(data_providers_df)}
-
-
-
-
