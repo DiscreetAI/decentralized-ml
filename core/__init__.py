@@ -97,7 +97,7 @@ class Orchestrator(object):
 
 			)
 			method_widget = widgets.RadioButtons(
-			    options=['histogram', 'scatter', 'compare', 'compare2'],
+			    options=['histogram', 'scatter', 'compare using histograms', 'describe numerical'],
 			    value='histogram',
 			    description='Method:',
 			    disabled=False
@@ -109,7 +109,7 @@ class Orchestrator(object):
 			display(button)
 			button.on_click(store)
 
-	def plot(self): 
+	def visualize(self): 
 		"""
 		Returns the corresponding plot.
 		"""
@@ -124,18 +124,18 @@ class Orchestrator(object):
 				column1 = self.columns[0]
 				column2 = self.columns[1]
 				return self.ed_component.scatter(df1, column1, column2)
-			elif (self.method == 'compare'):
+			elif (self.method == 'compare using histograms'):
 				df1 = pd.read_json(self.ed_directories[self.json_indexes[0]])
 				df2 = pd.read_json(self.ed_directories[self.json_indexes[1]])
 				column1 = self.columns[0]
 				column2 = self.columns[1]
-				return self.ed_component.compare(df1, df2, column1, column2)
-			elif (self.method == 'compare2'):
+				return self.ed_component.compare_using_histograms(df1, df2, column1, column2)
+			elif (self.method == 'describe numerical'):
 				df1 = pd.read_json(self.ed_directories[self.json_indexes[0]])
 				df2 = pd.read_json(self.ed_directories[self.json_indexes[1]])
 				column1 = self.columns[0]
 				column2 = self.columns[1]
-				return self.ed_component.compare2(df1, df2, column1, column2)
+				return self.ed_component.describe(df1, df2, column1, column2)
 		except Exception as e:
 			# TODO: probably do more about this part, more error handling
 			error_message = 'Could not plot, invalid input format. Check these are correct ---> {0} {1} {2}'.format(self.method, self.json_indexes, self.columns)

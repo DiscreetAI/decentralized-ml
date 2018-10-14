@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 class EDComponent(object):
 	"""
@@ -30,7 +32,7 @@ class EDComponent(object):
 		"""
 		return df.plot.scatter(column1, column2)
 
-	def compare(self, df1, df2, column1, column2):
+	def compare_using_histograms(self, df1, df2, column1, column2):
 		"""
 		Plots a scatter plot using, in order to compare them. 
 
@@ -40,8 +42,8 @@ class EDComponent(object):
 		@param str column2: name of the second column
 		"""
 		# TODO: get creative with plots 
-		ax = df1.plot.scatter(column1)
-		return df2.plot.scatter(column2)
+		ax = df1.hist(column1)
+		return df2.hist(column2)
 
 	def compare2(self, df1, df2, column1, column2):
 		"""
@@ -54,4 +56,4 @@ class EDComponent(object):
 		@param str column2: name of the second column
 		"""
 		# TODO: get creative with plots 
-		pass
+		return df1.describe(column1), df2.describe(column2)
