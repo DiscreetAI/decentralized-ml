@@ -59,7 +59,6 @@ def test_train_test_split(dataset_path, train_dataset_path, test_dataset_path):
     #index so that overlapping points can be detected later.
     train_data = []
     for X,y in random_train_iterator:
-        print(len(X))
         for datapoint in X:
             train_data.append(datapoint[-1])
 

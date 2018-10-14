@@ -66,7 +66,7 @@ def test_end_to_end(config_manager):
     #Sample transform function (takes dataframe, returns dataframe)
     def drop_duplicates(df):
         return df.drop_duplicates()
-
+    
     rfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data'
     tfp = 'tests/artifacts/dataset_manager/dataset_manager_test_data/transformed'
     expected_test1_raw = pd.read_csv(rfp + '/test1/test1.csv')
@@ -74,6 +74,7 @@ def test_end_to_end(config_manager):
     combined_raw = expected_test1_raw.append(expected_test2_raw)
     expected_test_transformed = drop_duplicates(combined_raw).reset_index(drop=True)
     dsm = DatasetManager(config_manager)
+    dsm.clean_up()
     dsm_initialization_test(dsm, rfp)
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
     dsm.transform_data(drop_duplicates)

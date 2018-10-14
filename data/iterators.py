@@ -210,9 +210,14 @@ def _create_randomized_dataset_iterator(dataset_path, batch_size, labeler):
 
     # Calculate number of batches so that each batch is at most size
     # batch_size, and then create the batches and yield each one.
+    
     count = len(dataset)
     batch_size = min(count, batch_size) 
-    num_batches = math.ceil(len(dataset)/batch_size) 
-    dataset_batches = np.array_split(dataset, num_batches)
+    offset = count % batch_size
+    leftover = []
+    if offset:
+        dataset, leftover = dataset.iloc[0:-offset], [dataset.iloc[-offset:]]
+    num_batches = count/batch_size
+    dataset_batches = np.array_split(dataset, num_batches) + leftover
     for batch in dataset_batches:
         yield (batch.drop(labeler, axis=1).values, pd.DataFrame(batch[labeler]).values)

@@ -4,7 +4,6 @@ import datetime
 import string
 import random
 import os
-from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 
@@ -99,6 +98,8 @@ class DatasetManager():
         #1. Extracts all of the raw data from raw data filepath
         raw_data = self._get_raw_data()
         self.tfp = os.path.join(self.rfp, "transformed")
+        if not self.tfp:
+            os.makedirs(self.tfp)
 
         #2. Tranforms data using provided transform function and puts data in
         #'transformed'. Names in this folder are generated using a timestamp
@@ -115,17 +116,15 @@ class DatasetManager():
         if not os.path.isdir(session_folder):
             os.makedirs(session_folder)
 
-        train, test, _, _ = train_test_split(
-                                    transformed_data, 
-                                    transformed_data.index, 
-                                    train_size=self.split,
-                                    test_size=1-self.split
-                            )
+        transformed_data = transformed_data.sample(frac=1)
+        split = int(len(transformed_data)*self.split)
+        train, test = transformed_data.iloc[:split], transformed_data.iloc[split:]
 
         train.to_csv(
             os.path.join(session_folder, 'train.csv'),
             index=False
         )
+
         test.to_csv(
             os.path.join(session_folder, 'test.csv'),
             index=False
@@ -179,7 +178,7 @@ class DatasetManager():
         """
         if self.tfp:
             shutil.rmtree(self.tfp)
-        assert not os.path.isdir(self.tfp)
+            assert not os.path.isdir(self.tfp)
         self.tfp = None
 
     def check_key_length(key):
