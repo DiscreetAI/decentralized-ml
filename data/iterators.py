@@ -205,7 +205,7 @@ def _create_randomized_dataset_iterator(dataset_path, batch_size, labeler):
     """
     assert os.path.isfile(dataset_path), "Dataset path is invalid."
     assert batch_size > 0, "Invalid batch size provided."
-    dataset = pd.read_csv(dataset_path)
+    dataset = pd.read_csv(dataset_path).sample(frac=1)
     assert labeler in dataset.columns, 'Labeler is invalid.'
 
     count = len(dataset)
