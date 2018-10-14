@@ -39,7 +39,7 @@ class EDComponent(object):
 		"""
 		# TODO: get creative with plots 
 		ax = df1.hist(column1)
-		return df2.hist(column2 ax=ax)
+		return df2.hist(column2, ax=ax)
 
 	def compare2(self, df1, df2, column1, column2):
 		"""
