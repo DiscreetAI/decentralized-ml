@@ -18,7 +18,7 @@ class DMLJob(object):
         framework_type,
         weights=None,
         hyperparams=None,
-        label_index=None
+        label_column_name=None
         ):
         """
         Initializes a DML Result object.
@@ -29,9 +29,9 @@ class DMLJob(object):
             framework_type (str): the type of framework the model is in [keras].
             weights (list): list of np.arrays representing the weghts of a model.
             hyperparams (dict): hyperparameters for training/validating a model.
-            label_index (int): index that represents which column of the
-                               transformed dataset contains the labels for
-                               supervised training.
+            label_column_name (str): string that represents which column of the 
+                                     transformed dataset contains the labels for 
+                                     supervised training.
 
         """
         self.job_type = job_type
@@ -39,7 +39,7 @@ class DMLJob(object):
         self.framework_type = framework_type
         self.weights = weights
         self.hyperparams = hyperparams
-        self.label_index = label_index
+        self.label_column_name = label_column_name
 
 
 def serialize_job(dmljob_obj):
@@ -57,7 +57,7 @@ def serialize_job(dmljob_obj):
         'serialized_model': dmljob_obj.serialized_model,
         'framework_type': dmljob_obj.framework_type,
         'hyperparams': dmljob_obj.hyperparams,
-        'label_index': dmljob_obj.label_index
+        'label_column_name': dmljob_obj.label_column_name
     }
     return {
         'weights': serialize_weights(dmljob_obj.weights),
@@ -81,5 +81,5 @@ def deserialize_job(serialized_job):
         rest['framework_type'],
         deserialize_weights(serialized_job['weights']),
         rest['hyperparams'],
-        rest['label_index']
+        rest['label_column_name']
     )
