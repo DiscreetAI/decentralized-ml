@@ -6,8 +6,6 @@ class EDComponent(object):
 
 	- 
 	""" 
-	def __init__(self):
-		pass
 
 	def histogram(self, df, column):
 		"""
@@ -38,12 +36,12 @@ class EDComponent(object):
 		@param str column2: name of the second column
 		"""
 		# TODO: get creative with plots 
-		ax = df1.hist(column1)
-		return df2.hist(column2, ax=ax)
+		ax = df1.plot.scatter(column1)
+		return df2.plot.scatter(column2, ax=ax)
 
-	def compare2(self, df1, df2, column1, column2):
+	def compare_statistics(self, df1, df2, column1, column2):
 		"""
-		Plots the average and STDev of both columns sets.
+		Returns the statistics for each dataframe's corresponding column.
 		This can only work if the columns correspond to numerical values.
 
 		@param pandas Dataframe df_first:
