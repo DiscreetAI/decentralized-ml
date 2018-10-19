@@ -35,14 +35,19 @@ def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     assert expected_test1_raw.equals(actual_test1_raw)
     assert expected_test2_raw.equals(actual_test2_raw)
 
-def accurate_transform_test(dsm, expected_test_transformed):
+def accurate_transform_test(dsm, expected_test_transformed, split):
     '''
     Check that the data in this folder is the result of calling the transform function on
     each csv in the raw data filepath
     '''
     transform_dsm = dsm.get_transformed_data()
     keys = list(transform_dsm.keys())
-    actual_test_transformed = transform_dsm['train'].append(transform_dsm['test'])
+    train = transform_dsm['train']
+    test = transform_dsm['test']
+    count = len(expected_test_transformed)
+    assert len(train) == int(split * count)
+    assert len(test) == int((1 - split) * count)
+    actual_test_transformed = train.append(test)
     actual_test_transformed = actual_test_transformed.reset_index(drop=True)
     merged_data = pd.merge(
         actual_test_transformed,
@@ -50,8 +55,8 @@ def accurate_transform_test(dsm, expected_test_transformed):
         on = ['a', 'b', 'c'],
         how = 'inner'
     )
-    assert len(expected_test_transformed) == len(actual_test_transformed)
-    assert len(merged_data) == len(expected_test_transformed)
+    assert len(actual_test_transformed) == count
+    assert len(merged_data) == count
 
 def clean_up_test(dsm, rfp):
     '''
@@ -77,8 +82,8 @@ def test_end_to_end(config_manager):
     dsm.clean_up()
     dsm_initialization_test(dsm, rfp)
     same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw)
-    dsm.transform_data(drop_duplicates)
-    accurate_transform_test(dsm, expected_test_transformed)
+    dsm.split_and_transform_data(drop_duplicates, 0.75)
+    accurate_transform_test(dsm, expected_test_transformed, 0.75)
     dsm.clean_up()
     clean_up_test(dsm, rfp) #leave commented out until we figure out reset
     #dsm.post_dataset("my_test")

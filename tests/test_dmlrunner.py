@@ -14,7 +14,7 @@ from core.configuration         import ConfigurationManager
 def config_manager():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
-        config_filepath='tests/artifacts/configuration.ini'
+        config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
     )
     return config_manager
 

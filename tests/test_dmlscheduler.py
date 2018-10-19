@@ -15,7 +15,7 @@ from core.configuration         import ConfigurationManager
 
 config_manager = ConfigurationManager()
 config_manager.bootstrap(
-    config_filepath='tests/artifacts/configuration.ini'
+    config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
 )
 scheduler = DMLScheduler(config_manager)
 

@@ -4,6 +4,7 @@ import datetime
 import string
 import random
 import os
+
 import numpy as np
 import pandas as pd
 
@@ -66,7 +67,7 @@ class DatasetManager():
     Dataset Manager maps session ids to transformed datasets?
     """
 
-    def __init__(self, config_manager, split=0.8):
+    def __init__(self, config_manager):
         """
         Take in an filepath to the raw data, no filepath to transformed exists
         yet.
@@ -81,9 +82,8 @@ class DatasetManager():
         assert os.path.isdir(raw_filepath), "The dataset filepath provided is not valid."
         self.rfp = raw_filepath
         self.tfp = None
-        self.split = split
 
-    def transform_data(self, transform_function):
+    def split_and_transform_data(self, transform_function, split=0.8):
         """
         Taking in a transform function, transforming the data, and putting this
         transformed data in a new directory (called 'transformed') in the same
@@ -117,8 +117,9 @@ class DatasetManager():
             os.makedirs(session_folder)
 
         transformed_data = transformed_data.sample(frac=1)
-        split = int(len(transformed_data)*self.split)
-        train, test = transformed_data.iloc[:split], transformed_data.iloc[split:]
+        split_index = int(len(transformed_data)*split)
+        train = transformed_data.iloc[:split_index] 
+        test = transformed_data.iloc[split_index:]
 
         train.to_csv(
             os.path.join(session_folder, 'train.csv'),
