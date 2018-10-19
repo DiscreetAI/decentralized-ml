@@ -2,11 +2,12 @@ import logging
 import random
 import uuid
 import time
+import os
 
 from custom.keras import model_from_serialized, get_optimizer
 from data.iterators import count_datapoints
-from data.iterators import create_train_dataset_iterator
-from data.iterators import create_test_dataset_iterator
+from data.iterators import create_random_train_dataset_iterator
+from data.iterators import create_random_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
 from core.utils.keras import serialize_weights
 from core.configuration import ConfigurationManager
@@ -39,6 +40,8 @@ class DMLRunner(object):
         config = config_manager.get_config()
         self.iden = str(uuid.uuid4())[:8]
         self.dataset_path = config.get("GENERAL", "dataset_path")
+        self.train_dataset_path = os.path.join(self.dataset_path, 'train.csv')
+        self.test_dataset_path = os.path.join(self.dataset_path, 'test.csv')
         self.config = dict(config.items("RUNNER"))
         self.data_count = count_datapoints(self.dataset_path)
 
@@ -58,7 +61,7 @@ class DMLRunner(object):
                     job.framework_type,
                     job.weights,
                     job.hyperparams,
-                    job.label_index
+                    job.label_column_name
                 )
                 # TODO: Send the (new_weights_in_bytes, omega) to the aggregator
                 # through P2P.
@@ -79,7 +82,7 @@ class DMLRunner(object):
                      job.framework_type,
                      job.weights,
                      job.hyperparams,
-                     job.label_index
+                     job.label_column_name
                 )
 
                 # TODO: Send the results to the developer through P2P (maybe).
@@ -146,15 +149,16 @@ class DMLRunner(object):
             "Averaging type '{0}' is not supported.".format(avg_type)
         logging.info("Training model...")
         if avg_type == 'data_size':
-            dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=hyperparams['split'], \
-                batch_size=batch_size, labeler=labeler)
+            dataset_iterator = create_random_train_dataset_iterator(
+                self.train_dataset_path, batch_size=batch_size, labeler=labeler
+            )
         elif avg_type == 'val_acc':
-            dataset_iterator = create_train_dataset_iterator(self.dataset_path, \
-                count=self.data_count, batch_size=batch_size, labeler=labeler)
-            test_dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=hyperparams['split'], \
-                batch_size=batch_size, labeler=labeler)
+            dataset_iterator = create_random_train_dataset_iterator(
+                self.train_dataset_path, batch_size=batch_size, labeler=labeler
+            )
+            test_dataset_iterator = create_random_test_dataset_iterator(
+                self.test_dataset_path, batch_size=batch_size, labeler=labeler
+            )
 
         # Train the model the right way based on the model type.
         assert framework_type in ['keras'], \
@@ -190,9 +194,9 @@ class DMLRunner(object):
         # Choose the dataset to validate on.
         batch_size = hyperparams['batch_size']
         if custom_iterator is None:
-            dataset_iterator = create_test_dataset_iterator(self.dataset_path, \
-                count=self.data_count, split=(1-hyperparams['split']), \
-                batch_size=batch_size, labeler=labeler)
+            dataset_iterator = create_random_test_dataset_iterator(
+                self.test_dataset_path, batch_size=batch_size, labeler=labeler
+            )
         else:
             dataset_iterator = custom_iterator
 

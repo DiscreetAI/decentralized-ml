@@ -1,5 +1,5 @@
 import os
-
+import math
 import numpy as np
 import pandas as pd
 import keras
@@ -23,40 +23,73 @@ def count_datapoints(dataset_path):
         count -= 1 #exclude header
     return count
 
-def create_train_dataset_iterator(dataset_path, count, split=0.8, batch_size=1, \
-    labeler=None, infinite=True):
+def create_sequential_train_dataset_iterator(dataset_path, count, split=0.8, \
+    batch_size=1, labeler=None, infinite=True):
     """
-    Returns an iterator of batches of size B containing all features of the data.
+    Returns a sequential iterator of batches of size B containing all features
+    of the data.
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
     """
     if infinite:
         while True:
-            yield from _create_dataset_iterator(dataset_path, count*split, "train", \
+            yield from _create_sequential_dataset_iterator(dataset_path, \
+                count*split, "train", batch_size, labeler)
+    else:
+        yield from _create_sequential_dataset_iterator(dataset_path, \
+            count*split, "train", batch_size, labeler)
+
+def create_sequential_test_dataset_iterator(dataset_path, count, split=0.2, \
+    batch_size=1, labeler=None, infinite=True):
+    """
+    Returns a sequential iterator of batches of size B containing all features
+    of the data.
+
+    Assumes `dataset_path` is a path to a folder with multiple CSV files.
+    """
+    if infinite:
+        while True:
+            yield from _create_sequential_dataset_iterator(dataset_path, \
+                count*split, "test", batch_size, labeler)
+    else:
+        yield from _create_sequential_dataset_iterator(dataset_path, \
+            count*split, "test", batch_size, labeler)
+
+def create_random_train_dataset_iterator(dataset_path,  batch_size=1, \
+    labeler=None, infinite=True):
+    """
+    Returns an random iterator of batches of size B containing all features of
+    the data.
+
+    Assumes `dataset_path` is a path to a folder with multiple CSV files.
+    """
+    if infinite:
+        while True:
+            yield from _create_randomized_dataset_iterator(dataset_path, 
                 batch_size, labeler)
     else:
-        yield from _create_dataset_iterator(dataset_path, count*split, "train", \
+        yield from _create_randomized_dataset_iterator(dataset_path,
             batch_size, labeler)
 
-def create_test_dataset_iterator(dataset_path, count, split=0.2, batch_size=1, \
+def create_random_test_dataset_iterator(dataset_path, batch_size=1, \
     labeler=None, infinite=True):
     """
-    Returns an iterator of batches of size B containing all features of the data.
+    Returns a random iterator of batches of size B containing all features of
+    the data.
 
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
     """
     if infinite:
         while True:
-            yield from _create_dataset_iterator(dataset_path, count*split, "test", \
+            yield from _create_randomized_dataset_iterator(dataset_path, \
                 batch_size, labeler)
     else:
-        yield from _create_dataset_iterator(dataset_path, count*split, "test", \
+        yield from _create_randomized_dataset_iterator(dataset_path, \
             batch_size, labeler)
 
 def reverse_readline(filename, buf_size=8192):
     """
     A generator that returns the lines of a file in reverse order
-
     Obtained from: 
     https://stackoverflow.com/questions/2301789/read-a-file-in-reverse-order-using-python
     """
@@ -90,15 +123,18 @@ def reverse_readline(filename, buf_size=8192):
         if segment is not None:
             yield segment
 
-def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, labeler):
+def _create_sequential_dataset_iterator(dataset_path, max_count, iter_type, \
+    batch_size, labeler):
     """
-    Returns an iterator of batches of size B containing all features of the 
-    data. If batch_size > max_count, then the datapoints for the dataset 
+    Returns a sequential iterator of batches of size B containing all features
+    of the data. If batch_size > max_count, then the datapoints for the dataset 
     will be single batch of data (the iterator only iterates over one item.
-
+    
     Assumes `dataset_path` is a path to a folder with multiple CSV files.
-
-    NOTE: labeler is now a string that refers to a column name
+    
+    NOTE: labeler is now a string that refers to a column name. Also, this
+    method creates an iterator by sequentially iterating over data points
+    (no randomization in the training-test split)
     """
     assert iter_type in ['train', 'test'], "'iter_type' parameter is invalid."
     assert os.path.isdir(dataset_path), "Dataset path is invalid."
@@ -147,3 +183,41 @@ def _create_dataset_iterator(dataset_path, max_count, iter_type, batch_size, lab
             line = line[0:labeler] + line[labeler + 1:], line[labeler]
             batch.append(line)
             count += 1
+
+def _create_randomized_dataset_iterator(dataset_path, batch_size, labeler):
+    """
+    Returns a randomized iterator of batches of size B containing all features
+    of the data. If batch_size > max_count, then the datapoints for the 
+    dataset will be single batch of data (the iterator only iterates over one
+    item.
+
+    Assumes `dataset_path` is a path to a folder with multiple CSV files.
+
+    NOTE: labeler is now a string that refers to the column name
+
+    Args:
+        dataset_path (str): The dataset path to the actual file
+        batch_size (int): Maximum number of datapoints in each batch
+        labeler (str): Column name of column that is label
+
+    Yields:
+        tuple(X,y) where X is batch of features, y is batch of labels
+    """
+    assert os.path.isfile(dataset_path), "Dataset path is invalid."
+    assert batch_size > 0, "Invalid batch size provided."
+    dataset = pd.read_csv(dataset_path).sample(frac=1) #Loads data and shuffles
+    assert labeler in dataset.columns, 'Labeler is invalid.'
+
+    # Calculate number of batches so that each batch is at most size
+    # batch_size, and then create the batches and yield each one.
+    
+    count = len(dataset)
+    batch_size = min(count, batch_size) 
+    offset = count % batch_size
+    leftover = []
+    if offset:
+        dataset, leftover = dataset.iloc[0:-offset], [dataset.iloc[-offset:]]
+    num_batches = count/batch_size
+    dataset_batches = np.array_split(dataset, num_batches) + leftover
+    for batch in dataset_batches:
+        yield (batch.drop(labeler, axis=1).values, pd.DataFrame(batch[labeler]).values)

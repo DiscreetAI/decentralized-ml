@@ -83,7 +83,7 @@ class DatasetManager():
         self.rfp = raw_filepath
         self.tfp = None
 
-    def transform_data(self, transform_function):
+    def split_and_transform_data(self, transform_function, split=0.8):
         """
         Taking in a transform function, transforming the data, and putting this
         transformed data in a new directory (called 'transformed') in the same
@@ -98,22 +98,38 @@ class DatasetManager():
         #1. Extracts all of the raw data from raw data filepath
         raw_data = self._get_raw_data()
         self.tfp = os.path.join(self.rfp, "transformed")
+        if not self.tfp:
+            os.makedirs(self.tfp)
 
         #2. Tranforms data using provided transform function and puts data in
         #'transformed'. Names in this folder are generated using a timestamp
         #joined with some random characters.
+        aggregated_data = pd.DataFrame()
         for name,data in raw_data.items():
-            new_folder = os.path.join(self.tfp, name)
-            if not os.path.exists(new_folder):
-                os.makedirs(new_folder)
-            transformed_data = transform_function(data)
-            timestamp = str(datetime.datetime.now())
-            r_string = random_string(5)
-            new_name = timestamp + r_string
-            transformed_data.to_csv(
-                os.path.join(new_folder, new_name + '.csv'),
-                index=False
-            )
+            aggregated_data = data if aggregated_data.empty else aggregated_data.append(data)
+        aggregated_data = aggregated_data.reset_index(drop=True)
+        transformed_data = transform_function(aggregated_data)
+        timestamp = str(datetime.datetime.now())
+        r_string = random_string(5)
+        new_name = timestamp + r_string
+        session_folder = os.path.join(self.tfp, new_name)
+        if not os.path.isdir(session_folder):
+            os.makedirs(session_folder)
+
+        transformed_data = transformed_data.sample(frac=1)
+        split_index = int(len(transformed_data)*split)
+        train = transformed_data.iloc[:split_index] 
+        test = transformed_data.iloc[split_index:]
+
+        train.to_csv(
+            os.path.join(session_folder, 'train.csv'),
+            index=False
+        )
+
+        test.to_csv(
+            os.path.join(session_folder, 'test.csv'),
+            index=False
+        )
 
     def _get_raw_data(self):
         """
@@ -150,10 +166,8 @@ class DatasetManager():
         transform_dict = {}
         for folder in os.listdir(self.tfp):
             folder_path = os.path.join(self.tfp, folder)
-            for file in os.listdir(folder_path):
-                if file[-4:] == '.csv':
-                    data = pd.read_csv(os.path.join(folder_path, file))
-                    transform_dict[file] = data
+            transform_dict['train'] = pd.read_csv(os.path.join(folder_path, 'train.csv'))
+            transform_dict['test'] = pd.read_csv(os.path.join(folder_path, 'test.csv'))
         return transform_dict
 
     def clean_up(self):
@@ -165,7 +179,7 @@ class DatasetManager():
         """
         if self.tfp:
             shutil.rmtree(self.tfp)
-        assert not os.path.isdir(self.tfp)
+            assert not os.path.isdir(self.tfp)
         self.tfp = None
 
     def check_key_length(key):

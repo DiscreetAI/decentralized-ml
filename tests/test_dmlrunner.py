@@ -14,7 +14,7 @@ from core.configuration         import ConfigurationManager
 def config_manager():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
-        config_filepath='tests/artifacts/configuration.ini'
+        config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
     )
     return config_manager
 
@@ -60,7 +60,7 @@ def make_train_job(model_json, initial_weights, hyperparams):
         "keras",
         initial_weights,
         hyperparams,
-        0
+        'label'
     )
     return train_job
 
@@ -72,7 +72,7 @@ def make_validate_job(model_json, new_weights, hyperparams):
         'keras',
         new_weights,
         hyperparams,
-        0
+        'label'
     )
     return validate_job
 
