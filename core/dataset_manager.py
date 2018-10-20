@@ -83,6 +83,23 @@ class DatasetManager():
         self.rfp = raw_filepath
         self.tfp = None
 
+    def _validate_data(self):
+        folders = []
+        for file in os.listdir(self.rfp):
+            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), file)):
+                folders.append(file)
+        for folder in folders:
+            folder_dict = {}
+            folder_path = os.path.join(os.path.abspath(self.rfp), folder)
+            files = os.listdir(folder_path)
+            for file in files:
+                if not file.endswith(".csv"): continue
+                if file[:2] != 'md':
+                    file_path = os.path.join(folder_path, file)
+                    dataset = pd.read_csv(file_path)
+                    raw_dict[file[:-4]] = dataset
+        return raw_dict
+
     def split_and_transform_data(self, transform_function, split=0.8):
         """
         Taking in a transform function, transforming the data, and putting this
@@ -140,19 +157,16 @@ class DatasetManager():
         """
         raw_dict = {}
         folders = []
-        for file in os.listdir(self.rfp):
-            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), file)):
-                folders.append(file)
-        for folder in folders:
-            folder_dict = {}
-            folder_path = os.path.join(os.path.abspath(self.rfp), folder)
-            files = os.listdir(folder_path)
-            for file in files:
-                if not file.endswith(".csv"): continue
-                if file[:2] != 'md':
-                    file_path = os.path.join(folder_path, file)
-                    dataset = pd.read_csv(file_path)
-                    raw_dict[file[:-4]] = dataset
+        for folder in os.listdir(self.rfp):
+            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), folder)):
+                folder_path = os.path.join(os.path.abspath(self.rfp), folder)
+                files = os.listdir(folder_path)
+                for file in files:
+                    if not file.endswith(".csv"): continue
+                    if file[:2] != 'md':
+                        file_path = os.path.join(folder_path, file)
+                        dataset = pd.read_csv(file_path)
+                        raw_dict[file[:-4]] = dataset
         return raw_dict
 
     def get_transformed_data(self):
