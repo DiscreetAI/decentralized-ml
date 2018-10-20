@@ -18,6 +18,22 @@ def config_manager():
     )
     return config_manager
 
+@pytest.fixture
+def bad_config_manager_format():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration2.ini'
+    )
+    return config_manager
+
+@pytest.fixture
+def bad_config_manager_header():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration3.ini'
+    )
+    return config_manager
+
 def dsm_initialization_test(dsm, rfp):
     '''
     Check that DM instance has path to raw data and that path transformed data
@@ -87,6 +103,33 @@ def test_end_to_end(config_manager):
     dsm.clean_up()
     clean_up_test(dsm, rfp) #leave commented out until we figure out reset
     #dsm.post_dataset("my_test")
+
+def test_no_header(bad_config_manager_header):
+    error_message = ("No header has been provided in file {file} in folder "
+                     "{folder}")
+    try:
+        dsm = DatasetManager(bad_config_manager_header)
+        assert False, "Error should have been thrown for lack of header"
+    except AssertionError as e:
+        assert str(e) == error_message.format(
+                            file='test1.csv',
+                            folder='test1',
+                         )
+
+def test_bad_format(bad_config_manager_format):
+    format_message = ("The file {file} in folder {folder} was improperly "
+                      "formatted. Please refer to the following error "
+                      "message from pandas for more information: {message}")
+                      
+    try:
+        dsm = DatasetManager(bad_config_manager_format)
+        assert False, "Error should have been thrown for bad format"
+    except AssertionError as e:
+        assert str(e) == format_message.format(
+                            file='test1.csv',
+                            folder='test1',
+                            message='list index out of range'
+                         )
 
 '''
 uncomment when node is running

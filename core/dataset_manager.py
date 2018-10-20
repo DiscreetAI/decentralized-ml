@@ -82,23 +82,38 @@ class DatasetManager():
         assert os.path.isdir(raw_filepath), "The dataset filepath provided is not valid."
         self.rfp = raw_filepath
         self.tfp = None
+        self._validate_data()
 
     def _validate_data(self):
-        folders = []
-        for file in os.listdir(self.rfp):
-            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), file)):
-                folders.append(file)
-        for folder in folders:
-            folder_dict = {}
+        format_message = ("The file {file} in folder {folder} was improperly "
+                          "formatted. Please refer to the following error "
+                          "message from pandas for more information: {message}")
+        header_message = ("No header has been provided in file {file} in "
+                          "folder {folder}")
+        for folder in os.listdir(self.rfp):
             folder_path = os.path.join(os.path.abspath(self.rfp), folder)
+            if not os.path.isdir(folder_path): continue
             files = os.listdir(folder_path)
             for file in files:
                 if not file.endswith(".csv"): continue
-                if file[:2] != 'md':
-                    file_path = os.path.join(folder_path, file)
-                    dataset = pd.read_csv(file_path)
-                    raw_dict[file[:-4]] = dataset
-        return raw_dict
+                if file[:2] == 'md': continue
+                file_path = os.path.join(folder_path, file)
+                try:
+                    dataset = pd.read_csv(file_path, index_col=False)
+                except Exception as e:
+                    logging.error(str(e))
+                    assert False, format_message.format(
+                        file=file,
+                        folder=folder,
+                        message=str(e)
+                    )
+                print(dataset)
+                is_str = lambda c: not c.replace('.','',1).isdigit()
+                assert all([is_str(c) for c in dataset.columns]), \
+                    header_message.format(
+                        file=file,
+                        folder=folder
+                    )
 
     def split_and_transform_data(self, transform_function, split=0.8):
         """
@@ -156,17 +171,16 @@ class DatasetManager():
         DataFrame of the actual data.
         """
         raw_dict = {}
-        folders = []
         for folder in os.listdir(self.rfp):
-            if os.path.isdir(os.path.join(os.path.abspath(self.rfp), folder)):
-                folder_path = os.path.join(os.path.abspath(self.rfp), folder)
-                files = os.listdir(folder_path)
-                for file in files:
-                    if not file.endswith(".csv"): continue
-                    if file[:2] != 'md':
-                        file_path = os.path.join(folder_path, file)
-                        dataset = pd.read_csv(file_path)
-                        raw_dict[file[:-4]] = dataset
+            folder_path = os.path.join(os.path.abspath(self.rfp), folder)
+            if not os.path.isdir(folder_path): continue
+            files = os.listdir(folder_path)
+            for file in files:
+                if not file.endswith(".csv"): continue
+                if file[:2] != 'md':
+                    file_path = os.path.join(folder_path, file)
+                    dataset = pd.read_csv(file_path, index_col=False)
+                    raw_dict[file[:-4]] = dataset
         return raw_dict
 
     def get_transformed_data(self):
@@ -180,8 +194,10 @@ class DatasetManager():
         transform_dict = {}
         for folder in os.listdir(self.tfp):
             folder_path = os.path.join(self.tfp, folder)
-            transform_dict['train'] = pd.read_csv(os.path.join(folder_path, 'train.csv'))
-            transform_dict['test'] = pd.read_csv(os.path.join(folder_path, 'test.csv'))
+            train_path = os.path.join(folder_path, 'train.csv')
+            test_path = os.path.join(folder_path, 'test.csv')
+            transform_dict['train'] = pd.read_csv(train_path, index_col=False)
+            transform_dict['test'] = pd.read_csv(test_path, index_col=False)
         return transform_dict
 
     def clean_up(self):
