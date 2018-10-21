@@ -18,17 +18,33 @@ def config_manager():
     )
     return config_manager
 
+@pytest.fixture
+def bad_config_manager_format():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration2.ini'
+    )
+    return config_manager
+
+@pytest.fixture
+def bad_config_manager_header():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration3.ini'
+    )
+    return config_manager
+
 def dsm_initialization_test(dsm, rfp):
-    '''
+    """
     Check that DM instance has path to raw data and that path transformed data
     hasn't been made yet (since no transform has been done yet)
-    '''
+    """
     assert dsm.rfp == rfp
 
 def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
-    '''
+    """
     Check _get_raw_data actually returns the data in this directory
-    '''
+    """
     raw_data = dsm._get_raw_data()
     actual_test1_raw = raw_data['test1']
     actual_test2_raw = raw_data['test2']
@@ -36,10 +52,10 @@ def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     assert expected_test2_raw.equals(actual_test2_raw)
 
 def accurate_transform_test(dsm, expected_test_transformed, split):
-    '''
+    """
     Check that the data in this folder is the result of calling the transform function on
     each csv in the raw data filepath
-    '''
+    """
     transform_dsm = dsm.get_transformed_data()
     keys = list(transform_dsm.keys())
     train = transform_dsm['train']
@@ -59,10 +75,10 @@ def accurate_transform_test(dsm, expected_test_transformed, split):
     assert len(merged_data) == count
 
 def clean_up_test(dsm, rfp):
-    '''
+    """
     Check the raw data filepath exists, the transformed data filepath doesn't, and the 'transformed' folder
     is gone from the raw data directory
-    '''
+    """
     assert dsm.rfp == rfp
     assert dsm.tfp == None
     assert not os.path.isdir(rfp + '/transformed')
@@ -87,6 +103,40 @@ def test_end_to_end(config_manager):
     dsm.clean_up()
     clean_up_test(dsm, rfp) #leave commented out until we figure out reset
     #dsm.post_dataset("my_test")
+
+def test_no_header(bad_config_manager_header):
+    """
+    Test that DSM invalidates dataset with no header.
+    """
+    error_message = ("No header has been provided in file {file} in folder "
+                     "{folder}")
+    error_message = error_message.format(
+                        file='test1.csv',
+                        folder='test1',
+                    )
+    try:
+        dsm = DatasetManager(bad_config_manager_header)
+        raise Exception("Error should have been thrown for lack of header")
+    except AssertionError as e:
+        assert str(e) == error_message, "Wrong assertion was thrown!"
+
+def test_bad_format(bad_config_manager_format):
+    """
+    Test that DSM invalidates dataset with invalid CSV format.
+    """
+    format_message = ("The file {file} in folder {folder} was improperly "
+                      "formatted. Please refer to the following error "
+                      "message from pandas for more information: {message}")
+    format_message = format_message.format(
+                        file='test1.csv',
+                        folder='test1',
+                        message='list index out of range'
+                     )                  
+    try:
+        dsm = DatasetManager(bad_config_manager_format)
+        raise Exception("Error should have been thrown for bad format")
+    except Exception as e:
+        assert str(e) == format_message, "Wrong assertion was thrown!"
 
 '''
 uncomment when node is running
