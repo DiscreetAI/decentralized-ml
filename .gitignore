@@ -8,7 +8,7 @@ core/configuration.ini
 __pycache__/
 .pytest_cache/
 .cache/
-
+core/__pycache__/
 datasets/shakespeare
 
 core/utils/weights
