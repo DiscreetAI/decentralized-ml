@@ -110,14 +110,15 @@ def test_no_header(bad_config_manager_header):
     """
     error_message = ("No header has been provided in file {file} in folder "
                      "{folder}")
+    error_message = error_message.format(
+                        file='test1.csv',
+                        folder='test1',
+                    )
     try:
         dsm = DatasetManager(bad_config_manager_header)
-        assert False, "Error should have been thrown for lack of header"
+        raise Exception("Error should have been thrown for lack of header")
     except AssertionError as e:
-        assert str(e) == error_message.format(
-                            file='test1.csv',
-                            folder='test1',
-                         )
+        assert str(e) == error_message, "Wrong assertion was thrown!"
 
 def test_bad_format(bad_config_manager_format):
     """
@@ -126,16 +127,16 @@ def test_bad_format(bad_config_manager_format):
     format_message = ("The file {file} in folder {folder} was improperly "
                       "formatted. Please refer to the following error "
                       "message from pandas for more information: {message}")
-                      
+    format_message = format_message.format(
+                        file='test1.csv',
+                        folder='test1',
+                        message='list index out of range'
+                     )                  
     try:
         dsm = DatasetManager(bad_config_manager_format)
-        assert False, "Error should have been thrown for bad format"
-    except AssertionError as e:
-        assert str(e) == format_message.format(
-                            file='test1.csv',
-                            folder='test1',
-                            message='list index out of range'
-                         )
+        raise Exception("Error should have been thrown for bad format")
+    except Exception as e:
+        assert str(e) == format_message, "Wrong assertion was thrown!"
 
 '''
 uncomment when node is running

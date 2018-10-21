@@ -111,10 +111,12 @@ class DatasetManager():
                     dataset = pd.read_csv(file_path, index_col=False)
                 except Exception as e:
                     logging.error(str(e))
-                    assert False, format_message.format(
-                        file=file,
-                        folder=folder,
-                        message=str(e)
+                    raise Exception(
+                        format_message.format(
+                            file=file,
+                            folder=folder,
+                            message=str(e)
+                        )
                     )
                 is_str = lambda c: not c.replace('.','',1).isdigit()
                 assert all([is_str(c) for c in dataset.columns]), \
