@@ -35,16 +35,16 @@ def bad_config_manager_header():
     return config_manager
 
 def dsm_initialization_test(dsm, rfp):
-    '''
+    """
     Check that DM instance has path to raw data and that path transformed data
     hasn't been made yet (since no transform has been done yet)
-    '''
+    """
     assert dsm.rfp == rfp
 
 def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
-    '''
+    """
     Check _get_raw_data actually returns the data in this directory
-    '''
+    """
     raw_data = dsm._get_raw_data()
     actual_test1_raw = raw_data['test1']
     actual_test2_raw = raw_data['test2']
@@ -52,10 +52,10 @@ def same_raw_data_test(dsm, expected_test1_raw, expected_test2_raw):
     assert expected_test2_raw.equals(actual_test2_raw)
 
 def accurate_transform_test(dsm, expected_test_transformed, split):
-    '''
+    """
     Check that the data in this folder is the result of calling the transform function on
     each csv in the raw data filepath
-    '''
+    """
     transform_dsm = dsm.get_transformed_data()
     keys = list(transform_dsm.keys())
     train = transform_dsm['train']
@@ -75,10 +75,10 @@ def accurate_transform_test(dsm, expected_test_transformed, split):
     assert len(merged_data) == count
 
 def clean_up_test(dsm, rfp):
-    '''
+    """
     Check the raw data filepath exists, the transformed data filepath doesn't, and the 'transformed' folder
     is gone from the raw data directory
-    '''
+    """
     assert dsm.rfp == rfp
     assert dsm.tfp == None
     assert not os.path.isdir(rfp + '/transformed')
@@ -105,6 +105,9 @@ def test_end_to_end(config_manager):
     #dsm.post_dataset("my_test")
 
 def test_no_header(bad_config_manager_header):
+    """
+    Test that DSM invalidates dataset with no header.
+    """
     error_message = ("No header has been provided in file {file} in folder "
                      "{folder}")
     try:
@@ -117,6 +120,9 @@ def test_no_header(bad_config_manager_header):
                          )
 
 def test_bad_format(bad_config_manager_format):
+    """
+    Test that DSM invalidates dataset with invalid CSV format.
+    """
     format_message = ("The file {file} in folder {folder} was improperly "
                       "formatted. Please refer to the following error "
                       "message from pandas for more information: {message}")

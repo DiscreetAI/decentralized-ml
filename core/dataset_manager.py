@@ -85,6 +85,15 @@ class DatasetManager():
         self._validate_data()
 
     def _validate_data(self):
+        """
+        Validate all raw data. As of now, checks that:
+            1. Each dataset has a header. Assumes column names are always
+               string. NOTE: if data is also string, then it is impossible
+               to tell whether file has header or not.
+            2. Each dataset is in a valid CSV format. pandas already
+               performs this validation when it reads in CSV files, so just
+               return the error from pandas if reading fails.
+        """
         format_message = ("The file {file} in folder {folder} was improperly "
                           "formatted. Please refer to the following error "
                           "message from pandas for more information: {message}")
@@ -107,7 +116,6 @@ class DatasetManager():
                         folder=folder,
                         message=str(e)
                     )
-                print(dataset)
                 is_str = lambda c: not c.replace('.','',1).isdigit()
                 assert all([is_str(c) for c in dataset.columns]), \
                     header_message.format(
@@ -115,7 +123,7 @@ class DatasetManager():
                         folder=folder
                     )
 
-    def split_and_transform_data(self, transform_function, split=0.8):
+    def split_and_transform_data(self, transform_function, split):
         """
         Taking in a transform function, transforming the data, and putting this
         transformed data in a new directory (called 'transformed') in the same
