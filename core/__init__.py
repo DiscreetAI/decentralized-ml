@@ -4,6 +4,9 @@ from core.category_component import CategoryComponent
 from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
+import numpy as np
+
+OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'compare using describe','compare using columns']
 
 class Orchestrator(object):
 	"""
@@ -19,15 +22,67 @@ class Orchestrator(object):
 		self.category_component = CategoryComponent(db_client)
 		self.ed_component = EDComponent()
 		self.ed_directories = []
-		self.json_indexes = []
-		self.columns = []
 		self.method = None
+		self.directory1 = None
+		self.directory2 = None
+		self.dataset1 = None
+		self.dataset2 = None
+		self.column1 = None
+		self.column2 = None
  
 	def get_ed_directories(self):
 		"""
-		Return ed_directories to the user.
+		Returns ed_directories to the user,
+		this is a list.
 		"""
-		return self.ed_directories
+		try:
+			return self.ed_directories
+		except Exception as inst:
+			print(inst)
+
+	def get_ed_directory(self, directory_index):
+		"""
+		Returns a dictionary in ed_directories to the user.
+
+		@param integer directory_index: index of corresponding directory
+		"""
+		# TODO: catch exceptions
+		try:
+			return self.ed_directories[directory_index]
+		except Exception as inst:
+			print(inst)
+
+	def get_datasets(self, directory_index):
+		"""
+		Returns a list of all datasets available for corresponding 
+		directory in directory_index position.
+
+		@param integer directory_index: index of corresponding directory
+		"""
+		try:
+			ed_directory = self.ed_directories[directory_index]
+			return ed_directory.keys()
+		except Exception as inst:
+			print(inst)
+
+	def get_dataset(self, directory_index, dataset_key):
+		"""
+		Returns a dataframe of the dataset dataset of directory in
+		directory_index position
+
+		@param integer directory_index: index of corresponding directory
+		@param object dataset_key: key of the dataset in the corresponding
+		directory
+		"""
+		# TODO: catch exceptions
+		try: 
+			ed_directory = self.ed_directories[directory_index]
+			dataset = ed_directory.get(dataset_key)
+			key = dataset.keys()[0]
+			df = pd.read_json(dataset.get(key))
+			return df
+		except Exception as inst:
+			print(inst)
 
 	def check(self):
 		return self.method, self.columns, self.json_indexes
@@ -65,7 +120,7 @@ class Orchestrator(object):
 		display(button)
 		button.on_click(orchestrate)
 
-	def directories_indexes(self):
+	def visualization_parameters(self):
 			"""
 			Displays:
 				Prompt to get visualization information from user. 
@@ -77,35 +132,71 @@ class Orchestrator(object):
 				"""
 				sender.disabled = True
 				self.method = method_widget.value.strip()
-				self.json_indexes = [int(index.strip()) for index in directories_widget.value.split(',')]
-				self.columns = [column.strip() for column in columns_widget.value.split(',')]
-				# TODO: handle visualization
+				self.directory1 = directory1_widget.value.strip()
+				self.directory2 = directory2_widget.value.strip()
+				self.dataset1 = dataset1_widget.value.strip()
+				self.dataset2 = dataset2_widget.value.strip()
+				self.column1 = column1_widget.value.strip()
+				self.column2 = column2_widget.value.strip()
 				sender.disabled = False
 
-			directories_widget = widgets.Text(
+			directory1_widget = widgets.Text(
 				value=None,
 				placeholder='',
-				description='Directories:',
+				description='Directory 1:',
 				disabled=False,
 
 			)
-			columns_widget = widgets.Text(
+			directory2_widget = widgets.Text(
 				value=None,
 				placeholder='',
-				description='Columns:',
+				description='Directory 2:',
+				disabled=False,
+
+			)
+			dataset1_widget = widgets.Text(
+				value=None,
+				placeholder='',
+				description='Dataset 1:',
+				disabled=False,
+
+			)
+			dataset2_widget = widgets.Text(
+				value=None,
+				placeholder='',
+				description='Dataset 2:',
+				disabled=False,
+
+			)
+			column1_widget = widgets.Text(
+				value=None,
+				placeholder='',
+				description='Column 1:',
+				disabled=False,
+
+			)
+			column2_widget = widgets.Text(
+				value=None,
+				placeholder='',
+				description='Column 2:',
 				disabled=False,
 
 			)
 			method_widget = widgets.RadioButtons(
-			    options=['histogram', 'scatter', 'compare using histograms', 'describe numerical'],
+			    options=OPTIONS,
 			    value='histogram',
 			    description='Method:',
 			    disabled=False
 			)
 			button = widgets.Button(description='Submit')
+
 			display(method_widget)
-			display(directories_widget)
-			display(columns_widget)
+			display(directory1_widget)
+			display(directory2_widget)
+			display(dataset1_widget)
+			display(dataset2_widget)
+			display(column1_widget)
+			display(column2_widget)
 			display(button)
 			button.on_click(store)
 
@@ -114,28 +205,51 @@ class Orchestrator(object):
 		Returns the corresponding plot.
 		"""
 		try: 
-			if (self.method == 'histogram'):
-				df = pd.read_json(self.ed_directories[self.json_indexes[0]])
-				column = self.columns[0]
-				return self.ed_component.histogram(df, column)
-			elif (self.method == 'scatter'):
-				df1 = pd.read_json(self.ed_directories[self.json_indexes[0]])
-				# df2 = pd.read_json(self.ed_directories[self.json_indexes[1]])
-				column1 = self.columns[0]
-				column2 = self.columns[1]
-				return self.ed_component.scatter(df1, column1, column2)
-			elif (self.method == 'compare using histograms'):
-				df1 = pd.read_json(self.ed_directories[self.json_indexes[0]])
-				df2 = pd.read_json(self.ed_directories[self.json_indexes[1]])
-				column1 = self.columns[0]
-				column2 = self.columns[1]
-				return self.ed_component.compare_using_histograms(df1, df2, column1, column2)
-			elif (self.method == 'describe numerical'):
-				df1 = pd.read_json(self.ed_directories[self.json_indexes[0]])
-				df2 = pd.read_json(self.ed_directories[self.json_indexes[1]])
-				column1 = self.columns[0]
-				column2 = self.columns[1]
-				return self.ed_component.describe(df1, df2, column1, column2)
+			if (self.method == OPTIONS[0]):
+				ed_directory = self.ed_directories[self.directory1]
+				dataset = ed_directory.get(self.dataset1)
+				key = dataset.keys()[0]
+				df = pd.read_json(dataset.get(key))
+				return self.ed_component.histogram(df, self.column1)
+			elif (self.method == OPTIONS[1]):
+				ed_directory = self.ed_directories[self.directory1]
+				dataset = ed_directory.get(self.dataset1)
+				key = dataset.keys()[0]
+				df = pd.read_json(dataset.get(key))
+				return self.ed_component.scatter(df, self.column1, self.column2)
+			elif (self.method == OPTIONS[2]):
+				ed_directory1 = self.ed_directories[self.directory1]
+				dataset1 = ed_directory.get(self.dataset1)
+				key1 = dataset.keys()[0]
+				df1 = pd.read_json(dataset.get(key1))
+
+				ed_directory2 = self.ed_directories[self.directory2]
+				dataset2 = ed_directory.get(self.dataset2)
+				key2 = dataset.keys()[0]
+				df2 = pd.read_json(dataset.get(key2))
+				return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
+			elif (self.method == OPTIONS[3]):
+				ed_directory1 = self.ed_directories[self.directory1]
+				dataset1 = ed_directory.get(self.dataset1)
+				key1 = dataset.keys()[0]
+				df1 = pd.read_json(dataset.get(key1))
+
+				ed_directory2 = self.ed_directories[self.directory2]
+				dataset2 = ed_directory.get(self.dataset2)
+				key2 = dataset.keys()[0]
+				df2 = pd.read_json(dataset.get(key2))
+				return self.ed_component.statistics(df1, df2)
+			elif (self.method == OPTIONS[4]):
+				ed_directory1 = self.ed_directories[self.directory1]
+				dataset1 = ed_directory.get(self.dataset1)
+				key1 = dataset.keys()[0]
+				df1 = pd.read_json(dataset.get(key1))
+
+				ed_directory2 = self.ed_directories[self.directory2]
+				dataset2 = ed_directory.get(self.dataset2)
+				key2 = dataset.keys()[0]
+				df2 = pd.read_json(dataset.get(key2))
+				return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		except Exception as e:
 			# TODO: probably do more about this part, more error handling
 			error_message = 'Could not plot, invalid input format. Check these are correct ---> {0} {1} {2}'.format(self.method, self.json_indexes, self.columns)

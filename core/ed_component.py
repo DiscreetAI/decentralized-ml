@@ -9,7 +9,7 @@ class EDComponent(object):
 
 	def histogram(self, df, column):
 		"""
-		Plots a histogram of the column from the Dataframe. 
+		Generates a histogram of the column from the Dataframe. 
 
 		@param pandas Dataframe df:
 		@param str column: name of the column to plot
@@ -18,7 +18,10 @@ class EDComponent(object):
 
 	def scatter(self, df, column1, column2):
 		"""
-		Plots a scatter plot using, in order to compare them. 
+		Generates a scatter plot, in order to compare the columns.
+		The coordinates of each point are defined by
+		two dataframe columns and filled circles are
+		used to represent each point.  
 
 		@param pandas Dataframe df:
 		@param str column1: name of the first column
@@ -26,28 +29,44 @@ class EDComponent(object):
 		"""
 		return df.plot.scatter(column1, column2)
 
-	def compare_using_histograms(self, df1, df2, column1, column2):
+	def scatter_compare(self, df1, df2, column1, column2):
 		"""
-		Plots a scatter plot using, in order to compare them. 
+		Generates a scatter plot using two dataframes.
+		Both evaluations are on the same two columns.
+		The coordinates of each point are defined by
+		two dataframe columns and filled circles are
+		used to represent each point. 
 
 		@param pandas Dataframe df_first:
 		@param pandas Dataframe df_second:
 		@param str column1: name of the first column
 		@param str column2: name of the second column
 		"""
-		# TODO: get creative with plots 
-		ax = df1.plot.scatter(column1)
-		return df2.plot.scatter(column2, ax=ax)
+		ax = df1.plot.scatter(column1, column2)
+		return df2.plot.scatter(column1, column2, ax=ax)
 
-	def compare_statistics(self, df1, df2, column1, column2):
+	def statistics_columns(self, df1, df2, column1, column2):
 		"""
-		Returns the statistics for each dataframe's corresponding column.
-		This can only work if the columns correspond to numerical values.
+		Generates a descriptive statistic summary of the central tendency, 
+		dispersion and shape of each dataframe's corresponding column.
+		This can only work if the columns have (python) numerical values.
 
 		@param pandas Dataframe df_first:
 		@param pandas Dataframe df_second:
 		@param str column1: name of the first column
 		@param str column2: name of the second column
 		"""
-		# TODO: get creative with plots 
-		return df1.describe(column1), df2.describe(column2)
+		return df1[column1].describe(), df2[column2].describe()
+
+	def statistics(self, df1, df2):
+		"""
+		Generates a descriptive statistic summary of the central tendency, 
+		dispersion and shape of all columns in each dataframe.
+		This can only work if the columns have (python) numerical values.
+
+		@param pandas Dataframe df_first:
+		@param pandas Dataframe df_second:
+		@param str column1: name of the first column
+		@param str column2: name of the second column
+		"""
+		return df1.describe(), df2.describe()
