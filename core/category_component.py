@@ -30,4 +30,4 @@ class CategoryComponent(object):
 			return {'Success': False, 'Error': 'Category: {} has no data providers.'.format(category)}
 		columns = list(data_providers_df.columns.values)
 		providers_list = data_providers_df[columns[1]].tolist()
-		return {'Success': True, 'Directory': bc.get_data_providers_ED(data_providers_df)}
+		return {'Success': True, 'Directory': bc.get_data_providers_ED(providers_list)}

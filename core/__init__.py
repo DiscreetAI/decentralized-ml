@@ -206,46 +206,88 @@ class Orchestrator(object):
 		"""
 		try: 
 			if (self.method == OPTIONS[0]):
+				validate_ed_directories(OPTIONS[0], self.directory1, self.dataset1)
+
 				ed_directory = self.ed_directories[self.directory1]
 				dataset = ed_directory.get(self.dataset1)
-				key = dataset.keys()[0]
-				df = pd.read_json(dataset.get(key))
+				df = pd.read_json(dataset)
+
+				validate_column(df, self.column1)
 				return self.ed_component.histogram(df, self.column1)
 			elif (self.method == OPTIONS[1]):
+				validate_ed_directories(OPTIONS[1], self.directory1, self.dataset1)
+
 				ed_directory = self.ed_directories[self.directory1]
 				dataset = ed_directory.get(self.dataset1)
-				key = dataset.keys()[0]
-				df = pd.read_json(dataset.get(key))
+				df = pd.read_json(dataset)
+
+				validate_column(df, self.column1)
+				validate_column(df, self.column2)
 				return self.ed_component.scatter(df, self.column1, self.column2)
 			elif (self.method == OPTIONS[2]):
+				validate_ed_directories(OPTIONS[2], self.directory1, self.dataset1, self.directory2, self.dataset2)
+
 				ed_directory1 = self.ed_directories[self.directory1]
 				dataset1 = ed_directory.get(self.dataset1)
-				key1 = dataset.keys()[0]
-				df1 = pd.read_json(dataset.get(key1))
+				df1 = pd.read_json(dataset1)
+
+				validate_column(df1, self.column1)
+				validate_column(df1, self.column2)
 
 				ed_directory2 = self.ed_directories[self.directory2]
 				dataset2 = ed_directory.get(self.dataset2)
-				key2 = dataset.keys()[0]
-				df2 = pd.read_json(dataset.get(key2))
+				df2 = pd.read_json(dataset2)
+
+				validate_column(df2, self.column1)
+				validate_column(df2, self.column2)
 				return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
 			elif (self.method == OPTIONS[3]):
+				validate_ed_directories(OPTIONS[3], self.directory1, self.dataset1)
+
 				ed_directory = self.ed_directories[self.directory1]
 				dataset = ed_directory.get(self.dataset1)
-				key = dataset.keys()[0]
-				df = pd.read_json(dataset.get(key))
-				return self.ed_component.statistics(df)
+				df = pd.read_json(dataset)
+
+				validate_column(df, self.column1)
+
+				return self.ed_component.statistics(df, self.column1)
 			elif (self.method == OPTIONS[4]):
+				validate_ed_directories(OPTIONS[4], self.directory1, self.dataset1, self.directory2, self.dataset2)
+
 				ed_directory1 = self.ed_directories[self.directory1]
 				dataset1 = ed_directory.get(self.dataset1)
-				key1 = dataset.keys()[0]
-				df1 = pd.read_json(dataset.get(key1))
+				df1 = pd.read_json(dataset1)
+
+				validate_column(df1, self.column1)
 
 				ed_directory2 = self.ed_directories[self.directory2]
 				dataset2 = ed_directory.get(self.dataset2)
-				key2 = dataset.keys()[0]
-				df2 = pd.read_json(dataset.get(key2))
+				df2 = pd.read_json(dataset2)
+				
+				validate_column(df2, self.column2)
 				return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		except Exception as e:
 			# TODO: probably do more about this part, more error handling
-			error_message = 'Could not plot, invalid input format. Check these are correct ---> {0} {1} {2}'.format(self.method, self.json_indexes, self.columns)
+			error_message = '{0} Could not plot, invalid input format. Check these are correct ---> {1} {2} {3}'.format(e, self.method, self.json_indexes, self.columns)
 			raise Exception(error_message)
+
+
+	def validate_ed_directories(option, directory1, dataset1, directory2=None, dataset2=None):
+		try:
+			if (option == OPTIONS[0] or option == OPTIONS[1] or option == OPTIONS[3]):
+				assert(self.ed_directories.length > directory1)
+				assert(self.ed_directories[directory1].keys().contains(dataset1))
+			elif (option == OPTIONS[2] or option == OPTIONS[4] ):
+				assert(self.ed_directories.length > directory1)
+				assert(self.ed_directories[directory1].keys().contains(dataset1))	
+				assert(self.ed_directories.length > directory2)
+				assert(self.ed_directories[directory1].keys().contains(dataset2))
+		except:
+			raise Exception('Invalid directory index or dataset key.')
+
+	def validate_column(df, column):
+		try:
+			columns = list(df.columns.values)
+			assert(columns.contains(column))
+		except:
+			raise Exception('Invalid column/s.')	

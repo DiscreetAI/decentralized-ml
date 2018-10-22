@@ -58,15 +58,13 @@ class EDComponent(object):
 		"""
 		return df1[column1].describe(), df2[column2].describe()
 
-	def statistics(self, df):
+	def statistics(self, df, column):
 		"""
 		Generates a descriptive statistic summary of the central tendency, 
 		dispersion and shape of all columns in each dataframe.
 		This can only work if the columns have (python) numerical values.
 
 		@param pandas Dataframe df_first:
-		@param pandas Dataframe df_second:
 		@param str column1: name of the first column
-		@param str column2: name of the second column
 		"""
-		return df.describe()
+		return df[column].describe()
