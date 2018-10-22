@@ -6,7 +6,7 @@ import pandas as pd
 from core.ed_component import EDComponent
 import numpy as np
 
-OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'compare using describe','compare using columns']
+OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
 
 class Orchestrator(object):
 	"""
@@ -229,16 +229,11 @@ class Orchestrator(object):
 				df2 = pd.read_json(dataset.get(key2))
 				return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
 			elif (self.method == OPTIONS[3]):
-				ed_directory1 = self.ed_directories[self.directory1]
-				dataset1 = ed_directory.get(self.dataset1)
-				key1 = dataset.keys()[0]
-				df1 = pd.read_json(dataset.get(key1))
-
-				ed_directory2 = self.ed_directories[self.directory2]
-				dataset2 = ed_directory.get(self.dataset2)
-				key2 = dataset.keys()[0]
-				df2 = pd.read_json(dataset.get(key2))
-				return self.ed_component.statistics(df1, df2)
+				ed_directory = self.ed_directories[self.directory1]
+				dataset = ed_directory.get(self.dataset1)
+				key = dataset.keys()[0]
+				df = pd.read_json(dataset.get(key))
+				return self.ed_component.statistics(df)
 			elif (self.method == OPTIONS[4]):
 				ed_directory1 = self.ed_directories[self.directory1]
 				dataset1 = ed_directory.get(self.dataset1)

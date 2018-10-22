@@ -58,7 +58,7 @@ class EDComponent(object):
 		"""
 		return df1[column1].describe(), df2[column2].describe()
 
-	def statistics(self, df1, df2):
+	def statistics(self, df):
 		"""
 		Generates a descriptive statistic summary of the central tendency, 
 		dispersion and shape of all columns in each dataframe.
@@ -69,4 +69,4 @@ class EDComponent(object):
 		@param str column1: name of the first column
 		@param str column2: name of the second column
 		"""
-		return df1.describe(), df2.describe()
+		return df.describe()
