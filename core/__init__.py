@@ -263,7 +263,7 @@ class Orchestrator(object):
 				ed_directory2 = self.ed_directories[self.directory2]
 				dataset2 = ed_directory.get(self.dataset2)
 				df2 = pd.read_json(dataset2)
-				
+
 				validate_column(df2, self.column2)
 				return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		except Exception as e:
@@ -290,4 +290,4 @@ class Orchestrator(object):
 			columns = list(df.columns.values)
 			assert(columns.contains(column))
 		except:
-			raise Exception('Invalid column/s.')	
+			raise Exception('Invalid column {0}'.format(column))	
