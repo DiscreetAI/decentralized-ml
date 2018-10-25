@@ -21,71 +21,33 @@ class Orchestrator(object):
 		self.db_client = DBClient()
 		self.category_component = CategoryComponent(db_client)
 		self.ed_component = EDComponent()
-		self.ed_directories = []
+		self.ed_datasets = list()
 		self.method = None
-		self.directory1 = None
-		self.directory2 = None
 		self.dataset1 = None
 		self.dataset2 = None
 		self.column1 = None
 		self.column2 = None
  
-	def get_ed_directories(self):
+	def get_ed_datasets(self):
 		"""
-		Returns ed_directories to the user,
+		Returns ed_datasets to the user,
 		this is a list.
 		"""
 		try:
-			return self.ed_directories
+			return self.ed_datasets
 		except Exception as inst:
 			print(inst)
 
-	def get_ed_directory(self, directory_index):
+	def get_dataset_dictionary(self, dataset_index):
 		"""
-		Returns a dictionary in ed_directories to the user.
+		Returns a dictionary in ed_datasets to the user.
 
-		@param integer directory_index: index of corresponding directory
-		"""
-		# TODO: catch exceptions
-		try:
-			return self.ed_directories[directory_index]
-		except Exception as inst:
-			print(inst)
-
-	def get_datasets(self, directory_index):
-		"""
-		Returns a list of all datasets available for corresponding 
-		directory in directory_index position.
-
-		@param integer directory_index: index of corresponding directory
+		@param integer dataset_index: index of corresponding directory
 		"""
 		try:
-			ed_directory = self.ed_directories[directory_index]
-			return ed_directory.keys()
+			return self.ed_datasets[dataset_index]
 		except Exception as inst:
 			print(inst)
-
-	def get_dataset(self, directory_index, dataset_key):
-		"""
-		Returns a dataframe of the dataset dataset of directory in
-		directory_index position
-
-		@param integer directory_index: index of corresponding directory
-		@param object dataset_key: key of the dataset in the corresponding
-		directory
-		"""
-		# TODO: catch exceptions
-		try: 
-			ed_directory = self.ed_directories[directory_index]
-			dataset = ed_directory.get(dataset_key)
-			key = dataset.keys()[0]
-			df = pd.read_json(dataset.get(key))
-			return df
-		except Exception as inst:
-			print(inst)
-
-	def check(self):
-		return self.method, self.columns, self.json_indexes
 
 	def category_name(self):
 		"""
@@ -103,8 +65,7 @@ class Orchestrator(object):
 			category_text = category_widget.value.strip().lower()
 			cc_dict = self.category_component.get_ed_with_category(category_text)
 			# TODO: change this to the actual value of the dictionary, it should not be jsut the category text
-			# global ed_directories
-			self.ed_directories = None
+			self.ed_datasets = None
 			sender.disabled = False
 
 
@@ -132,28 +93,12 @@ class Orchestrator(object):
 				"""
 				sender.disabled = True
 				self.method = method_widget.value.strip()
-				self.directory1 = directory1_widget.value.strip()
-				self.directory2 = directory2_widget.value.strip()
 				self.dataset1 = dataset1_widget.value.strip()
 				self.dataset2 = dataset2_widget.value.strip()
 				self.column1 = column1_widget.value.strip()
 				self.column2 = column2_widget.value.strip()
 				sender.disabled = False
 
-			directory1_widget = widgets.Text(
-				value=None,
-				placeholder='',
-				description='Directory 1:',
-				disabled=False,
-
-			)
-			directory2_widget = widgets.Text(
-				value=None,
-				placeholder='',
-				description='Directory 2:',
-				disabled=False,
-
-			)
 			dataset1_widget = widgets.Text(
 				value=None,
 				placeholder='',
@@ -191,8 +136,6 @@ class Orchestrator(object):
 			button = widgets.Button(description='Submit')
 
 			display(method_widget)
-			display(directory1_widget)
-			display(directory2_widget)
 			display(dataset1_widget)
 			display(dataset2_widget)
 			display(column1_widget)
@@ -206,84 +149,85 @@ class Orchestrator(object):
 		"""
 		try: 
 			if (self.method == OPTIONS[0]):
-				validate_ed_directories(OPTIONS[0], self.directory1, self.dataset1)
+				validate_ed_dataset(self.dataset1)
 
-				ed_directory = self.ed_directories[self.directory1]
-				dataset = ed_directory.get(self.dataset1)
-				df = pd.read_json(dataset)
+				dataset1_dict = self.ed_datasets[self.dataset1]
+				dataset1_key = list(dataset1_dict.keys())
+				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				df = pd.read_json(dataset1_json)
 
 				validate_column(df, self.column1)
 				return self.ed_component.histogram(df, self.column1)
 			elif (self.method == OPTIONS[1]):
-				validate_ed_directories(OPTIONS[1], self.directory1, self.dataset1)
+				validate_ed_dataset(self.dataset1)
 
-				ed_directory = self.ed_directories[self.directory1]
-				dataset = ed_directory.get(self.dataset1)
-				df = pd.read_json(dataset)
-
+				dataset1_dict = self.ed_datasets[self.dataset1]
+				dataset1_key = list(dataset1_dict.keys())
+				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				df = pd.read_json(dataset1_json)
+				
 				validate_column(df, self.column1)
 				validate_column(df, self.column2)
 				return self.ed_component.scatter(df, self.column1, self.column2)
 			elif (self.method == OPTIONS[2]):
-				validate_ed_directories(OPTIONS[2], self.directory1, self.dataset1, self.directory2, self.dataset2)
+				validate_ed_dataset(self.dataset1)
+				validate_ed_dataset(self.dataset2)
 
-				ed_directory1 = self.ed_directories[self.directory1]
-				dataset1 = ed_directory.get(self.dataset1)
-				df1 = pd.read_json(dataset1)
+				dataset1_dict = self.ed_datasets[self.dataset1]
+				dataset1_key = list(dataset1_dict.keys())
+				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				df1 = pd.read_json(dataset1_json)
 
 				validate_column(df1, self.column1)
 				validate_column(df1, self.column2)
 
-				ed_directory2 = self.ed_directories[self.directory2]
-				dataset2 = ed_directory.get(self.dataset2)
-				df2 = pd.read_json(dataset2)
+				dataset2_dict = self.ed_datasets[self.dataset2]
+				dataset2_key = list(dataset2_dict.keys())
+				dataset2_json = dataset2_dict.get(dataset2_key[0])[1]
+				df2 = pd.read_json(dataset2_json)
 
 				validate_column(df2, self.column1)
 				validate_column(df2, self.column2)
 				return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
 			elif (self.method == OPTIONS[3]):
-				validate_ed_directories(OPTIONS[3], self.directory1, self.dataset1)
+				validate_ed_dataset(self.dataset1)
 
-				ed_directory = self.ed_directories[self.directory1]
-				dataset = ed_directory.get(self.dataset1)
-				df = pd.read_json(dataset)
+				dataset1_dict = self.ed_datasets[self.dataset1]
+				dataset1_key = list(dataset1_dict.keys())
+				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				df = pd.read_json(dataset1_json)
 
 				validate_column(df, self.column1)
-
 				return self.ed_component.statistics(df, self.column1)
 			elif (self.method == OPTIONS[4]):
-				validate_ed_directories(OPTIONS[4], self.directory1, self.dataset1, self.directory2, self.dataset2)
+				validate_ed_dataset(self.dataset1)
+				validate_ed_dataset(self.dataset2)
 
-				ed_directory1 = self.ed_directories[self.directory1]
-				dataset1 = ed_directory.get(self.dataset1)
-				df1 = pd.read_json(dataset1)
+				dataset1_dict = self.ed_datasets[self.dataset1]
+				dataset1_key = list(dataset1_dict.keys())
+				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				df1 = pd.read_json(dataset1_json)
 
 				validate_column(df1, self.column1)
 
-				ed_directory2 = self.ed_directories[self.directory2]
-				dataset2 = ed_directory.get(self.dataset2)
-				df2 = pd.read_json(dataset2)
+				dataset2_dict = self.ed_datasets[self.dataset2]
+				dataset2_key = list(dataset2_dict.keys())
+				dataset2_json = dataset2_dict.get(dataset2_key[0])[1]
+				df2 = pd.read_json(dataset2_json)
 
 				validate_column(df2, self.column2)
 				return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		except Exception as e:
-			# TODO: probably do more about this part, more error handling
 			error_message = '{0} Could not plot, invalid input format. Check these are correct ---> {1} {2} {3}'.format(e, self.method, self.json_indexes, self.columns)
 			raise Exception(error_message)
 
 
-	def validate_ed_directories(option, directory1, dataset1, directory2=None, dataset2=None):
+	def validate_ed_dataset(dataset_index):
 		try:
-			if (option == OPTIONS[0] or option == OPTIONS[1] or option == OPTIONS[3]):
-				assert(self.ed_directories.length > directory1)
-				assert(self.ed_directories[directory1].keys().contains(dataset1))
-			elif (option == OPTIONS[2] or option == OPTIONS[4] ):
-				assert(self.ed_directories.length > directory1)
-				assert(self.ed_directories[directory1].keys().contains(dataset1))	
-				assert(self.ed_directories.length > directory2)
-				assert(self.ed_directories[directory1].keys().contains(dataset2))
+			assert(dataset_index >= 0)
+			assert(len(self.ed_datasets) > dataset_index)
 		except:
-			raise Exception('Invalid directory index or dataset key.')
+			raise Exception('Invalid index for dataset.')
 
 	def validate_column(df, column):
 		try:
