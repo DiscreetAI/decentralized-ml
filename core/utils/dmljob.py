@@ -21,7 +21,7 @@ class DMLJob(object):
         label_column_name=None
         ):
         """
-        Initializes a DML Result object.
+        Initializes a DML Job object.
 
         Args:
             job_type (str): the job type.
@@ -29,8 +29,8 @@ class DMLJob(object):
             framework_type (str): the type of framework the model is in [keras].
             weights (list): list of np.arrays representing the weghts of a model.
             hyperparams (dict): hyperparameters for training/validating a model.
-            label_column_name (str): string that represents which column of the 
-                                     transformed dataset contains the labels for 
+            label_column_name (str): string that represents which column of the
+                                     transformed dataset contains the labels for
                                      supervised training.
 
         """
@@ -40,6 +40,7 @@ class DMLJob(object):
         self.weights = weights
         self.hyperparams = hyperparams
         self.label_column_name = label_column_name
+
 
 
 def serialize_job(dmljob_obj):
@@ -57,11 +58,14 @@ def serialize_job(dmljob_obj):
         'serialized_model': dmljob_obj.serialized_model,
         'framework_type': dmljob_obj.framework_type,
         'hyperparams': dmljob_obj.hyperparams,
-        'label_column_name': dmljob_obj.label_column_name
+        'label_column_name': dmljob_obj.label_column_name,
     }
+    weights = None
+    if dmljob_obj.weights:
+        weights = serialize_weights(dmljob_obj.weights)
     return {
-        'weights': serialize_weights(dmljob_obj.weights),
-        'job_data': rest
+        'weights': weights,
+        'job_data': rest,
     }
 
 def deserialize_job(serialized_job):
@@ -75,11 +79,14 @@ def deserialize_job(serialized_job):
         DMLJob: A DML Job object from serialized_job.
     """
     rest = serialized_job['job_data']
+    weights = None
+    if serialized_job.get('weights', None):
+        weights = deserialize_weights(serialized_job['weights'])
     return DMLJob(
         rest['job_type'],
         rest['serialized_model'],
         rest['framework_type'],
-        deserialize_weights(serialized_job['weights']),
+        weights,
         rest['hyperparams'],
-        rest['label_column_name']
+        rest['label_column_name'],
     )

@@ -2,7 +2,7 @@ import threading
 
 from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager
-from core.debug_communication import FlaskTestingCommunicationManager
+from core.communication_manager import CommunicationManager
 from core.scheduler import DMLScheduler
 
 
@@ -26,34 +26,31 @@ def bootstrap():
     )
 
     # 3. Set up the Communication Manager.
-    # NOTE: This is the test version until the P2P one is implemented.
-    communication_manager = FlaskTestingCommunicationManager(
-        config_manager=config_manager
-    )
+    communication_manager = CommunicationManager()
 
     # 4. Set up the Execution Pipeline (Scheduler, Runners)
     # and run the Scheduler's cron on a new thread.
     scheduler = DMLScheduler(
         config_manager=config_manager,
     )
+    scheduler.configure(
+        communication_manager=communication_manager
+    )
     t1 = threading.Thread(
         target=scheduler.start_cron,
         args=(0.05,),
-        daemon=True,
+        daemon=False,
     )
     t1.start()
 
-    # 5. Start listening on a new thread.
+    # 5. Set up Blockchain Gateway and start listening on a new thread.
+    # TODO: The Blockchain Client to be implemented.
+
+    # 6. Configure the Communication Manager with the components it talks to.
     communication_manager.configure(
         scheduler=scheduler
     )
-    t2 = threading.Thread(
-        target=communication_manager.start,
-        args=(),
-        daemon=True,
-    )
-    t2.start()
 
-    # 6. Wait for the threads to end.
+    # 7. Wait for the threads to end.
+    # TODO: Need to make it work as a daemon.
     t1.join()
-    t2.join()

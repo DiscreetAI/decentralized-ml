@@ -6,39 +6,23 @@ import os
 import pytest
 import numpy as np
 
-from custom.keras               import get_optimizer
-from models.keras_perceptron    import KerasPerceptron
-from core.utils.dmljob          import DMLJob
 from core.scheduler             import DMLScheduler
 from core.configuration         import ConfigurationManager
+from tests.testing_utils        import make_initialize_job, make_model_json
 
 
 config_manager = ConfigurationManager()
 config_manager.bootstrap(
     config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
 )
+
+class MockCommunicationManager:
+    def inform(self, dummy1, dummy2):
+        pass
+
+communication_manager = MockCommunicationManager()
 scheduler = DMLScheduler(config_manager)
-
-
-def make_model_json():
-    m = KerasPerceptron(is_training=True)
-    model_architecture = m.model.to_json()
-    model_optimizer = get_optimizer(m.model)
-    model_json = {
-        "architecture": model_architecture,
-        "optimizer": model_optimizer
-    }
-    return model_json
-
-
-def make_initialize_job(model_json):
-    initialize_job = DMLJob(
-        "initialize",
-        model_json,
-        "keras"
-    )
-    return initialize_job
-
+scheduler.configure(communication_manager)
 
 def test_dmlscheduler_sanity():
     """
@@ -52,7 +36,7 @@ def test_dmlscheduler_sanity():
         time.sleep(0.1)
         scheduler.runners_run_next_jobs()
     output = scheduler.processed.pop(0)
-    initial_weights = output.results['initial_weights']
+    initial_weights = output.results['weights']
     assert type(initial_weights) == list
     assert type(initial_weights[0]) == np.ndarray
 
@@ -82,7 +66,7 @@ def test_dmlscheduler_arbitrary_scheduling():
     assert len(scheduler.processed) == 5
     while scheduler.processed:
         output = scheduler.processed.pop(0)
-        initial_weights = output.results['initial_weights']
+        initial_weights = output.results['weights']
         assert type(initial_weights) == list
         assert type(initial_weights[0]) == np.ndarray
 
@@ -103,6 +87,6 @@ def test_dmlscheduler_cron():
     assert len(scheduler.processed) == 3
     while scheduler.processed:
         output = scheduler.processed.pop(0)
-        initial_weights = output.results['initial_weights']
+        initial_weights = output.results['weights']
         assert type(initial_weights) == list
         assert type(initial_weights[0]) == np.ndarray

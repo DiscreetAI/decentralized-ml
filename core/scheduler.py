@@ -3,11 +3,13 @@ import time
 import json
 from collections import deque
 from threading import Event, Timer
+import multiprocessing
 from multiprocessing import Pool
 
-from core.utils.dmljob import DMLJob
 from core.runner import DMLRunner
 from core.configuration import ConfigurationManager
+from core.utils.dmljob import DMLJob
+from core.utils.enums import RawEventTypes
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -41,11 +43,19 @@ class DMLScheduler(object):
 		self.num_runners = config.getint("SCHEDULER", "num_runners")
 		self.max_tries = config.getint("SCHEDULER", "max_tries")
 
+		multiprocessing.set_start_method('spawn', force=True)
 		self.pool = Pool(processes=self.num_runners)
 		self.runners = [DMLRunner(config_manager) for _ in range(self.num_runners)]
 		self.current_jobs = [None for _ in range(self.num_runners)]
 		self.current_results = [None for _ in range(self.num_runners)]
 		logging.info("Scheduler is set up!")
+
+	def configure(self, communication_manager):
+		"""
+		Configures the scheduler with the Communication Manager so that it can
+		inform it of the jobs it schedules after they run successfully.
+		"""
+		self.communication_manager = communication_manager
 
 	def add_job(self, dml_job):
 		"""
@@ -91,10 +101,15 @@ class DMLScheduler(object):
 		run the next job on the queue asynchronously of the others and collect
 		the result of the job that was running before (if applicable).
 
+		If job succeeds, inform the Communication Manager about the results.
+
 		If job that runner is running fails, then put the job back in queue.
 		If job failed more than num_tries times, don't put the job back in
-		thw queue.
+		the queue.
 		"""
+		if not self.communication_manager:
+			raise Exception("Scheduler needs to be configured first!")
+
 		for i, runner in enumerate(self.runners):
 			# Check if there's any finished jobs and process them.
 			if self.current_results[i]:
@@ -106,6 +121,10 @@ class DMLScheduler(object):
 					self.history.append(finished_results)
 					self.current_jobs[i] = None
 					self.current_results[i] = None
+					self.communication_manager.inform(
+						RawEventTypes.JOB_DONE.name,
+						finished_results
+					)
 				elif finished_results.status == 'failed':
 					# If some error occurred
 					job_to_run = self.current_jobs[i]

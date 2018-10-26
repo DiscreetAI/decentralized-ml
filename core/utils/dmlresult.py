@@ -16,7 +16,7 @@ class DMLResult(object):
     def __init__(
         self,
         status,
-        job_type,
+        job,
         results={},
         error_message="",
     ):
@@ -25,12 +25,12 @@ class DMLResult(object):
 
         Args:
             status (str): status of the job [successful|failed].
-            job_type (str): job type of the job that finished running.
+            job (DMLJob): the job that finished running.
             results (dict): results from running the job.
             error_message (str): error message of why the job failed (if it did).
         """
         self.status = status
-        self.job_type = job_type
+        self.job = job
         self.results = results
         self.error_message = error_message
 
@@ -47,7 +47,7 @@ def serialize_result(dmlresult_job):
     """
     return {
         'status': dmlresult_job.status,
-        'job_type': dmlresult_job.job_type,
+        'job': serialize_job(dmlresult_job.job),
         'results': dmlresult_job.results,
         'error_message': dmlresult_job.error_message,
     }
@@ -65,7 +65,7 @@ def deserialize_result(serialized_result):
     """
     return DMLResult(
         status=serialized_result['status'],
-        job_type=serialized_result['job_type'],
+        job=deserialize_job(serialized_result['job']),
         results=serialized_result['results'],
         error_message=serialized_result['error_message'],
     )
