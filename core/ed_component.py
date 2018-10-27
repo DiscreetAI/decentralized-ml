@@ -2,9 +2,7 @@ class EDComponent(object):
 	"""
 	Exploratory Data Component
 
-	This component enables visualization for DataFrame.
-
-	- 
+	- This component enables visualization for a dataframes.
 	""" 
 
 	def histogram(self, df, column):

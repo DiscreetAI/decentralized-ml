@@ -1,11 +1,12 @@
 # import blockchain as bc
 import pandas as pd
 
+
 class CategoryComponent(object):
 	"""
 	CategoryComponent
 
-	- 
+	- Returns the object containing datasets needed by __init__.py.
 	""" 
 	def __init__(self, DBClient):
 		"""
@@ -17,10 +18,17 @@ class CategoryComponent(object):
 		
 	def get_ed_with_category(self, category):
 		"""
-		Return ED for each data provider with the given category.
-
+		Return list of dictionaries for each data provider with the given category.
+		Each dictionary has the following structure: 
+			key: #_data_provider, where # stands for the dataset number/index.
+			value: (data_provider, dataset json object), this is a tuple.
+ 
 		@param str category: name of the data category of interest
 		@return dict: a dictionary with status and Error (str) or Directory with data providers ED
+
+		TODO: Need to resolve how to integrate the Category Component with the Blockchain Client. 
+		Furthermore, we must check the return value of the getter method and work with it accordingly.
+		TODO: Parsing and handling the parameters for bc.getter().
 		"""
 		try:
 			data_providers_df = self.DBClient._get_data_providers_with_category(category)
@@ -28,10 +36,7 @@ class CategoryComponent(object):
 			return {'Success': False, 'Error': e}
 		if data_providers_df.empty: 
 			return {'Success': False, 'Error': 'Category: {} has no data providers.'.format(category)}
-		columns = list(data_providers_df.columns.values)
-		providers_list = data_providers_df[columns[1]].tolist()
-		# Change a lot of things here, but worry about them later
-		# for now understand that we have to iterate through providers_list
+		providers_list = data_providers_df['data_provider']
 		result = list()
 		for provider in providers_list:
 			datasets_dict = bc.getter(provider)

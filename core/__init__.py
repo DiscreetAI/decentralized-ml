@@ -6,13 +6,15 @@ import pandas as pd
 from core.ed_component import EDComponent
 import numpy as np
 
+
 OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
 
 class Orchestrator(object):
 	"""
 	Orchestrator Class
-
-	- 
+	
+	- Manages logic between DBClient, EDComponent, and CategoryComponent. 
+	- Gets input from user with the help of DLDL Notebook.
 	""" 
 	def __init__(self):
 		"""
@@ -141,6 +143,12 @@ class Orchestrator(object):
 	def visualize(self): 
 		"""
 		Returns the corresponding plot.
+		There are five different options to call methods in self.ed_component on.
+		OPTIONS[0]: 'histogram' needs one dataset json and one column.
+		OPTIONS[1]: 'scatter' needs one dataset json and two columns.
+		OPTIONS[2]: 'compare using scatter' needs two datasets json and two columns.
+		OPTIONS[3}: 'describe' needs one dataset and one column.
+		OPTIONS[4]: 'compare using describe' needs two datasets and two corresponding columns.
 		"""
 		try: 
 			if (self.method == OPTIONS[0]):
@@ -211,16 +219,10 @@ class Orchestrator(object):
 
 
 	def validate_ed_dataset(dataset_index):
-		try:
-			assert(dataset_index >= 0)
-			assert(len(self.ed_datasets) > dataset_index)
-		except:
-			raise Exception('Invalid index for dataset.')
+		assert(len(self.ed_datasets) != 0, 'No datasets available, please query to create datasets.')
+		assert(dataset_index >= 0, 'Index must be non-negative.')
+		assert(len(self.ed_datasets) > dataset_index, 'Index out of range.')
 
 	def validate_column(df, column):
-		try:
-			columns = list(df.columns.values)
-			assert(columns.contains(column))
-		except:
-			raise Exception('Invalid column {0}'.format(column))	
+		assert(column in df.columns, 'Invalid column {0}'.format(column))
 
