@@ -38,6 +38,6 @@ class CategoryComponent(object):
 			datasets = datasets_dict.values()
 			for index in range(len(datasets)):
 				key = 'dataset{0}_{1}'.format(index, provider)
-				value = [provider, datasets[index]]
+				value = (provider, datasets[index])
 				result.append({key: value})
 		return {'Success': True, 'Result': result}
