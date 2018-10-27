@@ -62,7 +62,7 @@ class Orchestrator(object):
 			category_text = category_widget.value.strip().lower()
 			cc_dict = self.category_component.get_ed_with_category(category_text)
 			# TODO: change this to the actual value of the dictionary, it should not be jsut the category text
-			self.ed_datasets = None
+			self.ed_datasets = list()
 			sender.disabled = False
 
 
