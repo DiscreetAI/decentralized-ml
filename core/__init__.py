@@ -150,73 +150,71 @@ class Orchestrator(object):
 		OPTIONS[3}: 'describe' needs one dataset and one column.
 		OPTIONS[4]: 'compare using describe' needs two datasets and two corresponding columns.
 		"""
-		try: 
-			if (self.method == OPTIONS[0]):
-				validate_ed_dataset(self.dataset1)
+		if (self.method == OPTIONS[0]):
+			validate_ed_dataset(self.dataset1)
 
-				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_json = dataset1_dict.values()[0][1]
-				df = pd.read_json(dataset1_json)
+			dataset1_dict = self.ed_datasets[self.dataset1]
+			dataset1_json = dataset1_dict.values()[0][1]
+			df = pd.read_json(dataset1_json)
 
-				validate_column(df, self.column1)
-				return self.ed_component.histogram(df, self.column1)
-			elif (self.method == OPTIONS[1]):
-				validate_ed_dataset(self.dataset1)
+			validate_column(df, self.column1)
+			return self.ed_component.histogram(df, self.column1)
+		elif (self.method == OPTIONS[1]):
+			validate_ed_dataset(self.dataset1)
 
-				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_json = dataset1_dict.values()[0][1]
-				df = pd.read_json(dataset1_json)
-				
-				validate_column(df, self.column1)
-				validate_column(df, self.column2)
-				return self.ed_component.scatter(df, self.column1, self.column2)
-			elif (self.method == OPTIONS[2]):
-				validate_ed_dataset(self.dataset1)
-				validate_ed_dataset(self.dataset2)
+			dataset1_dict = self.ed_datasets[self.dataset1]
+			dataset1_json = dataset1_dict.values()[0][1]
+			df = pd.read_json(dataset1_json)
+			
+			validate_column(df, self.column1)
+			validate_column(df, self.column2)
+			return self.ed_component.scatter(df, self.column1, self.column2)
+		elif (self.method == OPTIONS[2]):
+			validate_ed_dataset(self.dataset1)
+			validate_ed_dataset(self.dataset2)
 
-				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_json = dataset1_dict.values()[0][1]
-				df1 = pd.read_json(dataset1_json)
+			dataset1_dict = self.ed_datasets[self.dataset1]
+			dataset1_json = dataset1_dict.values()[0][1]
+			df1 = pd.read_json(dataset1_json)
 
-				validate_column(df1, self.column1)
-				validate_column(df1, self.column2)
+			validate_column(df1, self.column1)
+			validate_column(df1, self.column2)
 
-				dataset2_dict = self.ed_datasets[self.dataset2]
-				dataset2_json = dataset2_dict.values()[0][1]
-				df2 = pd.read_json(dataset2_json)
+			dataset2_dict = self.ed_datasets[self.dataset2]
+			dataset2_json = dataset2_dict.values()[0][1]
+			df2 = pd.read_json(dataset2_json)
 
-				validate_column(df2, self.column1)
-				validate_column(df2, self.column2)
-				return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
-			elif (self.method == OPTIONS[3]):
-				validate_ed_dataset(self.dataset1)
+			validate_column(df2, self.column1)
+			validate_column(df2, self.column2)
+			return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
+		elif (self.method == OPTIONS[3]):
+			validate_ed_dataset(self.dataset1)
 
-				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset2_json = dataset2_dict.values()[0][1]
-				df = pd.read_json(dataset1_json)
+			dataset1_dict = self.ed_datasets[self.dataset1]
+			dataset1_json = dataset1_dict.values()[0][1]
+			df = pd.read_json(dataset1_json)
 
-				validate_column(df, self.column1)
-				return self.ed_component.statistics(df, self.column1)
-			elif (self.method == OPTIONS[4]):
-				validate_ed_dataset(self.dataset1)
-				validate_ed_dataset(self.dataset2)
+			validate_column(df, self.column1)
+			return self.ed_component.statistics(df, self.column1)
+		elif (self.method == OPTIONS[4]):
+			validate_ed_dataset(self.dataset1)
+			validate_ed_dataset(self.dataset2)
 
-				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_json = dataset1_dict.values()[0][1]
-				df1 = pd.read_json(dataset1_json)
+			dataset1_dict = self.ed_datasets[self.dataset1]
+			dataset1_json = dataset1_dict.values()[0][1]
+			df1 = pd.read_json(dataset1_json)
 
-				validate_column(df1, self.column1)
+			validate_column(df1, self.column1)
 
-				dataset2_dict = self.ed_datasets[self.dataset2]
-				dataset2_json = dataset2_dict.values()[0][1]
-				df2 = pd.read_json(dataset2_json)
+			dataset2_dict = self.ed_datasets[self.dataset2]
+			dataset2_json = dataset2_dict.values()[0][1]
+			df2 = pd.read_json(dataset2_json)
 
-				validate_column(df2, self.column2)
-				return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
-		except Exception as e:
+			validate_column(df2, self.column2)
+			return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
+		else: 
 			error_message = '{0} Could not plot, invalid input format. Check these are correct ---> {1} {2} {3}'.format(e, self.method, self.json_indexes, self.columns)
 			raise Exception(error_message)
-
 
 	def validate_ed_dataset(dataset_index):
 		assert(len(self.ed_datasets) != 0, 'No datasets available, please query to create datasets.')
