@@ -1,4 +1,4 @@
-""" import Blockchain** as bc"""
+import BlockchainWrapper as bc
 import pandas as pd
 
 class CategoryComponent(object):

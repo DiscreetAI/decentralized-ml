@@ -33,10 +33,7 @@ class Orchestrator(object):
 		Returns ed_datasets to the user,
 		this is a list.
 		"""
-		try:
-			return self.ed_datasets
-		except Exception as inst:
-			print(inst)
+		return self.ed_datasets
 
 	def get_dataset_dictionary(self, dataset_index):
 		"""
@@ -44,10 +41,8 @@ class Orchestrator(object):
 
 		@param integer dataset_index: index of corresponding directory
 		"""
-		try:
-			return self.ed_datasets[dataset_index]
-		except Exception as inst:
-			print(inst)
+		validate_ed_dataset(dataset_index)
+		return self.ed_datasets[dataset_index]
 
 	def category_name(self):
 		"""
@@ -152,8 +147,7 @@ class Orchestrator(object):
 				validate_ed_dataset(self.dataset1)
 
 				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_key = list(dataset1_dict.keys())
-				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				dataset1_json = dataset1_dict.values()[0][1]
 				df = pd.read_json(dataset1_json)
 
 				validate_column(df, self.column1)
@@ -162,8 +156,7 @@ class Orchestrator(object):
 				validate_ed_dataset(self.dataset1)
 
 				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_key = list(dataset1_dict.keys())
-				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				dataset1_json = dataset1_dict.values()[0][1]
 				df = pd.read_json(dataset1_json)
 				
 				validate_column(df, self.column1)
@@ -174,16 +167,14 @@ class Orchestrator(object):
 				validate_ed_dataset(self.dataset2)
 
 				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_key = list(dataset1_dict.keys())
-				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				dataset1_json = dataset1_dict.values()[0][1]
 				df1 = pd.read_json(dataset1_json)
 
 				validate_column(df1, self.column1)
 				validate_column(df1, self.column2)
 
 				dataset2_dict = self.ed_datasets[self.dataset2]
-				dataset2_key = list(dataset2_dict.keys())
-				dataset2_json = dataset2_dict.get(dataset2_key[0])[1]
+				dataset2_json = dataset2_dict.values()[0][1]
 				df2 = pd.read_json(dataset2_json)
 
 				validate_column(df2, self.column1)
@@ -193,8 +184,7 @@ class Orchestrator(object):
 				validate_ed_dataset(self.dataset1)
 
 				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_key = list(dataset1_dict.keys())
-				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				dataset2_json = dataset2_dict.values()[0][1]
 				df = pd.read_json(dataset1_json)
 
 				validate_column(df, self.column1)
@@ -204,15 +194,13 @@ class Orchestrator(object):
 				validate_ed_dataset(self.dataset2)
 
 				dataset1_dict = self.ed_datasets[self.dataset1]
-				dataset1_key = list(dataset1_dict.keys())
-				dataset1_json = dataset1_dict.get(dataset1_key[0])[1]
+				dataset1_json = dataset1_dict.values()[0][1]
 				df1 = pd.read_json(dataset1_json)
 
 				validate_column(df1, self.column1)
 
 				dataset2_dict = self.ed_datasets[self.dataset2]
-				dataset2_key = list(dataset2_dict.keys())
-				dataset2_json = dataset2_dict.get(dataset2_key[0])[1]
+				dataset2_json = dataset2_dict.values()[0][1]
 				df2 = pd.read_json(dataset2_json)
 
 				validate_column(df2, self.column2)
@@ -235,3 +223,4 @@ class Orchestrator(object):
 			assert(columns.contains(column))
 		except:
 			raise Exception('Invalid column {0}'.format(column))	
+
