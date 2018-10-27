@@ -1,4 +1,4 @@
-import BlockchainWrapper as bc
+# import blockchain as bc
 import pandas as pd
 
 class CategoryComponent(object):
@@ -32,4 +32,12 @@ class CategoryComponent(object):
 		providers_list = data_providers_df[columns[1]].tolist()
 		# Change a lot of things here, but worry about them later
 		# for now understand that we have to iterate through providers_list
-		return {'Success': True, 'Directory': bc.getter(providers_list)}
+		result = list()
+		for provider in providers_list:
+			datasets_dict = bc.getter(provider)
+			datasets = datasets_dict.values()
+			for index in range(len(datasets)):
+				key = 'dataset{0}_{1}'.format(index, provider)
+				value = [provider, datasets[index]]
+				result.append({key: value})
+		return {'Success': True, 'Result': result}
