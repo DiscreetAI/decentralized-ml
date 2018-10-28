@@ -84,4 +84,30 @@ if __name__ == '__main__':
 	client = Client()
 	client.setter("test", "test123")
 	print(client.getter("test"))
+    ##########################################################################
+    ###                         DEVELOPER SECTION                          ###
+    ##########################################################################
+
+    def broadcast_decentralized_learning(self, model_config: object)-> str:
+        """
+        Upload a model config and weights to the blockchain
+        """
+        tx_receipt = setter(self.client, None, self.port, model_config, flag=True)
+        return tx_receipt
+
+    def broadcast_terminate(self, key: str) -> str:
+        """
+        Terminates decentralized training
+        TODO: check if training even started
+        """
+        tx_receipt = setter(self.client, key, self.port, None)
+        return tx_receipt
+
+    def handle_decentralized_learning_owner(self, model_config: object) -> None:
+        """
+        Return weights after training terminates
+        TODO: add condition to check if training for specific model terminated
+        """
+        final_weights = getter(self.client, model_config, self.state, self.port, self.timeout)
+        return final_weights
 """
