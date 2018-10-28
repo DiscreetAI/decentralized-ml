@@ -5,6 +5,8 @@ from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
 import numpy as np
+# TODO: import here
+# import blockchain_utils as bc
 
 
 OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
@@ -21,7 +23,9 @@ class Orchestrator(object):
 		Initialize Orchestrator instance.
 		"""
 		self.db_client = DBClient()
-		self.category_component = CategoryComponent(db_client)
+		# TODO: integrate with bc
+		# self.bc_client = BCClient()
+		self.category_component = CategoryComponent(db_client, None)
 		self.ed_component = EDComponent()
 		self.ed_datasets = list()
 		self.method = None
@@ -213,7 +217,7 @@ class Orchestrator(object):
 			validate_column(df2, self.column2)
 			return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		else: 
-			error_message = '{0} Could not plot, invalid input format. Check these are correct ---> {1} {2} {3}'.format(e, self.method, self.json_indexes, self.columns)
+			error_message = 'Could not plot, invalid input format.'
 			raise Exception(error_message)
 
 	def validate_ed_dataset(dataset_index):
