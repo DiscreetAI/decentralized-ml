@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np 
 from core.category_component import CategoryComponent
 
-
 @pytest.fixture
 def blockchain_client():
 	class BlockchainClient:
@@ -35,22 +34,25 @@ def db_client():
 				df['data_provider'] = ['fruit', 'games']
 				return df
 			elif category == 'failure':
-				return pd.DataFrame({'data_provider' : []})
+				return pd.DataFrame()
 			else:
 				raise Exception('error')
 	return DBClient()
 
-def test_success(blockchain_client, db_client):
+@pytest.fixture
+def category_component(blockchain_client, db_client):
+	return CategoryComponent(db_client, blockchain_client)
+
+def test_success(category_component):
 	"""
 	Tests that category_component's expected value with success
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = CategoryComponent(db_client, blockchain_client)
+	CC = category_component
 	CC_dict = CC.get_ed_with_category('success')
-	assert(CC_dict['Success'] == True)
-	assert(CC_dict['Result'] == 
-		[{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
+	assert CC_dict['Success']
+	assert CC_dict['Result'] == [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
 		 {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
 		 {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
 		 {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
@@ -63,31 +65,31 @@ def test_success(blockchain_client, db_client):
 		 {'dataset3_games': ('games', {'real': 1, 'barca': 3})},
 		 {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
 		 {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
-		 {'dataset6_games': ('games', {'real': 1, 'barca': 6})}])
+		 {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
 
 
-def test_failure(blockchain_client, db_client): 
+def test_failure(category_component): 
 	"""
 	Tests that category_component's expected value with failure
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = CategoryComponent(db_client, blockchain_client)
+	CC = category_component
 	CC_dict = CC.get_ed_with_category('failure')
-	assert(CC_dict['Success'] == False)
-	assert(CC_dict['Error'] == 'Category: failure has no data providers.')
+	assert not CC_dict['Success']
+	assert CC_dict['Error'] == 'Category: failure has no data providers.'
 
 
-def test_exception(blockchain_client, db_client): 
+def test_exception(category_component): 
 	"""
 	Tests that category_component's expected value with exception
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = CategoryComponent(db_client, blockchain_client)
+	CC = category_component
 	CC_dict = CC.get_ed_with_category('exception')
-	assert(CC_dict['Success'] == False)
-	assert(CC_dict['Error'] == str(Exception('error')))
+	assert not CC_dict['Success']
+	assert CC_dict['Error'] == 'error'
 
 
 

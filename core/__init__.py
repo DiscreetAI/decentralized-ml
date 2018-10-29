@@ -220,11 +220,12 @@ class Orchestrator(object):
 			error_message = 'Could not plot, invalid input format.'
 			raise Exception(error_message)
 
-	def validate_ed_dataset(dataset_index):
-		assert(len(self.ed_datasets) != 0, 'No datasets available, please query to create datasets.')
-		assert(dataset_index >= 0, 'Index must be non-negative.')
-		assert(len(self.ed_datasets) > dataset_index, 'Index out of range.')
+	def validate_ed_dataset(self, dataset_index):
+		assert len(self.ed_datasets) != 0, 'No datasets available, make sure to query to create datasets.'
+		assert dataset_index >= 0, 'Index must be non-negative.' 
+		assert len(self.ed_datasets) > dataset_index, 'Index out of range. Length of datasets is {0}.'.format(len(self.ed_datasets)) 
 
-	def validate_column(df, column):
-		assert(column in df.columns, 'Invalid column {0}'.format(column))
 
+	def validate_column(self, df, column):
+		assert column in df.columns, 'Invalid column {0}'.format(column)
+		assert np.issubdtype(df[column].dtype, np.number), 'Column type must be numerical, not {0}.'.format(df[column].dtype) 
