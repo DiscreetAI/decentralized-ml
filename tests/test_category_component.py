@@ -49,10 +49,9 @@ def test_success(category_component):
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = category_component
-	CC_dict = CC.get_ed_with_category('success')
-	assert CC_dict['Success']
-	assert CC_dict['Result'] == [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
+	category_component_dict = category_component.get_ed_with_category('success')
+	assert category_component_dict ['Success']
+	assert category_component_dict ['Result'] == [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
 		 {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
 		 {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
 		 {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
@@ -74,10 +73,9 @@ def test_failure(category_component):
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = category_component
-	CC_dict = CC.get_ed_with_category('failure')
-	assert not CC_dict['Success']
-	assert CC_dict['Error'] == 'Category: failure has no data providers.'
+	category_component_dict = category_component.get_ed_with_category('failure')
+	assert not category_component_dict['Success']
+	assert category_component_dict['Error'] == 'Category: failure has no data providers.'
 
 
 def test_exception(category_component): 
@@ -86,10 +84,9 @@ def test_exception(category_component):
 	by checking all of the data in the dictionary returned by 
 	get_ed_with_category.
 	"""
-	CC = category_component
-	CC_dict = CC.get_ed_with_category('exception')
-	assert not CC_dict['Success']
-	assert CC_dict['Error'] == 'error'
+	category_component_dict = category_component.get_ed_with_category('exception')
+	assert not category_component_dict['Success']
+	assert category_component_dict['Error'] == 'error'
 
 
 
