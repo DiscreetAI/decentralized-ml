@@ -5,6 +5,8 @@ from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
 import numpy as np
+# TODO: import here
+# import blockchain_utils as bc
 
 
 OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
@@ -21,7 +23,9 @@ class Orchestrator(object):
 		Initialize Orchestrator instance.
 		"""
 		self.db_client = DBClient()
-		self.category_component = CategoryComponent(db_client)
+		# TODO: integrate with bc
+		# self.bc_client = BCClient()
+		self.category_component = CategoryComponent(db_client, None)
 		self.ed_component = EDComponent()
 		self.ed_datasets = list()
 		self.method = None
@@ -213,14 +217,15 @@ class Orchestrator(object):
 			validate_column(df2, self.column2)
 			return self.ed_component.statistics_columns(df1, df2, self.column1, self.column2)
 		else: 
-			error_message = '{0} Could not plot, invalid input format. Check these are correct ---> {1} {2} {3}'.format(e, self.method, self.json_indexes, self.columns)
+			error_message = 'Could not plot, invalid input format.'
 			raise Exception(error_message)
 
-	def validate_ed_dataset(dataset_index):
-		assert(len(self.ed_datasets) != 0, 'No datasets available, please query to create datasets.')
-		assert(dataset_index >= 0, 'Index must be non-negative.')
-		assert(len(self.ed_datasets) > dataset_index, 'Index out of range.')
+	def validate_ed_dataset(self, dataset_index):
+		assert len(self.ed_datasets) != 0, 'No datasets available, make sure to query to create datasets.'
+		assert dataset_index >= 0, 'Index must be non-negative.' 
+		assert len(self.ed_datasets) > dataset_index, 'Index out of range. Length of datasets is {0}.'.format(len(self.ed_datasets)) 
 
-	def validate_column(df, column):
-		assert(column in df.columns, 'Invalid column {0}'.format(column))
 
+	def validate_column(self, df, column):
+		assert column in df.columns, 'Invalid column {0}'.format(column)
+		assert np.issubdtype(df[column].dtype, np.number), 'Column type must be numerical, not {0}.'.format(df[column].dtype) 
