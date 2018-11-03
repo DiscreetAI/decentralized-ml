@@ -1,52 +1,149 @@
-import asyncio
-import time
-import pprint
-import requests
-import pandas as pd
 import json
+import logging
+import requests
+import time
+from typing import Callable
 
-import rlp
-import web3
+from core.blockchain.tx_utils import TxEnum, Transaction
 
-from eth_utils import is_address
-from ethereum.transactions import Transaction
-from solc import compile_source, compile_files
-from web3 import Web3, HTTPProvider, eth, IPCProvider
-from web3.auto import w3
-from web3.utils.events import get_event_data
-from eth_abi import decode_abi
 
-TEMP_DELEGATOR_ADDR = '0x009f87d4aab161dc5d5b67271b931dbc43d05cef'
-TEMP_DELEGATOR_ABI = '''
-[{"constant":false,"inputs":[{"name":"_clientArray","type":"address[]"},{"name":"_modelAddrs","type":"bytes32[2]"}],"name":"makeQuery","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"address"},{"indexed":false,"name":"models","type":"bytes32[2]"},{"indexed":false,"name":"validator","type":"address"}],"name":"NewQuery","type":"event"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
-'''
-TEMP_STATEMACHINE_ABI = '''
-[{"constant":false,"inputs":[],"name":"terminate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newModelAddrs","type":"bytes32"}],"name":"newWeights","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_validator","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"addr","type":"bytes32"}],"name":"NewWeights","type":"event"},{"anonymous":false,"inputs":[],"name":"DoneTraining","type":"event"}]
-'''
-ALPHA_URL = 'http://54.153.84.146:8545'
-ALPHA_ADDR = '0xb2CA9a58ea16599C2c827F399d07aA94b3C69dFb'
-BETA_URL = 'http://18.144.49.201:8545'
-BETA_ADDR = '0x0d65094fee55c21e256d52602a0dd6a23072223d'
-GAMMA_URL = 'http://18.144.19.67:8545'
-GAMMA_ADDR = '0x8f8301d2ac2294ad243ab7052054c3aa9a068965'
+# TODO: does this need to be here?
+logging.basicConfig(level=logging.DEBUG,
+    format='[BlockchainUtils] %(message)s')
 
-def decode_event(abi, event_data):
-	input_dict = json.loads(abi)
-	e = [x for x in input_dict if x['type'] == 'event'][0]
-	types = [i['type'] for i in e['inputs']]
-	names = [i['name'] for i in e['inputs']]
-	values = decode_abi(types, bytearray.fromhex(event_data['data'][2:]))
-	return dict(zip(names, values))
 
-def get_contract_address(address_name, db):
+##############################################################################
+###                              REQUIRE IPFS                              ###
+##############################################################################
+
+def upload(client: object, value: dict) -> str:
+    """
+    Provided any Python object, store it on IPFS and then upload the hash that
+    will be uploaded to the blockchain as a value
+    """
+    # assert TxEnum.KEY.name in value
+    # assert TxEnum.CONTENT.name in value
+    ipfs_hash = content_to_ipfs(client, value)
+    return str(ipfs_hash)
+
+def download(client: object, key: str, state: list) -> list:
+    """
+    Provided an on-chain key, retrieve the value from local state and retrieve
+    the Python object from IPFS
+    TODO: implement a better way to parse through state list
+    """
+    relevant_txs = list(
+        map(lambda tx: ipfs_to_content(client, tx.get(TxEnum.CONTENT.name)),
+        filter(lambda tx: tx.get(TxEnum.KEY.name) == key, state)))
+    return relevant_txs
+
+def ipfs_to_content(client: object, ipfs_hash: str) -> object:
+    """
+    Helper function to retrieve a Python object from an IPFS hash
+    """
+    return client.get_json(ipfs_hash)
+
+def content_to_ipfs(client: object, content: dict) -> str:
+    """
+    Helper function to deploy a Python object onto IPFS, returns an IPFS hash
+    """
+    return client.add_json(content)
+
+##############################################################################
+###                                 DIFFS                                  ###
+##############################################################################
+
+def get_diffs(global_state: list, local_state: list) -> list:
+    """
+    Return list of transactions that are present in `global_state` but not in
+    `local_state`
+    """
+    return global_state[len(local_state):]
+
+# TODO: consider merging the two methods below into one
+
+def filter_diffs(global_state_wrapper: object, local_state: list,
+                    filter_method: Callable = lambda tx: True) -> list:
+    """
+    Provided the freshly-downloaded state, call a handler on each transaction
+    that was not already present in our own state and return the new state
+    """
+    new_state = get_diffs(global_state_wrapper.get(TxEnum.MESSAGES.name, {}), 
+                            local_state)
+    return list(filter(filter_method, new_state))
+
+def update_diffs(global_state_wrapper: object, local_state: list,
+                    handler_method: Callable = lambda tx: tx) -> list:
+    """
+    Provided the freshly-downloaded state, call a handler on each transaction
+    that was not already present in our own state and return the new state
+    """
+    new_state = get_diffs(global_state_wrapper.get(TxEnum.MESSAGES.name, {}),
+                            local_state)
+    return list(map(handler_method, new_state))
+
+##############################################################################
+###                                REQUESTS                                ###
+##############################################################################
+
+def construct_getter_call(host: str, port: int) -> str:
+    return "http://{0}:{1}/state".format(host, port)
+
+def make_getter_call(host: str, port: int) -> object:
+    tx_receipt = requests.get(construct_getter_call(host, port))
+    tx_receipt.raise_for_status()
+    return tx_receipt
+
+def construct_setter_call(host: str, port: int) -> str:
+    return "http://{0}:{1}/txs".format(host, port)
+
+def make_setter_call(host: str, port: int, tx: dict) -> object:
+    tx_receipt = requests.post(construct_setter_call(host, port), json=tx)
+    tx_receipt.raise_for_status()
+    return tx_receipt
+
+def get_global_state(host: str, port: int, timeout: int) -> object:
+    """
+    Gets the global state which should be a list of dictionaries
+    TODO: perhaps it might be better to offload the retrying to the `getter`
+    """
+    timeout = time.time() + timeout
+    tx_receipt = None
+    while time.time() < timeout:
+        try:
+            tx_receipt = make_getter_call(host, port).json()
+            break
+        except (UnboundLocalError, requests.exceptions.ConnectionError) as e:
+            logging.info("HTTP GET error, got: {0}".format(e))
+            continue
+    return tx_receipt
+
+def getter(client: object, key: str, local_state: list, port: int, timeout: int,
+            host: str = '127.0.0.1') -> list:
+    """
+    Provided a key, get the IPFS hash from the blockchain and download the
+    object from IPFS. This pulls from the global state but DOES NOT update the
+    local state
+    """
+    # logging.info("Getting from blockchain...")
+    new_state = local_state + update_diffs(get_global_state(host, port, timeout),
+                                            local_state)
+    return download(client, key, new_state)
+
+def setter(client: object, key: str, port: int, value: object,
+            flag: bool = False, host: str = '127.0.0.1') -> str:
+    """
+    Provided a key and a JSON/np.array object, upload the object to IPFS and
+    then store the hash as the value on the blockchain. The key should be a
+    backward reference to a prior tx
+    TODO: decide on error handling that matches `get_global_state`
+    """
+    logging.info("Setting to blockchain...")
+    on_chain_value = upload(client, value) if value else None
+    key = on_chain_value if flag else key
+    tx = Transaction(key, on_chain_value)
     try:
-	    sample_data = pd.read_sql_query("select * from {}".format(address_name), db.engine)
-	    return sample_data.to_json()
-    except: 
-        print('No contract address by the name of {} exists'.format(address_name))
-
-def post_contract_address(contract_address, json, address_name, db):
-    sample_data = pd.DataFrame()
-    sample_data['contract_address'] = [contract_address]
-    sample_data['json'] = [json]
-    sample_data.to_sql(name=address_name, con=db.engine, if_exists='replace', index=False)
+        tx_receipt = make_setter_call(host, port, tx.get_tx())
+    except Exception as e:
+        logging.info("HTTP POST error, got: {0}".format(e))
+    return tx_receipt.text
