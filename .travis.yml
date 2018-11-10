@@ -28,4 +28,4 @@ before_script:
 script:
   - curl http://localhost:3000/state
   - curl http://localhost:5001/api/v0/id
-- pytest tests
+  - pytest tests
