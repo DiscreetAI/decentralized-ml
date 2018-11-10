@@ -22,7 +22,7 @@ def config_manager():
 @pytest.fixture
 def initialization_payload():
     return {
-        "optimizer_params": {},
+        "optimizer_params": {"listen_bound": 2, "listen_iterations": 0},
         "serialized_job": make_serialized_job()
     }
 

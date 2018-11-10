@@ -42,6 +42,15 @@ class DMLJob(object):
         self.label_column_name = label_column_name
 
 
+    def set_weights(self, current_weights, new_weights, omega, sigma_omega):
+        """
+        NOTE: This function is used to get relevant information into the DMLJob
+        for averaging. It will be deprecated in future.
+        """
+        self.weights = current_weights
+        self.new_weights = new_weights
+        self.omega = omega
+        self.sigma_omega = sigma_omega
 
 def serialize_job(dmljob_obj):
     """

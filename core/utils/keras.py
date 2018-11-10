@@ -51,14 +51,6 @@ def serialize_weights(weights):
 
     `weights` is a list of np arrays (the output of model.get_weights()).
     """
-    # arr = []
-    # for w in weights:
-    #     memfile = io.BytesIO()
-    #     np.save(memfile, w)
-    #     memfile.seek(0)
-    #     serialized = json.dumps(memfile.read().decode('latin-1'))
-    #     arr.append(serialized)
-    # return arr
     return [serialize_single_weights(w) for w in weights]
 
 def serialize_single_weights(weight):

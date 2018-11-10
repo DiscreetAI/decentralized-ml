@@ -9,7 +9,8 @@ from core.scheduler             import DMLScheduler
 from core.configuration         import ConfigurationManager
 from tests.testing_utils        import make_initialize_job, make_model_json
 from tests.testing_utils        import make_serialized_job, serialize_job
-from core.utils.enums           import RawEventTypes
+from core.utils.enums           import RawEventTypes, JobTypes, MessageEventTypes
+from core.utils.keras import serialize_weights
 
 
 config_manager = ConfigurationManager()
@@ -17,10 +18,10 @@ config_manager.bootstrap(
     config_filepath='tests/artifacts/communication_manager/configuration.ini'
 )
 
-def test_communication_manager_can_initialize_and_train_model():
+def test_communication_manager_can_initialize_and_train_and_average_model():
     """
     Integration test that checks that the Communication Manager can initialize,
-    train, (and soon communicate) a model.
+    train, (and soon communicate) a model, and average a model.
 
     NOTE: This should be renamed after the COMM PR.
 
@@ -48,31 +49,121 @@ def test_communication_manager_can_initialize_and_train_model():
     (15) Communication Manager receives DMLResult for communication job from
          Scheduler
     (16) Communication Manager gives DMLResult to Optimizer
-    (17) TO BE DEFINED (COMM PR.)
+    (17) Optimizer tells the Communication Manager to do nothing
+
+    NOTE: Next steps are specific to Averaging PR
+    (18) Communication Manager receives new weights from Blockchain Gateway
+    (19) Communication Manager gives new weights to Optimizer
+    (20) Optimizer tells Communication Manager to schedule an averaging job
+    (21) Communication Manager schedules averaging job
+    (22) Communication Manager receives DMLResult for averaging job from
+        Scheduler
+    (23) Communication Manager gives DMLResult to Optimizer
+    (24) Optimizer updates its weights to initialized model and increments listen_iterations
+    (25) Optimizer tells Communication Manager to do nothing
+    (26) Communication Manager receives new weights from Blockchain Gateway
+    (27) Communication Manager gives new weights to Optimizer
+    (28) Optimizer tells Communication Manager to schedule an averaging job
+    (29) Communication Manager schedules averaging job
+    (30) Communication Manager receives DMLResult for averaging job from
+        Scheduler
+    (31) Communication Manager gives DMLResult to Optimizer
+    (32) Optimizer updates its weights to initialized model and increments listen_iterations
+    (33) Optimizer tells Communication Manager to schedule a training job since it's heard enough
+
+    NOTE: Timeout errors can be as a result of Runners repeatedly erroring. Check logs for this.
     """
     communication_manager = CommunicationManager()
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler)
     scheduler.configure(communication_manager)
+    true_job = make_initialize_job(make_model_json())
+    serialized_job = serialize_job(true_job)
     new_session_event = {
         "key": None,
         "content": {
             "optimizer_params": {},
-            "serialized_job": make_serialized_job()
+            "serialized_job": serialized_job
         }
     }
     communication_manager.inform(
         RawEventTypes.NEW_SESSION.name,
         new_session_event
     )
-    while len(scheduler.processed) == 0:
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_INIT.name, \
+        "Should be ready to init!"
+    timeout = time.time() + 3
+    while time.time() < timeout and len(scheduler.processed) == 0:
+        # initialization job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    while len(scheduler.processed) == 1:
+    assert len(scheduler.processed) == 1, "Initialization failed/not completed in time!"
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_TRAIN.name, \
+        "Should be ready to train!"
+    timeout = time.time() + 3
+    while time.time() < timeout and len(scheduler.processed) == 1:
+        # training job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 2
-
+    assert len(scheduler.processed) == 2, "Training failed/not completed in time!"
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_COMM.name, \
+        "Should be ready to communicate!"
+    timeout = time.time() + 3
+    while time.time() < timeout and len(scheduler.processed) == 2:
+        # communication job
+        scheduler.runners_run_next_jobs()
+        time.sleep(0.1)
+    assert len(scheduler.processed) == 3, "Communication failed/not completed in time!"
+    # now the communication manager should be idle
+    scheduler.runners_run_next_jobs()
+    time.sleep(0.1)
+    assert len(scheduler.processed) == 3, "No job should have been run!"
+    # now it should hear some new weights
+    new_weights_event = {
+        "key": MessageEventTypes.NEW_WEIGHTS.name,
+        "content": {
+            "weights": serialize_weights(communication_manager.optimizer.job.weights)
+        }
+    }
+    communication_manager.inform(
+        RawEventTypes.NEW_INFO.name,
+        new_weights_event
+    )
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_AVG.name, \
+        "Should be ready to average!"
+    timeout = time.time() + 3
+    while time.time() < timeout and len(scheduler.processed) == 3:
+        # averaging job
+        scheduler.runners_run_next_jobs()
+        time.sleep(0.1)
+    assert len(scheduler.processed) == 4, "Averaging failed/not completed in time!"
+    # we've only heard one set of new weights so our listen_iters are 1
+    assert communication_manager.optimizer.listen_iterations == 1, \
+        "Should have only listened once!"
+    # now the communication manager should be idle
+    scheduler.runners_run_next_jobs()
+    time.sleep(0.1)
+    assert len(scheduler.processed) == 4, "No job should have been run!"
+    # now it should hear more new weights
+    communication_manager.inform(
+        RawEventTypes.NEW_INFO.name,
+        new_weights_event
+    )
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_AVG.name, \
+        "Should be ready to average!"
+    timeout = time.time() + 3
+    while time.time() < timeout and len(scheduler.processed) == 4:
+        # second averaging job
+        scheduler.runners_run_next_jobs()
+        time.sleep(0.1)
+    assert len(scheduler.processed) == 5, "Averaging failed/not completed in time!"
+    # we've heard both sets of new weights so our listen_iters are 2
+    assert communication_manager.optimizer.listen_iterations == 0, \
+        "Either did not hear anything, or heard too much!"
+    # now we should be ready to train
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_TRAIN.name, \
+        "Should be ready to train!"
+    # and that completes one local round of federated learning!
 
 def test_communication_manager_can_be_initialized():
     """
@@ -159,7 +250,6 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer():
     assert optimizer_job.framework_type == true_job.framework_type
     assert optimizer_job.hyperparams == true_job.hyperparams
     assert optimizer_job.label_column_name == true_job.label_column_name
-
 
 # NOTE: The following are tests that we will implement soon.
 

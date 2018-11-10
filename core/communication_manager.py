@@ -38,6 +38,7 @@ class CommunicationManager(object):
             RawEventTypes.NEW_SESSION.name: self._create_session,
             ActionableEventTypes.SCHEDULE_JOB.name: self._schedule_job,
             ActionableEventTypes.TERMINATE.name: self._terminate_session,
+            ActionableEventTypes.NOTHING.name: self._do_nothing,
         }
         logging.info("Communication Manager is set up!")
 
@@ -121,3 +122,9 @@ class CommunicationManager(object):
         """
         self.optimizer = None
         logging.info("Session terminated.")
+
+    def _do_nothing(self, payload):
+        """
+        Do nothing
+        """
+        logging.info("Doing nothing")
