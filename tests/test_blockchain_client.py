@@ -17,7 +17,8 @@ def test_blockchain_client_empty(blockchain_client):
     """
     Check that retrieving labels with specified category works.
     """
-    assert blockchain_client.get_dataset('some_data') == ''
+    with pytest.raises(AssertionError):
+        blockchain_client.get_dataset('no_key')
 
 def test_blockchain_client_post_and_get(blockchain_client):
     """
