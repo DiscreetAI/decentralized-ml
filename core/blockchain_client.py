@@ -7,7 +7,7 @@ import ipfsapi
 
 
 logging.basicConfig(level=logging.DEBUG,
-    format='[BlockchainGateway] %(message)s')
+    format='[BlockchainClient] %(message)s')
 
 class BlockchainClient(object):
     """
@@ -31,9 +31,10 @@ class BlockchainClient(object):
         self.timeout = config.get("timeout")
         self.client = None
         try:
-          self.client = ipfsapi.connect(self.host, self.ipfs_port)
+            self.client = ipfsapi.connect(self.host, self.ipfs_port)
         except Exception as e:
-          logging.info("IPFS daemon not started, got: {0}".format(e))
+            logging.info("IPFS daemon not started, got: {0}".format(e))
+            raise e
 
     ## GETTER ##
 
@@ -78,10 +79,9 @@ class BlockchainClient(object):
             lambda tx: tx.get(BlockchainClient.KEY) == key,
             self._get_global_state()
           ))
-        if filtered_state:
-          ipfs_hash = filtered_state[0].get(BlockchainClient.CONTENT)
-          return self.client.get_json(ipfs_hash)
-        return ''
+        assert filtered_state
+        ipfs_hash = filtered_state[0].get(BlockchainClient.CONTENT)
+        return self.client.get_json(ipfs_hash)
 
     ## SETTER ##
 
