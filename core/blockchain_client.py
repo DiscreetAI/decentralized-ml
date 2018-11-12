@@ -79,7 +79,7 @@ class BlockchainClient(object):
             lambda tx: tx.get(BlockchainClient.KEY) == key,
             self._get_global_state()
           ))
-        assert filtered_state
+        assert filtered_state, "No such key"
         ipfs_hash = filtered_state[0].get(BlockchainClient.CONTENT)
         return self.client.get_json(ipfs_hash)
 
