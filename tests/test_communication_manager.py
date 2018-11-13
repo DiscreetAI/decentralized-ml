@@ -18,7 +18,11 @@ config_manager.bootstrap(
     config_filepath='tests/artifacts/communication_manager/configuration.ini'
 )
 
-def test_communication_manager_can_initialize_and_train_and_average_model():
+@pytest.fixture
+def mnist_filepath():
+    return 'tests/artifacts/datasets/mnist'
+
+def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
     """
     Integration test that checks that the Communication Manager can initialize,
     train, (and soon communicate) a model, and average a model.
@@ -83,13 +87,14 @@ def test_communication_manager_can_initialize_and_train_and_average_model():
         "key": None,
         "content": {
             "optimizer_params": {},
-            "serialized_job": serialized_job
+            "serialized_job": make_serialized_job(mnist_filepath)
         }
     }
     communication_manager.inform(
         RawEventTypes.NEW_SESSION.name,
         new_session_event
     )
+
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_INIT.name, \
         "Should be ready to init!"
     timeout = time.time() + 3
@@ -250,6 +255,7 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer():
     assert optimizer_job.framework_type == true_job.framework_type
     assert optimizer_job.hyperparams == true_job.hyperparams
     assert optimizer_job.label_column_name == true_job.label_column_name
+
 
 # NOTE: The following are tests that we will implement soon.
 

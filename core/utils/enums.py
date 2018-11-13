@@ -25,6 +25,7 @@ class JobTypes(Enum):
     JOB_INIT = "INITIALIZE"
     JOB_AVG = "AVERAGE"
     JOB_COMM = "COMMUNICATE"
+    JOB_TRANSFORM_SPLIT = "TRANSFORM_SPLIT"
 
 class MessageEventTypes(Enum):
     """
@@ -49,7 +50,6 @@ class RawEventTypes(Enum):
 
         NEW_SESSION: Information received from the blockchain to create a new
         DML Session.
-
 
         JOB_DONE: Information received from the Scheduler about a job that was
         just completed (in the form of a DML Result).

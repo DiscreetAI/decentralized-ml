@@ -3,6 +3,7 @@ import random
 import uuid
 import time
 import os
+import pandas as pd
 import numpy as np
 
 from core.configuration import ConfigurationManager
@@ -11,6 +12,7 @@ from data.iterators import count_datapoints
 from data.iterators import create_random_train_dataset_iterator
 from data.iterators import create_random_test_dataset_iterator
 from core.utils.keras import train_keras_model, validate_keras_model
+
 from core.utils.keras import serialize_weights, deserialize_weights
 from core.utils.dmlresult import DMLResult
 from core.utils.enums import JobTypes, callback_handler_no_default
@@ -40,18 +42,15 @@ class DMLRunner(object):
         """
         config = config_manager.get_config()
         self.iden = str(uuid.uuid4())[:8]
-        self.dataset_path = config.get("GENERAL", "dataset_path")
-        self.train_dataset_path = os.path.join(self.dataset_path, 'train.csv')
-        self.test_dataset_path = os.path.join(self.dataset_path, 'test.csv')
+        
         self.config = dict(config.items("RUNNER"))
-        self.data_count = count_datapoints(self.dataset_path)
         self.JOB_CALLBACKS = {
             JobTypes.JOB_TRAIN.name: self._train,
             JobTypes.JOB_INIT.name: self._initialize,
             JobTypes.JOB_VAL.name: self._validate,
+            JobTypes.JOB_TRANSFORM_SPLIT.name: self._transform_and_split_data,
             JobTypes.JOB_AVG.name: self._average,
             JobTypes.JOB_COMM.name: self._communicate
-
         }
 
     def run_job(self, job):
@@ -67,19 +66,33 @@ class DMLRunner(object):
             job.job_type,
             self.JOB_CALLBACKS,
         )
-        try:
-            results = callback(job)
-        except Exception as e:
-            logging.error("RunnerError: " + str(e))
-            results = DMLResult(
-                status='failed',
-                job=job,
-                error_message=str(e),
-                results={},
-            )
+        results = callback(job)
+        # try:
+        #     results = callback(job)
+        # except Exception as e:
+        #     logging.error("RunnerError: " + str(e))
+        #     results = DMLResult(
+        #         status='failed',
+        #         job=job,
+        #         error_message=str(e),
+        #         results={},
+        #     )
         self.current_job = None
         logging.info("Finished running job! (type: {0})".format(job.job_type))
         return results
+
+    def _set_up(self, job):
+        assert job.session_filepath, \
+            "Transformed training and test sets not created yet!"
+        train_path = os.path.join(
+                                job.session_filepath, 
+                                'train.csv'
+                            )
+        test_path = os.path.join(
+                                job.session_filepath, 
+                                'test.csv'
+                            )
+        return train_path, test_path
 
     def _train(self, job):
         """
@@ -95,6 +108,10 @@ class DMLRunner(object):
 
         NOTE2: Assumes 'job.weights' are the actual weights and not a path.
         """
+        
+        train_dataset_path, test_dataset_path = self._set_up(job)
+        data_count = job.datapoint_count
+
         # Get the right dataset iterator based on the averaging type.
         avg_type = job.hyperparams['averaging_type']
         batch_size = job.hyperparams['batch_size']
@@ -104,18 +121,18 @@ class DMLRunner(object):
         logging.info("Training model...")
         if avg_type == 'data_size':
             dataset_iterator = create_random_train_dataset_iterator(
-                self.train_dataset_path,
+                train_dataset_path,
                 batch_size=batch_size,
                 labeler=job.label_column_name,
             )
         elif avg_type == 'val_acc':
             dataset_iterator = create_random_train_dataset_iterator(
-                self.train_dataset_path,
+                train_dataset_path,
                 batch_size=batch_size,
                 labeler=job.label_column_name,
             )
             test_dataset_iterator = create_random_test_dataset_iterator(
-                self.test_dataset_path,
+                test_dataset_path,
                 batch_size=batch_size,
                 labeler=job.label_column_name,
             )
@@ -129,14 +146,14 @@ class DMLRunner(object):
                 job.serialized_model,
                 job.weights,
                 dataset_iterator,
-                self.data_count*split,
+                data_count*split,
                 job.hyperparams,
                 self.config
             )
 
         # Get the right omega based on the averaging type.
         if avg_type == 'data_size':
-            omega = self.data_count * split
+            omega = data_count * split
         elif avg_type == 'val_acc':
             val_stats = self._validate(
                 job,
@@ -169,12 +186,15 @@ class DMLRunner(object):
         NOTE: Assumes 'weights' are the actual weights and not a path.
         """
         logging.info("Validating model...")
+        
+        train_dataset_path, test_dataset_path = self._set_up(job)
+        data_count = job.datapoint_count
         # Choose the dataset to validate on.
         batch_size = job.hyperparams['batch_size']
         split = job.hyperparams['split']
         if custom_iterator is None:
             dataset_iterator = create_random_test_dataset_iterator(
-                self.test_dataset_path,
+                test_dataset_path,
                 batch_size=batch_size,
                 labeler=job.label_column_name,
             )
@@ -189,7 +209,7 @@ class DMLRunner(object):
                 job.serialized_model,
                 job.weights,
                 dataset_iterator,
-                self.data_count*(1-split)
+                data_count*(1-split)
             )
 
         # Return the validation stats.
@@ -225,6 +245,83 @@ class DMLRunner(object):
                 )
         return results
 
+    def _transform_and_split_data(self, job):
+        """
+        Takes in a job, which should have the raw filepath assigned.
+
+        1. In each folder, aggregate all data.
+        2. Create session folder in transformed folder, along with data folders
+           in session folder.
+        3. Transform data in each raw data folder.
+        4. Shuffle each transformed data and perform train-test split on each. 
+        5. Put each training and test set in corresponding data folders in 
+           session folder.
+        6. Update session filepath in job.
+        """
+
+        # 1. Extracts all of the raw data from raw data filepath
+        assert job.raw_filepath, \
+            "Raw data filepath has not been set!"
+        assert job.transform_function, \
+            "Transform function has not been set!"
+        files = os.listdir(job.raw_filepath)
+        files = list(filter(lambda x: x.endswith('.csv'), files))
+        assert len(files) == 1, \
+            "Only supporting one file per dataset folder!"
+        data_filepath = os.path.join(
+                    job.raw_filepath,
+                    files[0]
+                )
+        raw_data = pd.read_csv(data_filepath)
+
+        # 2. Create transformed folder, if it doesn't exist.
+        transformed_filepath = os.path.join(job.raw_filepath, "transformed")
+        if not os.path.isdir(transformed_filepath):
+            os.makedirs(transformed_filepath)
+
+        # 3. Create session folder using timestamp and random characters.
+        new_name = str(uuid.uuid4())
+        session_filepath = os.path.join(transformed_filepath, new_name)
+        os.makedirs(session_filepath)
+
+        # 4. Retrieve transform function and train-test split from job.
+        transform_function = job.transform_function
+        split = job.hyperparams['split']
+
+        # 5. Shuffle raw data, then split into train and test set.
+        transformed_data = transform_function(raw_data)
+        transformed_data = transformed_data.sample(frac=1)
+        split_index = int(len(transformed_data)*split)
+        train = transformed_data.iloc[:split_index] 
+        test = transformed_data.iloc[split_index:]
+
+        # 6. Create train.csv and test.csv in data folder.
+        train.to_csv(
+            os.path.join(session_filepath, 'train.csv'),
+            index=False
+        )
+
+        test.to_csv(
+            os.path.join(session_filepath, 'test.csv'),
+            index=False
+        )
+
+        # 7. Get datapoint count to be used in future jobs
+        datapoint_count = count_datapoints(session_filepath)
+
+        # 8. Return job with assigned session folder filepath and
+        #    datapoint count.
+        results = DMLResult(
+                    status='successful',
+                    job=job,
+                    results = {
+                        'session_filepath': session_filepath,
+                        'datapoint_count': datapoint_count
+                    },
+                    error_message=""
+                )
+        return results 
+      
     def _average(self, job):
         """
         Average the weights in the job weighted by their omegas.

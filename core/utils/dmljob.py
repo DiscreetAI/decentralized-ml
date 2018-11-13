@@ -1,6 +1,7 @@
 import numpy as np
 
 from core.utils.keras import serialize_weights, deserialize_weights
+from core.utils.enums import JobTypes
 
 class DMLJob(object):
     """
@@ -18,7 +19,11 @@ class DMLJob(object):
         framework_type,
         weights=None,
         hyperparams=None,
-        label_column_name=None
+        label_column_name=None,
+        raw_filepath=None,
+        session_filepath=None,
+        transform_function=None,
+        datapoint_count=None
         ):
         """
         Initializes a DML Job object.
@@ -27,11 +32,24 @@ class DMLJob(object):
             job_type (str): the job type.
             serialized_model (dict): the model to train in a serialized format.
             framework_type (str): the type of framework the model is in [keras].
-            weights (list): list of np.arrays representing the weghts of a model.
+            weights (list): list of np.arrays representing the weights of a model.
             hyperparams (dict): hyperparameters for training/validating a model.
             label_column_name (str): string that represents which column of the
                                      transformed dataset contains the labels for
                                      supervised training.
+            raw_filepath (str): the filepath to the folder that contains the
+                                raw data before transform and training-test  
+                                split. Only one dataset file supported per
+                                folder at the moment.
+            session_filepath (str): the filepath to the folder that contains
+                                    the raw data after applying the transform
+                                    function and training-test split. Assumes
+                                    `train.csv` and `test.csv` are in folder.
+            transform_function (function): Function to be applied on raw data.
+                                           Should take DataFrame on input and
+                                           return a DataFrame.
+            datapoint_count (int): Number of datapoints after applying
+                                   transform function.
 
         """
         self.job_type = job_type
@@ -40,7 +58,10 @@ class DMLJob(object):
         self.weights = weights
         self.hyperparams = hyperparams
         self.label_column_name = label_column_name
-
+        self.raw_filepath = raw_filepath
+        self.session_filepath = session_filepath
+        self.transform_function = transform_function
+        self.datapoint_count = datapoint_count
 
     def set_weights(self, current_weights, new_weights, omega, sigma_omega):
         """
@@ -68,6 +89,10 @@ def serialize_job(dmljob_obj):
         'framework_type': dmljob_obj.framework_type,
         'hyperparams': dmljob_obj.hyperparams,
         'label_column_name': dmljob_obj.label_column_name,
+        'raw_filepath': dmljob_obj.raw_filepath,
+        'session_filepath': dmljob_obj.session_filepath,
+        'transform_function': dmljob_obj.transform_function,
+        'datapoint_count': dmljob_obj.datapoint_count
     }
     weights = None
     if dmljob_obj.weights:
@@ -98,4 +123,8 @@ def deserialize_job(serialized_job):
         weights,
         rest['hyperparams'],
         rest['label_column_name'],
+        rest['raw_filepath'],
+        rest['session_filepath'],
+        rest['transform_function'],
+        rest['datapoint_count']
     )

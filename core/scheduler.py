@@ -38,7 +38,7 @@ class DMLScheduler(object):
 		self.history = []
 
 		config = config_manager.get_config()
-		self.dataset_path = config.get("GENERAL", "dataset_path")
+		
 		self.frequency_in_mins = config.getint("SCHEDULER", "frequency_in_mins")
 		self.num_runners = config.getint("SCHEDULER", "num_runners")
 		self.max_tries = config.getint("SCHEDULER", "max_tries")
