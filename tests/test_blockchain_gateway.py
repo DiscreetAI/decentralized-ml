@@ -4,19 +4,18 @@ import pytest
 from core.configuration                 import ConfigurationManager	
 from core.blockchain.blockchain_gateway import BlockchainGateway
 from core.utils.enums                   import RawEventTypes
-from core.blockchain.tx_utils           import TxEnum
-from core.blockchain.blockchain_utils   import setter
+from core.blockchain.blockchain_utils   import setter, TxEnum
 
 
 @pytest.fixture	
 def config_manager():	
-    config_manager = ConfigurationManager()	
+    config_manager = ConfigurationManager()
     config_manager.bootstrap(	
         config_filepath='tests/artifacts/blockchain/configuration.ini'	
     )	
     return config_manager	
 
-@pytest.fixture	
+@pytest.fixture
 def communication_manager():		
     class MockCommunicationManager:
         def __init__(self):
@@ -49,14 +48,15 @@ def test_blockchain_gateway_can_listen_decentralized_learning(config_manager, co
     blockchain_gateway.configure(config_manager, communication_manager)
     tx_receipt = setter(blockchain_gateway.client, None, blockchain_gateway.port, {"model": "hello world"}, True)
     assert tx_receipt
-    blockchain_gateway.listen_decentralized_learning()
+    blockchain_gateway._listen(blockchain_gateway._handle_new_session_creation,
+        blockchain_gateway._filter_new_session)
     # at this point we should listen for decentralized learning, hear it, and update our communication manager
     assert communication_manager.dummy1 == RawEventTypes.NEW_SESSION.name, "Wrong dummy1"
-    assert communication_manager.dummy2, "No dummy2"
+    assert communication_manager.dummy2 == {"model": "hello world"}, "Wrong dummy2"
 
 # TODO: This will be implemented once we figure out how.	
 # def test_handle_decentralized_learning(blockchain_gateway):	
-#     """To be implemented."""	
+#     """To be implemented."""
 #     pass	
 # def test_listen_new_weights(blockchain_gateway):	
 #     """To be implemented."""	

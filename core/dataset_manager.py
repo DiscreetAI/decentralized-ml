@@ -8,9 +8,11 @@ import yaml
 
 import numpy as np
 import pandas as pd
+import ipfsapi
 
 import core.utils.context
 from core.configuration import ConfigurationManager
+from core.blockchain.blockchain_utils import setter
 
 
 logging.basicConfig(level=logging.INFO,
@@ -54,6 +56,15 @@ class DatasetManager():
         self.raw_filepath = raw_filepath
         self.mappings = None
         self._validate_data()
+        self.host = config.get("BLOCKCHAIN", "host")
+        self.ipfs_port = config.getint("BLOCKCHAIN", "ipfs_port")
+        self.port = config.getint("BLOCKCHAIN", "http_port")
+        self.timeout = config.getint("BLOCKCHAIN", "timeout")
+        try:
+            self.client = ipfsapi.connect(self.host, self.ipfs_port)
+        except Exception as e:
+            logging.info("IPFS daemon not started, got: {0}".format(e))
+            raise(e)
 
     def _validate_data(self):
         """
@@ -115,7 +126,7 @@ class DatasetManager():
         with open(mapping_filepath, "w") as f:
             f.write(yaml.dump(mapping))
 
-    def check_key_length(key):
+    def check_key_length(self, key):
         """
         Keys for datasets can only be at most 30 characters long.
         """
@@ -153,7 +164,7 @@ class DatasetManager():
             if 'md' not in folder_dict:
                 raise NoMetadataFoundError(folder)
             value[folder] = folder_dict
-        self.client.setter(name, value)
+        receipt = setter(client=self.client, key=name, value=value, port=self.port)
 
     def post_dataset(self, name):
         """
@@ -180,4 +191,4 @@ class DatasetManager():
             folder_dict['ds'] = sample.to_json()
             folder_dict['md'] = md.to_json()
             value[folder] = folder_dict
-        self.client.setter(name, value)
+        receipt = setter(client=self.client, key=name, value=value, port=self.port)
