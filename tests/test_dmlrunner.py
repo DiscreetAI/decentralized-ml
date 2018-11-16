@@ -12,7 +12,7 @@ from core.utils.keras           import serialize_weights, deserialize_weights
 from core.utils.enums           import JobTypes
 from tests.testing_utils        import make_initialize_job, make_model_json
 from tests.testing_utils        import make_train_job, make_validate_job, make_hyperparams
-from tests.testing_utils        import make_transform_split_job
+from tests.testing_utils        import make_split_job
  
 
 @pytest.fixture
@@ -22,10 +22,6 @@ def config_manager():
         config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
     )
     return config_manager
-
-@pytest.fixture
-def sample_transform_function():
-    return lambda x: x.drop_duplicates()
 
 @pytest.fixture
 def mnist_filepath():
@@ -47,16 +43,15 @@ def test_dmlrunner_initialize_job_returns_list_of_nparray(config_manager):
     assert type(initial_weights[0]) == np.ndarray
 
 def test_dmlrunner_transform_and_split( \
-        config_manager, small_filepath, sample_transform_function):
+        config_manager, small_filepath):
     model_json = make_model_json()
     runner = DMLRunner(config_manager)
-    transform_split_job = make_transform_split_job(
+    split_job = make_split_job(
                             model_json, 
-                            small_filepath, 
-                            sample_transform_function
+                            small_filepath
                         )
-    transform_split_job.hyperparams['split'] = 0.75
-    job_results = runner.run_job(transform_split_job)
+    split_job.hyperparams['split'] = 0.75
+    job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
     assert os.path.isdir(session_filepath), \
         "Session folder does not exist!"
@@ -66,9 +61,7 @@ def test_dmlrunner_transform_and_split( \
         "Training and test set not created!"
     train = pd.read_csv(train_filepath)
     test = pd.read_csv(test_filepath)
-    assert len(train) + len(test) == 4, \
-        "Transform function was not applied correctly."
-    assert len(train) == 3 and len(test) == 1, \
+    assert len(train) == 6 and len(test) == 2, \
         "Train test split was not performed correctly."
 
     # Clean up
@@ -82,11 +75,11 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats( \
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job).results['weights']
-    transform_split_job = make_transform_split_job(
+    split_job = make_split_job(
                             model_json, 
                             mnist_filepath
                         )
-    job_results = runner.run_job(transform_split_job)
+    job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
     datapoint_count = job_results.results['datapoint_count']
     train_job = make_train_job(
@@ -118,11 +111,11 @@ def test_dmlrunner_same_train_job_with_split_1( \
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(model_json)
     initial_weights = runner.run_job(initialize_job).results['weights']
-    transform_split_job = make_transform_split_job(
+    split_job = make_split_job(
                             model_json, 
                             mnist_filepath
                         )
-    job_results = runner.run_job(transform_split_job)
+    job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
     datapoint_count = job_results.results['datapoint_count']
     train_job = make_train_job(
@@ -156,11 +149,11 @@ def test_dmlrunner_validate_job_returns_stats( \
     runner = DMLRunner(config_manager)
     initialize_job = make_initialize_job(make_model_json())
     initial_weights = runner.run_job(initialize_job).results['weights']
-    transform_split_job = make_transform_split_job(
+    split_job = make_split_job(
                             model_json, 
                             mnist_filepath
                         )
-    job_results = runner.run_job(transform_split_job)
+    job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
     datapoint_count = job_results.results['datapoint_count']
     train_job = make_train_job(
@@ -208,4 +201,4 @@ def test_dmlrunner_averaging_weights(config_manager):
     serialized_weights = serialize_weights(initial_weights)
     initialize_job.set_weights(initial_weights, serialized_weights, 1, 1)
     averaged_weights = runner._average(initialize_job).results['weights']
-    assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(averaged_weights, initial_weights)) 
+    assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(averaged_weights, initial_weights))

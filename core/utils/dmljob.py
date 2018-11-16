@@ -1,3 +1,4 @@
+from copy import deepcopy
 import numpy as np
 
 from core.utils.keras import serialize_weights, deserialize_weights
@@ -22,7 +23,6 @@ class DMLJob(object):
         label_column_name=None,
         raw_filepath=None,
         session_filepath=None,
-        transform_function=None,
         datapoint_count=None
         ):
         """
@@ -45,9 +45,6 @@ class DMLJob(object):
                                     the raw data after applying the transform
                                     function and training-test split. Assumes
                                     `train.csv` and `test.csv` are in folder.
-            transform_function (function): Function to be applied on raw data.
-                                           Should take DataFrame on input and
-                                           return a DataFrame.
             datapoint_count (int): Number of datapoints after applying
                                    transform function.
 
@@ -60,7 +57,6 @@ class DMLJob(object):
         self.label_column_name = label_column_name
         self.raw_filepath = raw_filepath
         self.session_filepath = session_filepath
-        self.transform_function = transform_function
         self.datapoint_count = datapoint_count
 
     def set_weights(self, current_weights, new_weights, omega, sigma_omega):
@@ -72,6 +68,11 @@ class DMLJob(object):
         self.new_weights = new_weights
         self.omega = omega
         self.sigma_omega = sigma_omega
+
+    def copy_constructor(self, job_type):
+        newjob = deepcopy(self)
+        newjob.job_type = job_type
+        return newjob
 
 def serialize_job(dmljob_obj):
     """
@@ -91,7 +92,6 @@ def serialize_job(dmljob_obj):
         'label_column_name': dmljob_obj.label_column_name,
         'raw_filepath': dmljob_obj.raw_filepath,
         'session_filepath': dmljob_obj.session_filepath,
-        'transform_function': dmljob_obj.transform_function,
         'datapoint_count': dmljob_obj.datapoint_count
     }
     weights = None
@@ -125,6 +125,5 @@ def deserialize_job(serialized_job):
         rest['label_column_name'],
         rest['raw_filepath'],
         rest['session_filepath'],
-        rest['transform_function'],
         rest['datapoint_count']
     )

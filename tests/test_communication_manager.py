@@ -20,7 +20,7 @@ config_manager.bootstrap(
 
 @pytest.fixture
 def mnist_filepath():
-    return 'tests/artifacts/datasets/mnist'
+    return 'tests/artifacts/communication_manager/mnist'
 
 def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
     """
@@ -81,8 +81,6 @@ def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler)
     scheduler.configure(communication_manager)
-    true_job = make_initialize_job(make_model_json())
-    serialized_job = serialize_job(true_job)
     new_session_event = {
         "key": None,
         "content": {
@@ -95,34 +93,36 @@ def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
         new_session_event
     )
 
-    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_INIT.name, \
-        "Should be ready to init!"
+    assert communication_manager.optimizer.job.job_type == JobTypes.JOB_INIT.name or \
+        communication_manager.optimizer.job.job_type == JobTypes.JOB_SPLIT.name, \
+        "Should be ready to init or transform_split!"
     timeout = time.time() + 3
     while time.time() < timeout and len(scheduler.processed) == 0:
         # initialization job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 1, "Initialization failed/not completed in time!"
+    assert len(scheduler.processed) == 2, "Initialization failed/not completed in time!"
+    timeout = time.time() + 3
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_TRAIN.name, \
         "Should be ready to train!"
     timeout = time.time() + 3
-    while time.time() < timeout and len(scheduler.processed) == 1:
+    while time.time() < timeout and len(scheduler.processed) == 2:
         # training job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 2, "Training failed/not completed in time!"
+    assert len(scheduler.processed) == 3, "Training failed/not completed in time!"
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_COMM.name, \
         "Should be ready to communicate!"
     timeout = time.time() + 3
-    while time.time() < timeout and len(scheduler.processed) == 2:
+    while time.time() < timeout and len(scheduler.processed) == 3:
         # communication job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 3, "Communication failed/not completed in time!"
+    assert len(scheduler.processed) == 4, "Communication failed/not completed in time!"
     # now the communication manager should be idle
     scheduler.runners_run_next_jobs()
     time.sleep(0.1)
-    assert len(scheduler.processed) == 3, "No job should have been run!"
+    assert len(scheduler.processed) == 4, "No job should have been run!"
     # now it should hear some new weights
     new_weights_event = {
         "key": MessageEventTypes.NEW_WEIGHTS.name,
@@ -137,18 +137,18 @@ def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_AVG.name, \
         "Should be ready to average!"
     timeout = time.time() + 3
-    while time.time() < timeout and len(scheduler.processed) == 3:
+    while time.time() < timeout and len(scheduler.processed) == 4:
         # averaging job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 4, "Averaging failed/not completed in time!"
+    assert len(scheduler.processed) == 5, "Averaging failed/not completed in time!"
     # we've only heard one set of new weights so our listen_iters are 1
     assert communication_manager.optimizer.listen_iterations == 1, \
         "Should have only listened once!"
     # now the communication manager should be idle
     scheduler.runners_run_next_jobs()
     time.sleep(0.1)
-    assert len(scheduler.processed) == 4, "No job should have been run!"
+    assert len(scheduler.processed) == 5, "No job should have been run!"
     # now it should hear more new weights
     communication_manager.inform(
         RawEventTypes.NEW_INFO.name,
@@ -157,11 +157,11 @@ def test_communication_manager_can_initialize_and_train_model(mnist_filepath):
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_AVG.name, \
         "Should be ready to average!"
     timeout = time.time() + 3
-    while time.time() < timeout and len(scheduler.processed) == 4:
+    while time.time() < timeout and len(scheduler.processed) == 5:
         # second averaging job
         scheduler.runners_run_next_jobs()
         time.sleep(0.1)
-    assert len(scheduler.processed) == 5, "Averaging failed/not completed in time!"
+    assert len(scheduler.processed) == 6, "Averaging failed/not completed in time!"
     # we've heard both sets of new weights so our listen_iters are 2
     assert communication_manager.optimizer.listen_iterations == 0, \
         "Either did not hear anything, or heard too much!"
@@ -184,7 +184,7 @@ def test_communication_manager_fails_if_not_configured():
     configured.
     """
     communication_manager = CommunicationManager()
-    serialized_job = make_serialized_job()
+    serialized_job = make_serialized_job(mnist_filepath)
     new_session_event = {
         "key": None,
         "content": {
@@ -211,7 +211,7 @@ def test_communication_manager_creates_new_sessions():
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler)
     scheduler.configure(communication_manager)
-    serialized_job = make_serialized_job()
+    serialized_job = make_serialized_job(mnist_filepath)
     new_session_event = {
         "key": None,
         "content": {
@@ -235,7 +235,7 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer():
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler)
     scheduler.configure(communication_manager)
-    true_job = make_initialize_job(make_model_json())
+    true_job = make_initialize_job(make_model_json(), mnist_filepath)
     serialized_job = serialize_job(true_job)
     new_session_event = {
         "key": None,
@@ -250,7 +250,6 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer():
     )
     optimizer_job = communication_manager.optimizer.job
     assert optimizer_job.weights == true_job.weights
-    assert optimizer_job.job_type == true_job.job_type
     assert optimizer_job.serialized_model == true_job.serialized_model
     assert optimizer_job.framework_type == true_job.framework_type
     assert optimizer_job.hyperparams == true_job.hyperparams

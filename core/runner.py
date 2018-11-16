@@ -48,7 +48,7 @@ class DMLRunner(object):
             JobTypes.JOB_TRAIN.name: self._train,
             JobTypes.JOB_INIT.name: self._initialize,
             JobTypes.JOB_VAL.name: self._validate,
-            JobTypes.JOB_TRANSFORM_SPLIT.name: self._transform_and_split_data,
+            JobTypes.JOB_SPLIT.name: self._split_data,
             JobTypes.JOB_AVG.name: self._average,
             JobTypes.JOB_COMM.name: self._communicate
         }
@@ -66,17 +66,16 @@ class DMLRunner(object):
             job.job_type,
             self.JOB_CALLBACKS,
         )
-        results = callback(job)
-        # try:
-        #     results = callback(job)
-        # except Exception as e:
-        #     logging.error("RunnerError: " + str(e))
-        #     results = DMLResult(
-        #         status='failed',
-        #         job=job,
-        #         error_message=str(e),
-        #         results={},
-        #     )
+        try:
+            results = callback(job)
+        except Exception as e:
+            logging.error("RunnerError: " + str(e))
+            results = DMLResult(
+                status='failed',
+                job=job,
+                error_message=str(e),
+                results={},
+            )
         self.current_job = None
         logging.info("Finished running job! (type: {0})".format(job.job_type))
         return results
@@ -245,25 +244,22 @@ class DMLRunner(object):
                 )
         return results
 
-    def _transform_and_split_data(self, job):
+    def _split_data(self, job):
         """
         Takes in a job, which should have the raw filepath assigned.
 
         1. In each folder, aggregate all data.
         2. Create session folder in transformed folder, along with data folders
            in session folder.
-        3. Transform data in each raw data folder.
-        4. Shuffle each transformed data and perform train-test split on each. 
-        5. Put each training and test set in corresponding data folders in 
+        3. Shuffle each transformed data and perform train-test split on each. 
+        4. Put each training and test set in corresponding data folders in 
            session folder.
-        6. Update session filepath in job.
+        5. Update session filepath in job.
         """
 
         # 1. Extracts all of the raw data from raw data filepath
         assert job.raw_filepath, \
             "Raw data filepath has not been set!"
-        assert job.transform_function, \
-            "Transform function has not been set!"
         files = os.listdir(job.raw_filepath)
         files = list(filter(lambda x: x.endswith('.csv'), files))
         assert len(files) == 1, \
@@ -284,16 +280,14 @@ class DMLRunner(object):
         session_filepath = os.path.join(transformed_filepath, new_name)
         os.makedirs(session_filepath)
 
-        # 4. Retrieve transform function and train-test split from job.
-        transform_function = job.transform_function
+        # 4. Retrieve train-test split from job.
         split = job.hyperparams['split']
 
         # 5. Shuffle raw data, then split into train and test set.
-        transformed_data = transform_function(raw_data)
-        transformed_data = transformed_data.sample(frac=1)
-        split_index = int(len(transformed_data)*split)
-        train = transformed_data.iloc[:split_index] 
-        test = transformed_data.iloc[split_index:]
+        raw_data = raw_data.sample(frac=1)
+        split_index = int(len(raw_data)*split)
+        train = raw_data.iloc[:split_index] 
+        test = raw_data.iloc[split_index:]
 
         # 6. Create train.csv and test.csv in data folder.
         train.to_csv(

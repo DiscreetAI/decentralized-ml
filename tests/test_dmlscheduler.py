@@ -8,13 +8,17 @@ import numpy as np
 
 from core.scheduler             import DMLScheduler
 from core.configuration         import ConfigurationManager
-from tests.testing_utils        import make_initialize_job, make_model_json
+from tests.testing_utils        import make_initialize_job, make_model_json, make_split_job
 
 
 config_manager = ConfigurationManager()
 config_manager.bootstrap(
     config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
 )
+
+@pytest.fixture
+def mnist_filepath():
+    return 'tests/artifacts/runner_scheduler/mnist'
 
 class MockCommunicationManager:
     def inform(self, dummy1, dummy2):

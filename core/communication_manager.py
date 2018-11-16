@@ -36,7 +36,7 @@ class CommunicationManager(object):
         # the Communication Manager error-handle out of order/missed messages.
         self.EVENT_TYPE_2_CALLBACK = {
             RawEventTypes.NEW_SESSION.name: self._create_session,
-            ActionableEventTypes.SCHEDULE_JOB.name: self._schedule_job,
+            ActionableEventTypes.SCHEDULE_JOBS.name: self._schedule_jobs,
             ActionableEventTypes.TERMINATE.name: self._terminate_session,
             ActionableEventTypes.NOTHING.name: self._do_nothing,
         }
@@ -102,15 +102,16 @@ class CommunicationManager(object):
         callback(payload)
         logging.info("Kickoff complete.")
 
-    def _schedule_job(self, dmljob_obj):
+    def _schedule_jobs(self, dmljob_obj_arr):
         """
         Helper function that schedules a DML Job through the Scheduler.
         """
         if not self.scheduler:
             raise Exception("Communication Manager needs to be configured first!")
-        if not isinstance(dmljob_obj, DMLJob):
-            raise Exception("Job is not valid!")
-        self.scheduler.add_job(dmljob_obj)
+        for i, dmljob_obj in enumerate(dmljob_obj_arr):
+            assert isinstance(dmljob_obj, DMLJob), \
+                "Obj {} is not DMLJob, is {}".format(i, type(dmljob_obj))
+            self.scheduler.add_job(dmljob_obj)
 
     def _terminate_session(self, payload):
         """
