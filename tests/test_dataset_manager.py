@@ -6,9 +6,22 @@ import inspect
 import tests.context
 import pytest
 import shutil
+
 from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager
 
+
+@pytest.fixture
+def good_config_manager():
+    config_manager = ConfigurationManager()
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/dataset_manager/configuration.ini'
+    )
+    return config_manager
+
+@pytest.fixture
+def good_dataset_manager(good_config_manager):
+    return DatasetManager(good_config_manager)
 
 @pytest.fixture
 def bad_config_manager_format():
@@ -37,7 +50,7 @@ def test_no_header(bad_config_manager_header):
                         folder='test1',
                     )
     try:
-        dsm = DatasetManager(bad_config_manager_header)
+        dataset_manager = DatasetManager(bad_config_manager_header)
         raise Exception("Error should have been thrown for lack of header")
     except AssertionError as e:
         assert str(e) == error_message, "Wrong assertion was thrown!"
@@ -55,10 +68,69 @@ def test_bad_format(bad_config_manager_format):
                         message='list index out of range'
                      )                  
     try:
-        dsm = DatasetManager(bad_config_manager_format)
+        dataset_manager = DatasetManager(bad_config_manager_format)
         raise Exception("Error should have been thrown for bad format")
     except Exception as e:
         assert str(e) == format_message, "Wrong assertion was thrown!"
+
+def check_mappings_exist(dataset_manager):
+    """
+    Ensure that a yaml file was created.
+    """
+    assert dataset_manager.get_mappings()
+    mapping_filepath = os.path.join(
+        dataset_manager._raw_filepath, 
+        'datasets.yaml'
+    )
+    assert os.path.isfile(mapping_filepath)
+
+def check_mappings_correctness(dataset_manager):
+    """
+    Ensure that the values of the mappings are the folders in _raw_filepath
+    """
+    mappings = dataset_manager.get_mappings()
+    folders = list(mappings.values())
+    assert (folders[0] == 'test1' and folders[1] == 'test2') \
+        or (folders[0] == 'test2' and folders[1] == 'test1'), \
+        "Dataset mappings are incorrect!"
+
+def clean_up(dataset_manager):
+    """
+    Remove datasets.yaml, if it exists.
+    """
+    mapping_filepath = os.path.join(
+        dataset_manager._raw_filepath, 
+        'datasets.yaml'
+    )
+    if os.path.isfile(mapping_filepath):
+        os.remove(mapping_filepath)
+
+def test_complete_yaml_creation(good_dataset_manager):
+    """
+    Verify datasets.yaml (dataset mappings) is created and correct.
+    """
+    good_dataset_manager.bootstrap()
+    check_mappings_exist(good_dataset_manager)
+    mappings = good_dataset_manager.get_mappings()
+    check_mappings_correctness(good_dataset_manager)
+    
+    clean_up(good_dataset_manager)
+
+def test_no_yaml_creation_repeat(good_dataset_manager):
+    """
+    Verify that _create_dataset_mappings is not run again when mappings
+    already exist. 
+    """
+    good_dataset_manager.bootstrap()
+    check_mappings_exist(good_dataset_manager)
+    assert not good_dataset_manager.bootstrap(), \
+        "Created mappings even though mappings already loaded!"
+
+    good_dataset_manager._mappings = None
+    assert not good_dataset_manager.bootstrap(), \
+        "Created mappings even though datasets.yaml already exists!"
+    
+    clean_up(good_dataset_manager)
 
 '''
 uncomment when node is running
@@ -66,8 +138,8 @@ uncomment when node is running
 def test_bad_metadata_post():
     try:
         rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data')
-        dsm = DatasetManager(rfp)
-        dsm.post_dataset_with_md("my_test")
+        dataset_manager = DatasetManager(rfp)
+        dataset_manager.post_dataset_with_md("my_test")
         assert False
     except NoMetadataFoundError:
         pass
