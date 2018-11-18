@@ -8,6 +8,9 @@ from core import *
 def test_validate_ed_dataset():
     """
     Tests validation by the Orchestrator on ed_datasets indices access. 
+         1. Tests success when accessing a valid index.
+        2. Tests failure when accessing an invalid index.
+        3. Tests that we cannot access a dataset when no datasets available.
     """
     orchestrator = Orchestrator()
     orchestrator.ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
@@ -29,17 +32,24 @@ def test_validate_ed_dataset():
         orchestrator.validate_ed_dataset(-4)
     with pytest.raises(AssertionError):
         orchestrator.validate_ed_dataset(20)
+    orchestrator.ed_datasets = list()
+    with pytest.raises(AssertionError):
+        orchestrator.validate_ed_dataset(1)
 
 def test_validate_column(): 
     """
     Tests validation by the Orchestrator on dataframes' columns properties. 
+        1. Tests success when accessing a valid column.
+        2. Tests failure when accessing an invalid column.
+        3. Tests failure when accessing a column in a dataframe but with non-numerical values.
     """
     orchestrator = Orchestrator()
     df1 = pd.DataFrame(np.random.randn(50, 4), columns=list('ABCD'))
+    orchestrator.validate_column(df1, 'A')
     s = '[{"Country":"USA","Name":"Ryan"},{"Country":"Sweden","Name":"Sam"},{"Country":"Brazil","Name":"Ralf"}]'
     df2 = pd.DataFrame(json.loads(s))
     orchestrator.validate_column(df1, 'A')
     with pytest.raises(AssertionError):
-        orchestrator.validate_column(df2, 'Country')
-    with pytest.raises(AssertionError):
         orchestrator.validate_column(df1, 'E')
+    with pytest.raises(AssertionError):
+        orchestrator.validate_column(df2, 'Country')
