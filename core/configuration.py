@@ -44,7 +44,11 @@ class ConfigurationManager(object):
         self.config_filepath = config_filepath
         self.question_filepath = question_filepath
         if not os.path.isfile(self.config_filepath):
-            self._run_setup_mode(self.config_filepath, self.question_filepath, self.input_function)
+            self._run_setup_mode(
+                self.config_filepath, 
+                self.question_filepath, 
+                self.input_function
+            )
         else:
             self._config = configparser.ConfigParser()
             self._config.read(self.config_filepath)
@@ -65,12 +69,19 @@ class ConfigurationManager(object):
         rows = [r[1] for r in pd.read_csv(question_filepath).iterrows()]
         secret_sections = set([])
         for row in rows:
-            question, section, key, default = row['question'], row['section'], row['key'], row['default']
+            question = row['question']
+            section = row['section']
+            key = row['key']
+            default = row['default'] 
             if question == 'SECRET':
                 answer = default
                 secret_sections.add(section)
             else:
-                answer = user_input(self.question_format.format(question=question, default=default))
+                complete_question = self.question_format.format(
+                    question=question, 
+                    default=default
+                )
+                answer = user_input(complete_question)
                 answer = answer if answer else default
             if section not in config:
                 config[section] = {} 
@@ -81,9 +92,9 @@ class ConfigurationManager(object):
         # For all secret sections, add secret_section_message as a comment.
         with open(config_filepath, "r") as f:
             lines = f.readlines()
-        stripped = [line.strip() for line in lines]
         for secret_section in secret_sections:
-            lines.insert(stripped.index("[{}]".format(secret_section)), secret_section_message)
+            index = lines.index("[{}]\n".format(secret_section))
+            lines.insert(index, secret_section_message)
         with open(config_filepath, "w") as f:
             f.write("".join(lines))
         self._config = config
