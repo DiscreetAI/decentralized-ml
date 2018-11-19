@@ -6,17 +6,8 @@ from core import *
 
 @pytest.fixture
 def orchestrator():
-    return Orchestrator();
-
-
-def test_validate_ed_dataset(orchestrator):
-    """
-    Tests validation by the Orchestrator on ed_datasets indices access. 
-         1. Tests success when accessing a valid index.
-        2. Tests failure when accessing an invalid index.
-        3. Tests that we cannot access a dataset when no datasets available.
-    """
-    ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
+    orchestrator = Orchestrator()
+    orchestrator.ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
          {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
          {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
          {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
@@ -30,14 +21,22 @@ def test_validate_ed_dataset(orchestrator):
          {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
          {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
          {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
-    orchestrator.ed_datasets = ed_datasets
+    return orchestrator
+
+def test_validate_ed_dataset(orchestrator):
+    """
+    Tests validation by the Orchestrator on ed_datasets indices access. 
+         1. Tests success when accessing a valid index.
+        2. Tests failure when accessing an invalid index.
+        3. Tests that we cannot access a dataset when no datasets available.
+    """
     orchestrator.validate_ed_dataset(3)
-    with pytest.raises(AssertionError, match='Index must be non-negative.', message='Expecting: AssertionError'):
+    with pytest.raises(AssertionError, match='Index must be non-negative.', message='Expecting: AssertionError due to negative index.'):
         orchestrator.validate_ed_dataset(-4)
-    with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(ed_datasets), message='Expecting: AssertionError')):
+    with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(orchestrator.ed_datasets), message='Expecting: AssertionError due to index out of bounds.')):
         orchestrator.validate_ed_dataset(20)
     orchestrator.ed_datasets = list()
-    with pytest.raises(AssertionError, match='No datasets available, make sure to query to create datasets.', message='Expecting: AssertionError'):
+    with pytest.raises(AssertionError, match='No datasets available, make sure to query to create datasets.', message='Expecting: AssertionError due to empty datasets.'):
         orchestrator.validate_ed_dataset(1)
 
 def test_validate_column(orchestrator): 
@@ -51,7 +50,7 @@ def test_validate_column(orchestrator):
     orchestrator.validate_column(df1, 'A')
     s = '[{"Country":"USA","Name":"Ryan"},{"Country":"Sweden","Name":"Sam"},{"Country":"Brazil","Name":"Ralf"}]'
     df2 = pd.DataFrame(json.loads(s))
-    with pytest.raises(AssertionError, match= 'Invalid column E', message='Expecting: AssertionError'):
+    with pytest.raises(AssertionError, match= 'Invalid column E', message='Expecting: AssertionError due to non-existent column.'):
         orchestrator.validate_column(df1, 'E')
-    with pytest.raises(AssertionError, match='Column type must be numerical, not {0}.'.format(df2['Country'].dtype), message='Expecting: AssertionError'):
+    with pytest.raises(AssertionError, match='Column type must be numerical, not {0}.'.format(df2['Country'].dtype), message='Expecting: AssertionError due to non-numerical type.'):
         orchestrator.validate_column(df2, 'Country')
