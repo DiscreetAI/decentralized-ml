@@ -4,16 +4,19 @@ import numpy as np
 import json
 from core import *
 
+@pytest.fixture
+def orchestrator():
+    return Orchestrator();
 
-def test_validate_ed_dataset():
+
+def test_validate_ed_dataset(orchestrator):
     """
     Tests validation by the Orchestrator on ed_datasets indices access. 
          1. Tests success when accessing a valid index.
         2. Tests failure when accessing an invalid index.
         3. Tests that we cannot access a dataset when no datasets available.
     """
-    orchestrator = Orchestrator()
-    orchestrator.ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
+    ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
          {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
          {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
          {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
@@ -27,29 +30,28 @@ def test_validate_ed_dataset():
          {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
          {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
          {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
+    orchestrator.ed_datasets = ed_datasets
     orchestrator.validate_ed_dataset(3)
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match='Index must be non-negative.', message='Expecting: AssertionError'):
         orchestrator.validate_ed_dataset(-4)
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(ed_datasets), message='Expecting: AssertionError')):
         orchestrator.validate_ed_dataset(20)
     orchestrator.ed_datasets = list()
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match='No datasets available, make sure to query to create datasets.', message='Expecting: AssertionError'):
         orchestrator.validate_ed_dataset(1)
 
-def test_validate_column(): 
+def test_validate_column(orchestrator): 
     """
     Tests validation by the Orchestrator on dataframes' columns properties. 
         1. Tests success when accessing a valid column.
         2. Tests failure when accessing an invalid column.
         3. Tests failure when accessing a column in a dataframe but with non-numerical values.
     """
-    orchestrator = Orchestrator()
     df1 = pd.DataFrame(np.random.randn(50, 4), columns=list('ABCD'))
     orchestrator.validate_column(df1, 'A')
     s = '[{"Country":"USA","Name":"Ryan"},{"Country":"Sweden","Name":"Sam"},{"Country":"Brazil","Name":"Ralf"}]'
     df2 = pd.DataFrame(json.loads(s))
-    orchestrator.validate_column(df1, 'A')
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match= 'Invalid column E', message='Expecting: AssertionError'):
         orchestrator.validate_column(df1, 'E')
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match='Column type must be numerical, not {0}.'.format(df2['Country'].dtype), message='Expecting: AssertionError'):
         orchestrator.validate_column(df2, 'Country')
