@@ -8,15 +8,15 @@ from data.iterators import create_random_test_dataset_iterator
 from data.iterators import create_random_train_dataset_iterator
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def dataset_path():
     return "tests/artifacts/iterators/random"
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def train_dataset_path():
     return "tests/artifacts/iterators/random/train.csv"
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def test_dataset_path():
     return "tests/artifacts/iterators/random/test.csv"
 

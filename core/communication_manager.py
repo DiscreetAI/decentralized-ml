@@ -1,14 +1,14 @@
 import logging
 
-from core.utils.enums       import RawEventTypes, ActionableEventTypes
-from core.utils.enums       import callback_handler_no_default
-from core.fed_avg_optimizer import FederatedAveragingOptimizer
-from core.utils.dmljob      import DMLJob
+from core.utils.enums                   import RawEventTypes, MessageEventTypes, ActionableEventTypes
+from core.utils.enums                   import callback_handler_no_default
+from core.fed_avg_optimizer             import FederatedAveragingOptimizer
+from core.utils.dmljob                  import DMLJob
+from core.blockchain.blockchain_utils   import TxEnum
 
 
 logging.basicConfig(level=logging.DEBUG,
     format='[CommunicationManager] %(asctime)s %(levelname)s %(message)s')
-
 
 class CommunicationManager(object):
     """
@@ -35,7 +35,7 @@ class CommunicationManager(object):
         # NOTE: This should be updated when Gateway PR is merged and we make
         # the Communication Manager error-handle out of order/missed messages.
         self.EVENT_TYPE_2_CALLBACK = {
-            RawEventTypes.NEW_SESSION.name: self._create_session,
+            MessageEventTypes.NEW_SESSION.name: self._create_session,
             ActionableEventTypes.SCHEDULE_JOBS.name: self._schedule_jobs,
             ActionableEventTypes.TERMINATE.name: self._terminate_session,
             ActionableEventTypes.NOTHING.name: self._do_nothing,
@@ -69,7 +69,7 @@ class CommunicationManager(object):
         node is done training a particular model, to which the Optimizer could
         decide it's time to communicate the new weights to the network.
         """
-        logging.info("Information has been received: {})".format(event_type))
+        logging.info("Information has been received: {}".format(event_type))
         if self.optimizer:
             # We have an active session so we ask the optimizer what to do.
             event_type, payload = self.optimizer.ask(event_type, payload)
@@ -91,7 +91,7 @@ class CommunicationManager(object):
         # only considering the 'FederatedAveragingOptimizer' for now.
         # TODO: We need to incorporate session id's when we're ready.
         logging.info("New optimizer session is being set up...")
-        initialization_payload = payload.get('content')
+        initialization_payload = payload.get(TxEnum.CONTENT.name)
         self.optimizer = FederatedAveragingOptimizer(initialization_payload)
         logging.info("Optimizer session is set! Now doing kickoff...")
         event_type, payload = self.optimizer.kickoff()

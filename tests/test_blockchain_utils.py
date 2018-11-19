@@ -10,7 +10,7 @@ TEST_SINGLE_KEY = 'singleton'
 TEST_MULTIPLE_KEY = 'multiplicity'
 TEST_VALUE = 'World!'
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def config():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
@@ -18,7 +18,7 @@ def config():
     )
     return config_manager.get_config()
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def ipfs_client(config):
     return ipfsapi.connect(config.get('BLOCKCHAIN', 'host'), 
                             config.getint('BLOCKCHAIN', 'ipfs_port'))

@@ -1,15 +1,15 @@
 import logging
 
-from core.utils.enums 		import ActionableEventTypes, RawEventTypes, MessageEventTypes
-from core.utils.enums 		import JobTypes, callback_handler_no_default
-from core.utils.dmljob 		import deserialize_job, DMLJob
-from core.utils.keras 		import serialize_weights
-from core.utils.dmlresult 	import DMLResult
+from core.utils.enums 					import ActionableEventTypes, RawEventTypes, MessageEventTypes
+from core.utils.enums 					import JobTypes, callback_handler_no_default
+from core.utils.dmljob 					import deserialize_job, DMLJob
+from core.utils.keras 					import serialize_weights
+from core.utils.dmlresult 				import DMLResult
+from core.blockchain.blockchain_utils	import TxEnum
 
 
 logging.basicConfig(level=logging.DEBUG,
 	format='[FedAvgOpt] %(asctime)s %(levelname)s %(message)s')
-
 
 class FederatedAveragingOptimizer(object):
 	"""
@@ -45,19 +45,27 @@ class FederatedAveragingOptimizer(object):
 			- `serialized_job`: the serialized DML Job
 
 			- `optimizer_params`: the optimizer parameters (dict) needed to
-			initialize this optimizer (should contain the listen_iterations and
-			listen_bound)
+			initialize this optimizer (should contain the max_rounds and
+			num_averages_per_round)
+		
+		num_averages_per_round(int): how many weights this optimizer needs to incorporate
+		into its weighted running average before it's "heard enough" 
+		and can move on to training
+		max_rounds(int): how many rounds of fed learning this optimizer wants to do
 		"""
 		logging.info("Setting up Optimizer")
 		serialized_job = initialization_payload.get('serialized_job')
 		self.job = deserialize_job(serialized_job)
 		optimizer_params = initialization_payload.get('optimizer_params')
-		self.listen_iterations = optimizer_params.get('listen_iterations', 0)
-		self.listen_bound = optimizer_params.get('listen_bound', 2)
+		self.curr_averages_this_round = 0
+		self.num_averages_per_round = optimizer_params.get('num_averages_per_round')
+		self.curr_round = 0
+		self.max_rounds = optimizer_params.get('max_rounds')
 		self.initialization_complete = False
 		self.LEVEL1_CALLBACKS = {
 			RawEventTypes.JOB_DONE.name: self._handle_job_done,
-			RawEventTypes.NEW_INFO.name: self._handle_new_info,
+			RawEventTypes.NEW_MESSAGE.name: self._handle_new_info,
+			MessageEventTypes.NEW_SESSION.name: self._do_nothing,
 		}
 		self.LEVEL2_JOB_DONE_CALLBACKS = {
 			JobTypes.JOB_TRAIN.name: self._done_training,
@@ -66,8 +74,9 @@ class FederatedAveragingOptimizer(object):
 			JobTypes.JOB_COMM.name: self._done_communicating,
 			JobTypes.JOB_SPLIT.name: self._done_split,
 		}
-		self.LEVEL_2_INFO_CALLBACKS = {
+		self.LEVEL_2_NEW_INFO_CALLBACKS = {
 			MessageEventTypes.NEW_WEIGHTS.name: self._received_new_weights,
+			MessageEventTypes.TERMINATE.name: self._received_termination,
 		}
 
 		logging.info("Optimizer has been set up!")
@@ -80,9 +89,11 @@ class FederatedAveragingOptimizer(object):
 		randomly initializes the model.
 		"""
 		job_arr = []
-		job_one = self.job.copy_constructor(JobTypes.JOB_INIT.name)
+		job_one = self.job.copy_constructor()
+		job_one.job_type = JobTypes.JOB_INIT.name
 		job_arr.append(job_one)
-		job_two = self.job.copy_constructor(JobTypes.JOB_SPLIT.name)
+		job_two = self.job.copy_constructor()
+		job_two.job_type = JobTypes.JOB_SPLIT.name
 		job_arr.append(job_two)
 		return ActionableEventTypes.SCHEDULE_JOBS.name, job_arr
 
@@ -105,6 +116,7 @@ class FederatedAveragingOptimizer(object):
 			dmlresult_obj.job.job_type,
 			self.LEVEL2_JOB_DONE_CALLBACKS
 		)
+		logging.info("Job completed: {}".format(dmlresult_obj.job.job_type))
 		return callback(dmlresult_obj)
 
 	def _done_initializing(self, dmlresult_obj):
@@ -147,57 +159,74 @@ class FederatedAveragingOptimizer(object):
 		weights.
 		"""
 		new_weights = dmlresult_obj.results.get('weights')
+		self.job.omega = dmlresult_obj.results.get('omega')
+		self.job.sigma_omega = self.job.omega
 		self._update_weights(new_weights)
 		self.job.job_type = JobTypes.JOB_COMM.name
+		# TODO: Key management PR
+		self.job.key = "test"
 		return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 
+	def _done_communicating(self, dmlresult_obj):
+		"""
+		"LEVEL 2" Callback for a Communication job.
+		"""
+		return ActionableEventTypes.NOTHING.name, None
+	
 	def _done_averaging(self, dmlresult_obj):
 		new_weights = dmlresult_obj.results.get('weights')
 		self._update_weights(new_weights)
-		self.listen_iterations += 1
-		if self.listen_iterations >= self.listen_bound:
+		# Update our memory of the weights we've seen
+		self.job.sigma_omega = dmlresult_obj.job.sigma_omega + dmlresult_obj.job.omega
+		self.curr_averages_this_round += 1
+		if self.curr_averages_this_round >= self.num_averages_per_round:
+			logging.info("DONE WITH ROUND {} OF FEDERATED LEARNING!".format(self.curr_round))
 			self.job.job_type = JobTypes.JOB_TRAIN.name
-			self.listen_iterations = 0
-			return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
+			self.curr_averages_this_round = 0
+			# Reset sigma_omega for new round of learning
+			self.job.sigma_omega = 0
+			self.curr_round += 1
+			if self.curr_round >= self.max_rounds:
+				return ActionableEventTypes.TERMINATE.name, self.job
+			else:
+				return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 		else:
 			return ActionableEventTypes.NOTHING.name, None
 
-	def _done_communicating(self, dmlresult_obj):
-		return ActionableEventTypes.NOTHING.name, None
-
 	# Handlers for new information from the gateway
-	# TODO: This will come with the Gateway PR.
 
 	def _handle_new_info(self, payload):
 		"""
 		"LEVEL 1" Callback to handle new information from the blockchain.
-	
-		NOTE: The payload structure is to be defined.
+		Payload structure should be:
+		{TxEnum.KEY.name: <e.g. NEW_WEIGHTS>, 
+		TxEnum.CONTENT.name: <e.g. weights>}	
 		"""
 		# TODO: Some assert on the payload, like in `_handle_job_done()`.
 		callback = callback_handler_no_default(
-			payload["key"],
-			self.LEVEL_2_INFO_CALLBACKS
+			payload[TxEnum.KEY.name],
+			self.LEVEL_2_NEW_INFO_CALLBACKS
 		)
 		return callback(payload)
 
 	def _received_new_weights(self, payload):
 		"""
 		"LEVEL 2" Callback for new weights received by the service from the
-		blockchain.
-	
-		TODO: Will be updated with Averaging PR
+		blockchain.	
 		"""
+		logging.info("Received new weights!")
+		received_job = deserialize_job(payload[TxEnum.CONTENT.name])
 		self.job.job_type = JobTypes.JOB_AVG.name
-		self.job.set_weights(self.job.weights, payload["content"]["weights"], 1, 1)
+		self.job.omega = received_job.omega
+		self.job.new_weights = received_job.weights
 		return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 
-	# def _received_termination(self, payload):
-	# 	"""
-	# 	"LEVEL 2" Callback for a termination message received by the service
-	# 	from the blockchain.
-	# 	"""
-	# 	return ActionableEventTypes.TERMINATE.name, None
+	def _received_termination(self, payload):
+		"""
+		"LEVEL 2" Callback for a termination message received by the service
+		from the blockchain.
+		"""
+		return ActionableEventTypes.TERMINATE.name, None
 
 	# Helper functions
 
@@ -208,3 +237,9 @@ class FederatedAveragingOptimizer(object):
 		with the correct weights. Mutates, does not return anything.
 		"""
 		self.job.weights = weights
+
+	def _do_nothing(self, payload):
+		"""
+		Do nothing in case this optimizer heard a new session.
+		"""
+		return ActionableEventTypes.NOTHING.name, None

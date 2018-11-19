@@ -57,16 +57,14 @@ class DatasetManager():
         self._raw_filepath = raw_filepath
         self._mappings = None
         self._validate_data()
-        self._host = config.get("BLOCKCHAIN", "host")
-        self._ipfs_port = config.getint("BLOCKCHAIN", "ipfs_port")
         self._port = config.getint("BLOCKCHAIN", "http_port")
-        self._timeout = config.getint("BLOCKCHAIN", "timeout")
-        try:
-            self.client = ipfsapi.connect(self._host, self._ipfs_port)
-        except Exception as e:
-            logging.info("IPFS daemon not started, got: {0}".format(e))
-            raise(e)
 
+    def configure(self, ipfs_client):
+        """
+        Sets up IPFS client for _communicate.
+        """
+        self._client = ipfs_client
+    
     def _validate_data(self):
         """
         Validate all raw data. As of now, checks that:
@@ -192,7 +190,7 @@ class DatasetManager():
             if 'md' not in folder_dict:
                 raise NoMetadataFoundError(folder)
             value[folder] = folder_dict
-        receipt = setter(client=self.client, key=name, value=value, port=self.port)
+        receipt = setter(client=self._client, key=name, value=value, port=self._port)
 
     def post_dataset(self, name):
         """
@@ -219,4 +217,4 @@ class DatasetManager():
             folder_dict['ds'] = sample.to_json()
             folder_dict['md'] = md.to_json()
             value[folder] = folder_dict
-        receipt = setter(client=self.client, key=name, value=value, port=self.port)
+        receipt = setter(client=self._client, key=name, value=value, port=self._port)

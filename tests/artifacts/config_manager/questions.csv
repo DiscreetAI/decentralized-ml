@@ -4,6 +4,9 @@ How many runners should the scheduler manage?,SCHEDULER,num_runners,4
 How often should the scheduler run in minutes?,SCHEDULER,frequency_in_mins,1
 Where is the weights directory?,RUNNER,weights_directory,weights
 What is the max number of times a job should run?,SCHEDULER,max_tries,3
+What is the port for IPFS?,BLOCKCHAIN,ipfs_port,5001
+What is the port for HTTP?,BLOCKCHAIN,http_port,3000
+What is the host for HTTP?,BLOCKCHAIN,host,127.0.0.1
 SECRET,DB_CLIENT,user,datashark
 SECRET,DB_CLIENT,db,datasharkdb
 SECRET,DB_CLIENT,host,datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com

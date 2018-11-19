@@ -3,6 +3,7 @@ import random
 import uuid
 import time
 import os
+import ipfsapi
 import pandas as pd
 import numpy as np
 
@@ -15,7 +16,9 @@ from core.utils.keras import train_keras_model, validate_keras_model
 
 from core.utils.keras import serialize_weights, deserialize_weights
 from core.utils.dmlresult import DMLResult
+from core.utils.dmljob import serialize_job
 from core.utils.enums import JobTypes, callback_handler_no_default
+from core.blockchain.blockchain_utils import setter
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -39,19 +42,27 @@ class DMLRunner(object):
     def __init__(self, config_manager):
         """
         Sets up the unique identifier of the DML Runner and the local dataset path.
+        
+        Sets up IPFS client for _communicate.
         """
         config = config_manager.get_config()
         self.iden = str(uuid.uuid4())[:8]
-        
         self.config = dict(config.items("RUNNER"))
+        self._port = config.getint('BLOCKCHAIN', 'http_port')
         self.JOB_CALLBACKS = {
             JobTypes.JOB_TRAIN.name: self._train,
             JobTypes.JOB_INIT.name: self._initialize,
             JobTypes.JOB_VAL.name: self._validate,
             JobTypes.JOB_SPLIT.name: self._split_data,
             JobTypes.JOB_AVG.name: self._average,
-            JobTypes.JOB_COMM.name: self._communicate
+            JobTypes.JOB_COMM.name: self._communicate,
         }
+    
+    def configure(self, ipfs_client):
+        """
+        Sets up IPFS client for _communicate.
+        """
+        self._client = ipfs_client
 
     def run_job(self, job):
         """
@@ -244,6 +255,27 @@ class DMLRunner(object):
                 )
         return results
 
+    def _communicate(self, job):
+        """
+        Communicates a message to the blockchain using the Runner's
+        IPFS client, puts the tx_receipt in DMLResult.
+        """
+        tx_receipt = setter(
+            client=self._client,
+            key = job.key,
+            port = self._port,
+            value = serialize_job(job),
+        )
+        results = DMLResult(
+            status='successful',
+            job=job,
+            results={
+                'receipt': tx_receipt,
+            },
+            error_message="",
+        )
+        return results
+
     def _split_data(self, job):
         """
         Takes in a job, which should have the raw filepath assigned.
@@ -320,8 +352,10 @@ class DMLRunner(object):
         """
         Average the weights in the job weighted by their omegas.
         """
-        deserialized_new_weights = deserialize_weights(job.new_weights)
-        averaged_weights = self._weighted_running_avg(job.weights, deserialized_new_weights, job.sigma_omega, job.omega)
+        assert list(job.new_weights), "No new_weights supplied to average!"
+        assert job.omega, "No omega supplied to average!"
+        assert job.sigma_omega, "No sigma_omega supplied to average!"
+        averaged_weights = self._weighted_running_avg(job.weights, job.new_weights, job.sigma_omega, job.omega)
         result = DMLResult(
             status='successful',
             job=job,
@@ -332,28 +366,15 @@ class DMLRunner(object):
         )
         return result
     
-    def _weighted_running_avg(self, sigma_x_i_div_w_i, x_n, sigma_w_i, w_n):
+    def _weighted_running_avg(self, curr_weighted_avg, x_n, sigma_w_i, w_n):
         """
         Computes a weighting running average.
         w_n is the weight of datapoint n.
         x_n is a datapoint.
-        Sigma_x_i_div_w_i is the current weighted average.
+        curr_weighted_avg is the current weighted average.
         Sigma_w_i is the sum of weights currently.
         """
-        sigma_x_i = np.multiply(sigma_w_i, sigma_x_i_div_w_i)
-        cma_n_plus_one = np.divide(np.add(x_n, sigma_x_i), np.add(w_n,sigma_w_i))
-        return cma_n_plus_one
-
-    def _communicate(self, job):
-        """
-        NOTE: This is here ONLY to get past the first Communication Manager integration test.
-        """
-        result = DMLResult(
-            status='successful',
-            job=job,
-            results={
-                'weights': job.weights,
-            },
-            error_message="",
-        )
-        return result
+        sigma_x_i_times_w_i = np.multiply(curr_weighted_avg, sigma_w_i)
+        sigma_x_i_times_w_i = np.add(sigma_x_i_times_w_i, np.multiply(x_n, w_n))
+        new_weighted_avg = np.divide(sigma_x_i_times_w_i, np.add(sigma_w_i, w_n))
+        return new_weighted_avg

@@ -39,9 +39,13 @@ class MessageEventTypes(Enum):
         NEW_WEIGHTS: New weights from another node.
 
         TERMINATE: Terminate this session command.
+
+        NEW_SESSION: Information received from the blockchain to create a new
+        DML Session.
     """
     NEW_WEIGHTS = "NEW_WEIGHTS"
     TERMINATE = "TERMINATE"
+    NEW_SESSION = "NEW_SESSION"
 
 class RawEventTypes(Enum):
     """
@@ -51,18 +55,14 @@ class RawEventTypes(Enum):
 
     The different Raw Event Types are the following:
 
-        NEW_SESSION: Information received from the blockchain to create a new
-        DML Session.
-
         JOB_DONE: Information received from the Scheduler about a job that was
         just completed (in the form of a DML Result).
 
-        NEW_INFO: Information received by the Gateway containing new information
+        NEW_MESSAGE: Information received by the Gateway containing new information
         from the blockchain.
     """
-    NEW_SESSION = "NEW_SESSION"
     JOB_DONE = "JOB_DONE"
-    NEW_INFO = "NEW_INFO"
+    NEW_MESSAGE = "NEW_MESSAGE"
 
 class ActionableEventTypes(Enum):
     """

@@ -32,22 +32,16 @@ class BlockchainGateway(object):
         self.state = []
         self.event = Event()
 
-    def configure(self, config_manager: object, communication_manager: object):
+    def configure(self, config_manager: object, communication_manager: object, ipfs_client: object):
         """
-        Add communication_manager.
-        Set up IPFS client via config_manager.
+        Add communication_manager, ipfs_client, and set port.
         """
         self.communication_manager = communication_manager
         config = config_manager.get_config()
-        self.host = config.get("BLOCKCHAIN", "host")
-        self.ipfs_port = config.getint("BLOCKCHAIN", "ipfs_port")
-        self.port = config.getint("BLOCKCHAIN", "http_port")
-        self.timeout = config.getint("BLOCKCHAIN", "timeout")
-        try:
-            self.client = ipfsapi.connect(self.host, self.ipfs_port)
-        except Exception as e:
-            logging.info("IPFS daemon not started, got: {0}".format(e))
-            raise(e)
+        self._host = config.get("BLOCKCHAIN", "host")
+        self._port = config.getint("BLOCKCHAIN", "http_port")
+        self._timeout = config.getint("BLOCKCHAIN", "timeout")        
+        self._client = ipfs_client
 
     # Public methods for CRON
     
@@ -94,7 +88,7 @@ class BlockchainGateway(object):
         If any relevant transactions found, returns the callback result.
         Else, returns the arguments it was passed.
         """
-        global_state_wrapper = get_global_state(self.host, self.port, self.timeout)
+        global_state_wrapper = get_global_state(self._host, self._port, self._timeout)
         filtered_diffs = filter_diffs(global_state_wrapper, self.state, event_filter)
         self._update_local_state(global_state_wrapper)
         if filtered_diffs:
@@ -126,7 +120,7 @@ class BlockchainGateway(object):
             assert TxEnum.KEY.name in tx
             key = tx.get(TxEnum.KEY.name)
             value = tx.get(TxEnum.CONTENT.name)
-            self.communication_manager.inform(RawEventTypes.NEW_SESSION.name, ipfs_to_content(self.client, value))
+            self.communication_manager.inform(MessageEventTypes.NEW_SESSION.name, ipfs_to_content(self._client, value))
         list(map(handler, txs))
         return self._handle_new_session_info, self._filter_new_session_info
     
@@ -151,9 +145,9 @@ class BlockchainGateway(object):
             key = tx.get(TxEnum.KEY.name)
             value = tx.get(TxEnum.CONTENT.name)
             args = {TxEnum.KEY.name: MessageEventTypes.NEW_WEIGHTS.name, 
-                    TxEnum.CONTENT.name: ipfs_to_content(self.client, value)}
+                    TxEnum.CONTENT.name: ipfs_to_content(self._client, value)}
             # TODO: Put into in-memory datastore.
             self.communication_manager.inform(
-                RawEventTypes.NEW_INFO.name,args)
+                RawEventTypes.NEW_MESSAGE.name,args)
         list(map(handler, txs))
         return self._handle_new_session_info, self._filter_new_session_info

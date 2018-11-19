@@ -8,7 +8,7 @@ from data.iterators import create_sequential_train_dataset_iterator
 from data.iterators import create_sequential_test_dataset_iterator
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def dataset_path():
     return "tests/artifacts/iterators"
 

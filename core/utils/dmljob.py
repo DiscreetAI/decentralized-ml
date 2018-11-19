@@ -47,7 +47,12 @@ class DMLJob(object):
                                     `train.csv` and `test.csv` are in folder.
             datapoint_count (int): Number of datapoints after applying
                                    transform function.
-
+            new_weights (list): list of np.arrays representing the weights that
+                                should be averaged with 'weights'
+            omega (float): the weight given to new_weights in weighted averaging
+            sigma_omega (float): the sum of omega's incorporated into weighted
+                                averaging so far. Kept in the DMLJob to allow the
+                                weighted average to be unrolled.
         """
         self.job_type = job_type
         self.serialized_model = serialized_model
@@ -55,23 +60,15 @@ class DMLJob(object):
         self.weights = weights
         self.hyperparams = hyperparams
         self.label_column_name = label_column_name
+        self.omega = None
+        self.sigma_omega = None
+        self.new_weights = None
         self.raw_filepath = raw_filepath
         self.session_filepath = session_filepath
         self.datapoint_count = datapoint_count
-
-    def set_weights(self, current_weights, new_weights, omega, sigma_omega):
-        """
-        NOTE: This function is used to get relevant information into the DMLJob
-        for averaging. It will be deprecated in future.
-        """
-        self.weights = current_weights
-        self.new_weights = new_weights
-        self.omega = omega
-        self.sigma_omega = sigma_omega
-
-    def copy_constructor(self, job_type):
+    
+    def copy_constructor(self):
         newjob = deepcopy(self)
-        newjob.job_type = job_type
         return newjob
 
 def serialize_job(dmljob_obj):
@@ -84,6 +81,7 @@ def serialize_job(dmljob_obj):
     Returns:
         dict: The serialized version of the DML Job.
     """
+    assert isinstance(dmljob_obj, DMLJob), "Cannot serialize_job a non-DMLJob!"
     rest = {
         'job_type': dmljob_obj.job_type,
         'serialized_model': dmljob_obj.serialized_model,
@@ -92,7 +90,9 @@ def serialize_job(dmljob_obj):
         'label_column_name': dmljob_obj.label_column_name,
         'raw_filepath': dmljob_obj.raw_filepath,
         'session_filepath': dmljob_obj.session_filepath,
-        'datapoint_count': dmljob_obj.datapoint_count
+        'datapoint_count': dmljob_obj.datapoint_count,
+        'omega': dmljob_obj.omega,
+        'sigma_omega': dmljob_obj.sigma_omega,
     }
     weights = None
     if dmljob_obj.weights:
@@ -116,7 +116,7 @@ def deserialize_job(serialized_job):
     weights = None
     if serialized_job.get('weights', None):
         weights = deserialize_weights(serialized_job['weights'])
-    return DMLJob(
+    job = DMLJob(
         rest['job_type'],
         rest['serialized_model'],
         rest['framework_type'],
@@ -127,3 +127,6 @@ def deserialize_job(serialized_job):
         rest['session_filepath'],
         rest['datapoint_count']
     )
+    job.omega = rest['omega']
+    job.sigma_omega = rest['sigma_omega']
+    return job
