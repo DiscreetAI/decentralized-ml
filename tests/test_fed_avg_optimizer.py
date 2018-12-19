@@ -6,12 +6,13 @@ import os
 import shutil
 
 from tests.testing_utils import make_initialize_job, make_train_job
-from tests.testing_utils import make_serialized_job, make_model_json
+from tests.testing_utils import make_serialized_job_with_uuid, make_model_json
 from tests.testing_utils import make_hyperparams, make_split_job
 from core.utils.enums import JobTypes, RawEventTypes, ActionableEventTypes
 from core.fed_avg_optimizer import FederatedAveragingOptimizer
 from core.runner import DMLRunner
 from core.configuration import ConfigurationManager
+from core.dataset_manager import DatasetManager
 from data.iterators import count_datapoints
 
 
@@ -26,15 +27,25 @@ def config_manager():
     return config_manager
 
 @pytest.fixture(scope='session')
-def initialization_payload(small_filepath):
-    return {
-        "optimizer_params": {"listen_bound": 2, "listen_iterations": 0},
-        "serialized_job": make_serialized_job(small_filepath)
-    }
+def mnist_uuid():
+    return 'd16c6e86-d103-4e71-8741-ee1f888d206c'
 
 @pytest.fixture(scope='session')
-def mnist_filepath():
-    return 'tests/artifacts/fed_avg_optimizer/mnist'
+def small_uuid():
+    return 'dc1a2ae7-42c6-455d-a2d5-49bb9f30614e'
+
+@pytest.fixture(scope='session')
+def dataset_manager(config_manager):
+    dataset_manager = DatasetManager(config_manager)
+    dataset_manager.bootstrap()
+    return dataset_manager
+
+@pytest.fixture(scope='session')
+def initialization_payload(small_uuid):
+    return {
+        "optimizer_params": {"listen_bound": 2, "listen_iterations": 0},
+        "serialized_job": make_serialized_job_with_uuid(small_uuid)
+    }
 
 @pytest.fixture(scope='session')
 def transformed_filepath():
@@ -55,26 +66,25 @@ def cleanup(transformed_filepath, transformed_filepath_2):
         shutil.rmtree(transformed_filepath_2)
 
 @pytest.fixture(scope='session')
-def small_filepath():
-    return 'tests/artifacts/fed_avg_optimizer/test'
-
-@pytest.fixture(scope='session')
-def init_dmlresult_obj(config_manager, small_filepath):
+def init_dmlresult_obj(config_manager, small_uuid, dataset_manager):
     runner = DMLRunner(config_manager)
+    small_filepath = dataset_manager.get_mappings()[small_uuid]
     initialize_job = make_initialize_job(make_model_json(), small_filepath)
     result = runner.run_job(initialize_job)
     return result
 
 @pytest.fixture(scope='session')
-def split_dmlresult_obj(config_manager, mnist_filepath):
+def split_dmlresult_obj(config_manager, mnist_uuid, dataset_manager):
     model_json = make_model_json()
     runner = DMLRunner(config_manager)
+    mnist_filepath = dataset_manager.get_mappings()[mnist_uuid]
     split_job = make_split_job(
                             model_json, 
                             mnist_filepath,
                         )
     split_job.hyperparams['split'] = 0.75
     job_results = runner.run_job(split_job)
+    print(job_results)
     return job_results
 
 @pytest.fixture(scope='session')
@@ -93,8 +103,11 @@ def train_dmlresult_obj(config_manager, split_dmlresult_obj, init_dmlresult_obj)
     result = runner.run_job(train_job)
     return result
 
-def test_optimizer_fails_on_wrong_event_type(initialization_payload):
-    optimizer = FederatedAveragingOptimizer(initialization_payload)
+def test_optimizer_fails_on_wrong_event_type(initialization_payload, dataset_manager):
+    optimizer = FederatedAveragingOptimizer(
+                    initialization_payload, 
+                    dataset_manager
+                )
     try:
         dummy_payload = {}
         _, _ = optimizer.ask("WRONG_EVENT_TYPE", dummy_payload)
@@ -102,15 +115,22 @@ def test_optimizer_fails_on_wrong_event_type(initialization_payload):
     except Exception as e:
         assert str(e) == "Invalid callback passed!"
 
-def test_optimizer_can_kickoff(initialization_payload):
-    optimizer = FederatedAveragingOptimizer(initialization_payload)
+def test_optimizer_can_kickoff(initialization_payload, dataset_manager):
+    optimizer = FederatedAveragingOptimizer(
+                    initialization_payload, 
+                    dataset_manager
+                )
     event_type, job_arr = optimizer.kickoff()
     assert event_type == ActionableEventTypes.SCHEDULE_JOBS.name
     for job in job_arr:
         assert job.job_type == JobTypes.JOB_INIT.name or job.job_type == JobTypes.JOB_SPLIT.name
 
-def test_optimizer_schedules_training_after_initialization(initialization_payload, init_dmlresult_obj, split_dmlresult_obj):
-    optimizer = FederatedAveragingOptimizer(initialization_payload)
+def test_optimizer_schedules_training_after_initialization(initialization_payload, dataset_manager, init_dmlresult_obj, split_dmlresult_obj):
+    optimizer = FederatedAveragingOptimizer(
+                    initialization_payload, 
+                    dataset_manager
+                )
+    print(optimizer.job.raw_filepath)
     initial_weights = init_dmlresult_obj.results['weights']
     init_dmlresult_obj.job = init_dmlresult_obj.job.copy_constructor()
     split_dmlresult_obj.job = split_dmlresult_obj.job.copy_constructor()
@@ -122,8 +142,11 @@ def test_optimizer_schedules_training_after_initialization(initialization_payloa
     for job in job_arr:
         assert job.job_type == JobTypes.JOB_TRAIN.name
 
-def test_optimizer_schedules_communication_after_training(initialization_payload, train_dmlresult_obj):
-    optimizer = FederatedAveragingOptimizer(initialization_payload)
+def test_optimizer_schedules_communication_after_training(initialization_payload, dataset_manager, train_dmlresult_obj):
+    optimizer = FederatedAveragingOptimizer(
+                    initialization_payload, 
+                    dataset_manager
+                )
     trained_weights = train_dmlresult_obj.results['weights']
     train_dmlresult_obj.job = train_dmlresult_obj.job.copy_constructor()
     event_type, job_arr = optimizer.ask(RawEventTypes.JOB_DONE.name, train_dmlresult_obj)

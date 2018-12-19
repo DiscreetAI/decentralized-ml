@@ -36,7 +36,7 @@ class FederatedAveragingOptimizer(object):
 
 	"""
 
-	def __init__(self, initialization_payload):
+	def __init__(self, initialization_payload, dataset_manager):
 		"""
 		Initializes the optimizer.
 
@@ -56,7 +56,12 @@ class FederatedAveragingOptimizer(object):
 		logging.info("Setting up Optimizer")
 		serialized_job = initialization_payload.get('serialized_job')
 		self.job = deserialize_job(serialized_job)
+		mappings = dataset_manager.get_mappings()
+		assert self.job.uuid, "uuid of job not set!"
+		assert self.job.uuid in mappings, "uuid not found in mappings"
+		self.job.raw_filepath = mappings[self.job.uuid]
 		optimizer_params = initialization_payload.get('optimizer_params')
+
 		self.curr_averages_this_round = 0
 		self.num_averages_per_round = optimizer_params.get('num_averages_per_round')
 		self.curr_round = 0

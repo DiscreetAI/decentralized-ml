@@ -34,6 +34,7 @@ def bootstrap():
         config_manager=config_manager
     )
     dataset_manager.configure(ipfs_client=client)
+    dataset_manager.bootstrap()
     
     # 3. Set up the Communication Manager.
     communication_manager = CommunicationManager()
@@ -56,7 +57,8 @@ def bootstrap():
 
     # 5. Configure the Communication Manager with the components it talks to.
     communication_manager.configure(
-        scheduler=scheduler
+        scheduler=scheduler,
+        dataset_manager=dataset_manager
     )
 
     # 6. Set up Blockchain Gateway and start listening on a new thread.

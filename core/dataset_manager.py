@@ -105,7 +105,7 @@ class DatasetManager():
                         file=file,
                         folder=folder
                     )
-
+    
     def get_mappings(self):
         """
         Returns the dataset mappings.

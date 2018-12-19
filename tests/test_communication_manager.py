@@ -9,10 +9,11 @@ from core.runner                        import DMLRunner
 from core.scheduler                     import DMLScheduler
 from core.configuration                 import ConfigurationManager
 from tests.testing_utils                import make_initialize_job, make_model_json
-from tests.testing_utils                import make_serialized_job, serialize_job
+from tests.testing_utils                import make_serialized_job_with_uuid, serialize_job
 from core.utils.enums                   import RawEventTypes, JobTypes, MessageEventTypes
 from core.utils.keras                   import serialize_weights
 from core.blockchain.blockchain_utils   import TxEnum
+from core.dataset_manager               import DatasetManager
 
 
 @pytest.fixture(scope='session')
@@ -24,15 +25,24 @@ def config_manager():
     return config_manager
 
 @pytest.fixture(scope='session')
+def dataset_manager(config_manager):
+    dataset_manager = DatasetManager(config_manager)
+    dataset_manager.bootstrap()
+    return dataset_manager
+
+@pytest.fixture(scope='session')
 def ipfs_client(config_manager):
     config = config_manager.get_config()
     return ipfsapi.connect(config.get('BLOCKCHAIN', 'host'), 
                             config.getint('BLOCKCHAIN', 'ipfs_port'))
 
+@pytest.fixture(scope='session')
+def mnist_uuid():
+    return 'd16c6e86-d103-4e71-8741-ee1f888d206c'
 
 @pytest.fixture(scope='session')
-def new_session_event(mnist_filepath):
-    serialized_job = make_serialized_job(mnist_filepath)
+def new_session_event(mnist_uuid):
+    serialized_job = make_serialized_job_with_uuid(mnist_uuid)
     new_session_event = {
         TxEnum.KEY.name: None,
         TxEnum.CONTENT.name: {
@@ -41,10 +51,6 @@ def new_session_event(mnist_filepath):
         }
     }
     return new_session_event
-
-@pytest.fixture(scope='session')
-def mnist_filepath():
-    return 'tests/artifacts/communication_manager/mnist'
 
 def test_communication_manager_can_be_initialized():
     """
@@ -66,16 +72,17 @@ def test_communication_manager_fails_if_not_configured(new_session_event):
         )
         raise Exception("This should have raised an exception")
     except Exception as e:
-        assert str(e) == "Communication Manager needs to be configured first!"
+        assert str(e) == "Dataset Manager has not been set. Communication \
+             Manager needs to be configured first!"
 
-def test_communication_manager_creates_new_sessions(new_session_event, config_manager, ipfs_client):
+def test_communication_manager_creates_new_sessions(dataset_manager, new_session_event, config_manager, ipfs_client):
     """
     Ensures that upon receiving an initialization job, the Communication Manager
     will make an optimizer.
     """
     communication_manager = CommunicationManager()
     scheduler = DMLScheduler(config_manager)
-    communication_manager.configure(scheduler)
+    communication_manager.configure(scheduler, dataset_manager)
     scheduler.configure(communication_manager, ipfs_client)
     communication_manager.inform(
         MessageEventTypes.NEW_SESSION.name,
@@ -83,19 +90,20 @@ def test_communication_manager_creates_new_sessions(new_session_event, config_ma
     )
     assert communication_manager.optimizer
 
-def test_communication_manager_can_inform_new_job_to_the_optimizer(config_manager, ipfs_client):
+def test_communication_manager_can_inform_new_job_to_the_optimizer(dataset_manager, config_manager, ipfs_client, mnist_uuid):
     """
     Ensures that Communication Manager can tell the optimizer of something,
     and that the job will transfer correctly.
     """
     communication_manager = CommunicationManager()
     scheduler = DMLScheduler(config_manager)
-    communication_manager.configure(scheduler)
+    communication_manager.configure(scheduler, dataset_manager)
     scheduler.configure(communication_manager, ipfs_client)
     true_job = make_initialize_job(make_model_json())
     true_job.hyperparams['epochs'] = 10
     true_job.hyperparams['batch_size'] = 128
     true_job.hyperparams['split'] = .05
+    true_job.uuid = mnist_uuid
     serialized_job = serialize_job(true_job)                
     new_session_event = {
         TxEnum.KEY.name: None,

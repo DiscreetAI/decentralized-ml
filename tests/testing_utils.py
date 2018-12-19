@@ -26,7 +26,7 @@ def make_model_json():
     }
     return model_json
 
-def make_initialize_job(model_json, raw_filepath=None):
+def make_initialize_job(model_json, raw_filepath=None, uuid=None):
     initialize_job = DMLJob(
         JobTypes.JOB_INIT.name,
         model_json,
@@ -34,6 +34,7 @@ def make_initialize_job(model_json, raw_filepath=None):
         hyperparams=make_hyperparams(),
         label_column_name='label',
         raw_filepath=raw_filepath,
+        uuid=uuid
     )
     return initialize_job
 
@@ -73,7 +74,15 @@ def make_train_job(model_json, initial_weights, hyperparams, \
     return train_job
 
 def make_serialized_job(raw_filepath):
-    initialize_job = make_initialize_job(make_model_json(), raw_filepath)
+    initialize_job = make_initialize_job(
+                        make_model_json(), 
+                        raw_filepath=raw_filepath
+                    )
+    serialized_job = serialize_job(initialize_job)
+    return serialized_job
+
+def make_serialized_job_with_uuid(uuid):
+    initialize_job = make_initialize_job(make_model_json(), uuid=uuid)
     serialized_job = serialize_job(initialize_job)
     return serialized_job
 

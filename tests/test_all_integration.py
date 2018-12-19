@@ -11,11 +11,12 @@ from core.runner                        import DMLRunner
 from core.scheduler                     import DMLScheduler
 from core.configuration                 import ConfigurationManager
 from tests.testing_utils                import make_initialize_job, make_model_json
-from tests.testing_utils                import make_serialized_job, serialize_job
+from tests.testing_utils                import make_serialized_job_with_uuid, serialize_job
 from core.utils.enums                   import RawEventTypes, JobTypes, MessageEventTypes
 from core.utils.keras                   import serialize_weights
 from core.blockchain.blockchain_gateway import BlockchainGateway
 from core.blockchain.blockchain_utils   import setter, TxEnum
+from core.dataset_manager               import DatasetManager
 
 
 @pytest.fixture(scope='session')
@@ -33,8 +34,8 @@ def ipfs_client(config_manager):
                             config.getint('BLOCKCHAIN', 'ipfs_port'))
 
 @pytest.fixture(scope='session')
-def mnist_filepath():
-    return 'tests/artifacts/integration/mnist'
+def mnist_uuid():
+    return 'd16c6e86-d103-4e71-8741-ee1f888d206c'
 
 @pytest.fixture(scope='session')
 def transformed_filepath():
@@ -49,8 +50,8 @@ def cleanup(transformed_filepath):
         shutil.rmtree(transformed_filepath)
 
 @pytest.fixture(scope='session')
-def new_session_event(mnist_filepath):
-    serialized_job = make_serialized_job(mnist_filepath)
+def new_session_event(mnist_uuid):
+    serialized_job = make_serialized_job_with_uuid(mnist_uuid)
     new_session_event = {
         TxEnum.KEY.name: None,
         TxEnum.CONTENT.name: {
@@ -67,7 +68,9 @@ def setup_client(config_manager, client):
     communication_manager = CommunicationManager()
     blockchain_gateway = BlockchainGateway()
     scheduler = DMLScheduler(config_manager)
-    communication_manager.configure(scheduler)
+    dataset_manager = DatasetManager(config_manager)
+    dataset_manager.bootstrap()
+    communication_manager.configure(scheduler, dataset_manager)
     blockchain_gateway.configure(config_manager, communication_manager, client)
     scheduler.configure(communication_manager, client)
     return communication_manager, blockchain_gateway, scheduler
@@ -186,7 +189,7 @@ def test_federated_learning_two_clients_manual(new_session_event, config_manager
     assert communication_manager_2.optimizer is None, "Should have terminated!"
     # and that completes one local round of federated learning!
 
-def test_communication_manager_integration(mnist_filepath, new_session_event, config_manager, ipfs_client):
+def test_communication_manager_integration(new_session_event, config_manager, ipfs_client):
     """
     Integration test that checks that the Communication Manager can initialize,
     train, (and soon communicate) a model, and average a model.
@@ -239,7 +242,7 @@ def test_communication_manager_integration(mnist_filepath, new_session_event, co
         MessageEventTypes.NEW_SESSION.name,
         new_session_event
     )
-
+    
     assert communication_manager.optimizer.job.job_type == JobTypes.JOB_INIT.name or \
         communication_manager.optimizer.job.job_type == JobTypes.JOB_SPLIT.name, \
         "Should be ready to init or transform_split!"
