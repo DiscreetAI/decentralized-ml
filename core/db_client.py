@@ -18,11 +18,10 @@ class DBClient(object):
 	TODO: authenthication needs to be set up for DB
 	"""
 	
-	def __init__(self, config_filepath = 'database_config.json'):
+	def __init__(self, config_filepath = 'core/database_config.json'):
 		"""
 		Set up DBClient with corresponding database credentials
 		"""
-		config_filepath = '{}/core/{}'.format(os.getcwd(), config_filepath)
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			db_config = json.load(f)
