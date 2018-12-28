@@ -11,18 +11,17 @@ class DBClient(object):
 	DBClient
 
 	- Label datasets and retrieve datasets with corresponding category
-	- Needed here so that DL2 Notebook can retrieve labels
+	- Needed here so that DL2 Notebook can retrieve classifications
 	- Will most likely replace RDS DB with DynamoDB for performance reasons, 
 	  but I'll figure that out after MVP
 
 	TODO: authenthication needs to be set up for DB
 	"""
 	
-	def __init__(self, config_filepath = 'database_config.json'):
+	def __init__(self, config_filepath = 'core/database_config.json'):
 		"""
 		Set up DBClient with corresponding database credentials
 		"""
-		config_filepath = '{}/core/{}'.format(os.getcwd(), config_filepath)
 		app = Flask(__name__)
 		with open(config_filepath) as f:
 			db_config = json.load(f)
@@ -35,7 +34,7 @@ class DBClient(object):
 		self.num_tries = db_config['num_tries']
 		self.wait_time = db_config['wait_time']
 
-	def get_labels(self):
+	def get_classifications(self):
 		"""
 		Get category_labels table. Returns DataFrame.
 		"""
@@ -46,9 +45,9 @@ class DBClient(object):
 			except Exception as e:
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Getting labels failed.')
+		raise Exception('Getting classifications failed.')
 
-	def _get_data_providers_with_category(self, category):
+	def get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category. Returns DataFrame.
 		"""
@@ -62,6 +61,6 @@ class DBClient(object):
 			except Exception as e:
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Getting labels failed.')
+		raise Exception('Getting classifications failed.')
 		
 		
