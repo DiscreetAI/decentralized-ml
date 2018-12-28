@@ -11,7 +11,7 @@ class DBClient(object):
 	DBClient
 
 	- Label datasets and retrieve datasets with corresponding category
-	- Needed here so that DL2 Notebook can retrieve labels
+	- Needed here so that DL2 Notebook can retrieve classifications
 	- Will most likely replace RDS DB with DynamoDB for performance reasons, 
 	  but I'll figure that out after MVP
 
@@ -34,7 +34,7 @@ class DBClient(object):
 		self.num_tries = db_config['num_tries']
 		self.wait_time = db_config['wait_time']
 
-	def get_labels(self):
+	def get_classifications(self):
 		"""
 		Get category_labels table. Returns DataFrame.
 		"""
@@ -45,9 +45,9 @@ class DBClient(object):
 			except Exception as e:
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Getting labels failed.')
+		raise Exception('Getting classifications failed.')
 
-	def _get_data_providers_with_category(self, category):
+	def get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category. Returns DataFrame.
 		"""
@@ -61,6 +61,6 @@ class DBClient(object):
 			except Exception as e:
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Getting labels failed.')
+		raise Exception('Getting classifications failed.')
 		
 		

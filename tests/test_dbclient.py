@@ -22,8 +22,8 @@ def test_placeholder():
 
 def test_get_data_providers_with_category(db_client):
     """
-    Check that retrieving labels with specified category works.
+    Check that retrieving classifications with specified category works.
     """
-    actual = db_client._get_data_providers_with_category('social_media')
+    actual = db_client.get_data_providers_with_category('social_media')
     assert list(actual['data_provider'])[-1] == 'njkferwarif'
     assert list(actual['category'])[-1] == 'social_media'
