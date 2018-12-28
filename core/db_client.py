@@ -15,7 +15,7 @@ class DBClient(object):
 	DBClient
 
 	- Label datasets and retrieve datasets with corresponding category
-	- Needed here so that DL2 Notebook can retrieve labels
+	- Needed here so that DL2 Notebook can retrieve classifications
 	- Unsure whether DL2 Notebook will use this DBClient (through Virtual 
 	  Worker instance of UNIX Service) or have its own instance, TBD
 	- Will most likely replace RDS DB with DynamoDB for performance reasons, 
@@ -43,11 +43,11 @@ class DBClient(object):
 		self.num_tries = config.getint('DB_CLIENT', 'max_tries')
 		self.wait_time = config.getint('DB_CLIENT', 'wait_time')
 
-	def _get_labels(self):
+	def _get_classifications(self):
 		"""
 		Get category_labels table
 
-		NOTE: Functionality needs to be tested so that add_labels can be
+		NOTE: Functionality needs to be tested so that add_classifications can be
 		tested, but this method should not be used for the UNIX Service. Will 
 		be used for DL2 Notebook.
 		"""
@@ -59,24 +59,24 @@ class DBClient(object):
 				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Getting labels failed.')
+		raise Exception('Getting classifications failed.')
 
-	def add_labels(self, data_providers, categories):
+	def add_classifications(self, data_providers, categories):
 		"""
-		Append new category labels to the category_labels table and replace old
-		labels, where categories[i] corresponds to the labeled category for 
+		Append new category classifications to the category_labels table and replace old
+		classifications, where categories[i] corresponds to the labeled category for 
 		data_providers[i]
 		"""
-		labels = self._get_labels()
-		index = labels.index
-		labels = labels.set_index('data_provider')
+		classifications = self._get_classifications()
+		index = classifications.index
+		classifications = classifications.set_index('data_provider')
 		for data_provider, category in zip(data_providers, categories):
-			labels.loc[data_provider] = category
-		labels['data_provider'] = labels.index
-		labels.index = list(range(len(labels.index)))
+			classifications.loc[data_provider] = category
+		classifications['data_provider'] = classifications.index
+		classifications.index = list(range(len(classifications.index)))
 		for _ in range(self.num_tries):
 			try:
-				labels.to_sql(
+				classifications.to_sql(
 					name=self.table_name,
 					con=self.db.engine,
 					if_exists='replace',
@@ -87,14 +87,14 @@ class DBClient(object):
 				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Adding labels failed.')
+		raise Exception('Adding classifications failed.')
 		
 
 	def _get_data_providers_with_category(self, category):
 		"""
 		Get a list of data providers with the given category.
 		
-		NOTE: Functionality needs to be tested so that add_labels can be 
+		NOTE: Functionality needs to be tested so that add_classifications can be 
 		tested, but this method should not be used for the UNIX Service. Will 
 		be used for DL2 Notebook.
 		"""
@@ -109,6 +109,6 @@ class DBClient(object):
 				logging.error(e)
 				time.sleep(self.wait_time)
 				continue
-		raise Exception('Adding labels failed.')
+		raise Exception('Getting classifications failed.')
 		
 		

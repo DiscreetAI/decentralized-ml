@@ -7,11 +7,24 @@ import tests.context
 import pytest
 import shutil
 
+import ipfsapi
+
+from core.blockchain.blockchain_utils import getter, setter
 from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager
 
+TEST_NONEXISTENT_KEY = 'nonexistence'
+TEST_SINGLE_KEY = 'singleton'
+TEST_MULTIPLE_KEY = 'multiplicity'
+TEST_VALUE = 'World!'
 
-@pytest.fixture
+@pytest.fixture(scope='session')
+def ipfs_client(good_config_manager):
+    good_config_manager = good_config_manager.get_config()
+    return ipfsapi.connect(good_config_manager.get('BLOCKCHAIN', 'host'), 
+                            good_config_manager.getint('BLOCKCHAIN', 'ipfs_port'))
+
+@pytest.fixture(scope='session')
 def good_config_manager():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
@@ -19,11 +32,11 @@ def good_config_manager():
     )
     return config_manager
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def good_dataset_manager(good_config_manager):
     return DatasetManager(good_config_manager)
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def bad_config_manager_format():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
@@ -31,7 +44,7 @@ def bad_config_manager_format():
     )
     return config_manager
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def bad_config_manager_header():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
@@ -130,6 +143,26 @@ def test_no_yaml_creation_repeat(good_dataset_manager):
     assert not good_dataset_manager.bootstrap(), \
         "Created mappings even though datasets.yaml already exists!"
     
+    clean_up(good_dataset_manager)
+
+def test_ed_directory_format(good_dataset_manager):
+    good_dataset_manager.bootstrap()
+    ed_directory = good_dataset_manager._generate_ed_directory()
+    filepath = os.path.join(good_dataset_manager._raw_filepath, 'datasets.yaml')
+    mappings = good_dataset_manager._mappings
+
+    assert type(ed_directory == dict), \
+        "ED Directory is not a dictionary!"
+
+    for encoding, data_tuple in ed_directory.items():
+        dataset = data_tuple[0]
+        assert encoding in mappings.keys(), \
+            "Key is not encoding in dataset mappings!"
+        
+        df = pd.read_json(dataset)
+        assert len(df) == 1, \
+            "Sample was not 10 percent of original data!"
+
     clean_up(good_dataset_manager)
 
 '''
