@@ -3,26 +3,58 @@ import pandas as pd
 import numpy as np 
 from core.category_component import CategoryComponent
 
+
 @pytest.fixture
-def blockchain_client():
+def fruit_df():
+	df = pd.DataFrame()
+	df['fruit'] = ['Apple']
+	df['size'] = ['Large']
+	df['color'] = ['red']
+	return df
+
+@pytest.fixture
+def futbol_df():
+	df = pd.DataFrame()
+	df['real'] = [5]
+	df['barc'] = [0]
+	return df	
+
+@pytest.fixture
+def fruit_result(fruit_df):
+	fruit_dict = {}
+
+	df = fruit_df
+	key = 'dataset1'
+	fruit_dict[key] = (df.to_json(), df.describe().to_json())
+
+	df = fruit_df
+	key = 'dataset2'
+	fruit_dict[key] = (df.to_json(), df.describe().to_json())
+
+	return fruit_dict
+
+@pytest.fixture
+def futbol_result(futbol_df):
+	futbol_dict = {}
+
+	df = futbol_df
+	key = 'dataset3'
+	futbol_dict[key] = (df.to_json(), df.describe().to_json())
+
+	df = futbol_df
+	key = 'dataset4'
+	futbol_dict[key] = (df.to_json(), df.describe().to_json())
+
+	return futbol_dict
+
+@pytest.fixture
+def blockchain_client(fruit_result, futbol_result):
 	class BlockchainClient:
-		def getter(self, provider):
+		def get_dataset(self, provider):
 			if provider == 'fruit':
-				return {'dataset0': {'fruit': 'Apple','size': 'Large','color': 'Red'},
-						'dataset1': {'fruit': 'Orange','size': 'Medium','color': 'Purple'},
-						'dataset2': {'fruit': 'Berries','size': 'Mini','color': 'Orange'},
-						'dataset3': {'fruit': 'Grapes','size': 'XL','color': 'Yellow'},
-						'dataset4': {'fruit': 'Candy','size': 'Small','color': 'Red'},
-						'dataset5': {'fruit': 'Chocolate','size': 'Large','color': 'Blue'},
-						'dataset6': {'fruit': 'Bla','size': 'Small','color': 'Green'}}
+				return fruit_result
 			else:
-				return {'dataset0': {'real': 10, 'barca': 0},
-						'dataset1': {'real': 2, 'barca': 4},
-						'dataset2': {'real': 0, 'barca': 20},
-						'dataset3': {'real': 1, 'barca': 3},
-						'dataset4': {'real': 0, 'barca': 4},
-						'dataset5': {'real': 9, 'barca': 7},
-						'dataset6': {'real': 1, 'barca': 6}}
+				return futbol_result
 	return BlockchainClient()
 
 @pytest.fixture
@@ -43,37 +75,33 @@ def db_client():
 def category_component(blockchain_client, db_client):
 	return CategoryComponent(db_client, blockchain_client)
 
-def test_success(category_component):
+def test_success(category_component, fruit_df, futbol_df):
 	"""
 	Tests that category_component's expected value with success
 	by checking all of the data in the dictionary returned by 
-	get_ed_with_category.
+	get_datasets_with_category.
 	"""
-	category_component_dict = category_component.get_ed_with_category('success')
+	category_component_dict = category_component.get_datasets_with_category('success')
 	assert category_component_dict ['Success']
-	assert category_component_dict ['Result'] == [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
-		 {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
-		 {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
-		 {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
-		 {'dataset4_fruit': ('fruit', {'fruit': 'Candy', 'size': 'Small', 'color': 'Red'})}, 
-		 {'dataset5_fruit': ('fruit', {'fruit': 'Chocolate', 'size': 'Large', 'color': 'Blue'})},
-		 {'dataset6_fruit': ('fruit', {'fruit': 'Bla', 'size': 'Small', 'color': 'Green'})}, 
-		 {'dataset0_games': ('games', {'real': 10, 'barca': 0})},
-		 {'dataset1_games': ('games', {'real': 2, 'barca': 4})},
-		 {'dataset2_games': ('games', {'real': 0, 'barca': 20})},
-		 {'dataset3_games': ('games', {'real': 1, 'barca': 3})},
-		 {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
-		 {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
-		 {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
-
+	result = category_component_dict['Result']
+	assert len(result) == 4, 'Four datasets should have been found'
+	first, second, third, fourth = result
+	assert first.uuid == 'dataset1' \
+		and first.sample.sort_index(axis=1).equals(fruit_df.sort_index(axis=1))
+	assert second.uuid == 'dataset2' \
+		and second.sample.sort_index(axis=1).equals(fruit_df.sort_index(axis=1))
+	assert third.uuid == 'dataset3' \
+		and third.sample.sort_index(axis=1).equals(futbol_df.sort_index(axis=1))
+	assert fourth.uuid == 'dataset4' \
+		and fourth.sample.sort_index(axis=1).equals(futbol_df.sort_index(axis=1))
 
 def test_failure(category_component): 
 	"""
 	Tests that category_component's expected value with failure
 	by checking all of the data in the dictionary returned by 
-	get_ed_with_category.
+	get_datasets_with_category.
 	"""
-	category_component_dict = category_component.get_ed_with_category('failure')
+	category_component_dict = category_component.get_datasets_with_category('failure')
 	assert not category_component_dict['Success']
 	assert category_component_dict['Error'] == 'Category: failure has no data providers.'
 
@@ -82,9 +110,9 @@ def test_exception(category_component):
 	"""
 	Tests that category_component's expected value with exception
 	by checking all of the data in the dictionary returned by 
-	get_ed_with_category.
+	get_datasets_with_category.
 	"""
-	category_component_dict = category_component.get_ed_with_category('exception')
+	category_component_dict = category_component.get_datasets_with_category('exception')
 	assert not category_component_dict['Success']
 	assert category_component_dict['Error'] == 'error'
 
