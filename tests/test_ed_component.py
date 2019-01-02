@@ -3,24 +3,31 @@ import pandas as pd
 import numpy as np 
 import json
 from core.orchestrator import Orchestrator
+from core.dataset import Dataset
+
+
+@pytest.fixture(scope='session')
+def fruit_df():
+    df = pd.DataFrame()
+    df['fruit'] = ['Apple']
+    df['size'] = ['Large']
+    df['color'] = ['red']
+    return df
+
+@pytest.fixture(scope='session')
+def fruit_dataset(fruit_df):
+    fruit_dict = {}
+
+    key = 'dataset1'
+    value = (fruit_df.to_json(), fruit_df.describe().to_json())
+    data_tuple = (key, value)
+
+    return Dataset(data_tuple)
 
 @pytest.fixture
-def orchestrator():
+def orchestrator(fruit_dataset):
     orchestrator = Orchestrator(None, None)
-    orchestrator.datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
-         {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
-         {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
-         {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
-         {'dataset4_fruit': ('fruit', {'fruit': 'Candy', 'size': 'Small', 'color': 'Red'})}, 
-         {'dataset5_fruit': ('fruit', {'fruit': 'Chocolate', 'size': 'Large', 'color': 'Blue'})},
-         {'dataset6_fruit': ('fruit', {'fruit': 'Bla', 'size': 'Small', 'color': 'Green'})}, 
-         {'dataset0_games': ('games', {'real': 10, 'barca': 0})},
-         {'dataset1_games': ('games', {'real': 2, 'barca': 4})},
-         {'dataset2_games': ('games', {'real': 0, 'barca': 20})},
-         {'dataset3_games': ('games', {'real': 1, 'barca': 3})},
-         {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
-         {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
-         {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
+    orchestrator.datasets = [fruit_dataset] * 5
     return orchestrator
 
 def test_validate_dataset(orchestrator):

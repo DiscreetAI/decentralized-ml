@@ -4,7 +4,7 @@ import numpy as np
 from core.category_component import CategoryComponent
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def fruit_df():
 	df = pd.DataFrame()
 	df['fruit'] = ['Apple']
@@ -12,42 +12,38 @@ def fruit_df():
 	df['color'] = ['red']
 	return df
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def futbol_df():
 	df = pd.DataFrame()
 	df['real'] = [5]
 	df['barc'] = [0]
 	return df	
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def fruit_result(fruit_df):
 	fruit_dict = {}
 
-	df = fruit_df
 	key = 'dataset1'
-	fruit_dict[key] = (df.to_json(), df.describe().to_json())
+	fruit_dict[key] = (fruit_df.to_json(), fruit_df.describe().to_json())
 
-	df = fruit_df
 	key = 'dataset2'
-	fruit_dict[key] = (df.to_json(), df.describe().to_json())
+	fruit_dict[key] = (fruit_df.to_json(), fruit_df.describe().to_json())
 
 	return fruit_dict
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def futbol_result(futbol_df):
 	futbol_dict = {}
 
-	df = futbol_df
 	key = 'dataset3'
-	futbol_dict[key] = (df.to_json(), df.describe().to_json())
+	futbol_dict[key] = (futbol_df.to_json(), futbol_df.describe().to_json())
 
-	df = futbol_df
 	key = 'dataset4'
-	futbol_dict[key] = (df.to_json(), df.describe().to_json())
+	futbol_dict[key] = (futbol_df.to_json(), futbol_df.describe().to_json())
 
 	return futbol_dict
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def blockchain_client(fruit_result, futbol_result):
 	class BlockchainClient:
 		def get_dataset(self, provider):
@@ -57,7 +53,7 @@ def blockchain_client(fruit_result, futbol_result):
 				return futbol_result
 	return BlockchainClient()
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def db_client():
 	class DBClient:
 		def _get_data_providers_with_category(self, category):
@@ -71,7 +67,7 @@ def db_client():
 				raise Exception('error')
 	return DBClient()
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def category_component(blockchain_client, db_client):
 	return CategoryComponent(db_client, blockchain_client)
 
