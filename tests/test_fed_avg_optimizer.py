@@ -8,15 +8,15 @@ import shutil
 from tests.testing_utils import make_initialize_job, make_train_job
 from tests.testing_utils import make_serialized_job_with_uuid, make_model_json
 from tests.testing_utils import make_hyperparams, make_split_job
-from core.utils.enums import JobTypes, RawEventTypes, ActionableEventTypes
+from core.utils.enums import JobTypes, RawEventTypes, ActionableEventTypes, MessageEventTypes
 from core.fed_avg_optimizer import FederatedAveragingOptimizer
 from core.runner import DMLRunner
 from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager
 from data.iterators import count_datapoints
+from core.utils.dmljob import serialize_job
+from core.blockchain.blockchain_utils import TxEnum
 
-
-session_filepaths = set()
 
 @pytest.fixture(scope='session')
 def config_manager():
@@ -42,10 +42,16 @@ def dataset_manager(config_manager):
 
 @pytest.fixture(scope='session')
 def initialization_payload(small_uuid):
-    return {
-        "optimizer_params": {"listen_bound": 2, "listen_iterations": 0},
-        "serialized_job": make_serialized_job_with_uuid(small_uuid)
+    serialized_job = serialize_job(make_initialize_job(make_model_json()))
+    new_session_event = {
+        TxEnum.KEY.name: {"dataset_uuid": small_uuid, "label_column_name": "label"},
+        TxEnum.CONTENT.name: {
+            "optimizer_params": {"num_averages_per_round": 2, "max_rounds": 2},
+            "serialized_job": serialized_job,
+            "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', 'd16c6e86-d103-4e71-8741-ee1f888d206c']
+        }
     }
+    return new_session_event
 
 @pytest.fixture(scope='session')
 def transformed_filepath():
@@ -154,3 +160,12 @@ def test_optimizer_schedules_communication_after_training(initialization_payload
     assert event_type == ActionableEventTypes.SCHEDULE_JOBS.name
     for job in job_arr:
         assert job.job_type == JobTypes.JOB_COMM.name
+
+# def test_optimizer_waits_to_average_until_trained(initialization_payload, train_dmlresult_obj, dataset_manager):
+#     optimizer = FederatedAveragingOptimizer(initialization_payload, dataset_manager)
+#     args = {
+#         TxEnum.KEY.name: MessageEventTypes.NEW_WEIGHTS.name,
+#         TxEnum.CONTENT.name: serialize_job(train_dmlresult_obj.job)
+#     }
+#     nothing, nothing_ = optimizer.ask(RawEventTypes.NEW_MESSAGE.name, args)
+#     assert False

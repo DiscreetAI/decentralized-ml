@@ -5,6 +5,7 @@ import pytest
 from core.blockchain.blockchain_utils import getter, setter
 from core.configuration import ConfigurationManager
 
+
 TEST_NONEXISTENT_KEY = 'nonexistence'
 TEST_SINGLE_KEY = 'singleton'
 TEST_MULTIPLE_KEY = 'multiplicity'

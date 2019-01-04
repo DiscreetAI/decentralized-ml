@@ -123,12 +123,13 @@ def setter(client: object, key: str, port: int, value: object,
     """
     Provided a key and a JSON/np.array object, upload the object to IPFS and
     then store the hash as the value on the blockchain. The key should be a
-    backward reference to a prior tx
+    backward reference to a prior tx unless flag is set, in which case the key
+    is also stored onto the blockchain
     TODO: decide on error handling that matches `get_global_state`
     """
     logging.info("Setting to blockchain...")
     on_chain_value = upload(client, value) if value else None
-    key = on_chain_value if flag else key
+    key = upload(client, key) if flag else key
     tx = Transaction(key, on_chain_value)
     try:
         tx_receipt = make_setter_call(host, port, tx.get_tx())

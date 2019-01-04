@@ -36,7 +36,7 @@ class CommunicationManager(object):
         # NOTE: This should be updated when Gateway PR is merged and we make
         # the Communication Manager error-handle out of order/missed messages.
         self.EVENT_TYPE_2_CALLBACK = {
-            MessageEventTypes.NEW_SESSION.name: self._create_session,
+            RawEventTypes.NEW_MESSAGE.name: self._create_session,
             ActionableEventTypes.SCHEDULE_JOBS.name: self._schedule_jobs,
             ActionableEventTypes.TERMINATE.name: self._terminate_session,
             ActionableEventTypes.NOTHING.name: self._do_nothing,
@@ -95,10 +95,11 @@ class CommunicationManager(object):
         # only considering the 'FederatedAveragingOptimizer' for now.
         # TODO: We need to incorporate session id's when we're ready.
         if not self.dataset_manager:
-            raise Exception("Dataset Manager has not been set. Communication \
-             Manager needs to be configured first!")
-        logging.info("New optimizer session is being set up...")
+            raise Exception("Dataset Manager has not been set. Communication Manager needs to be configured first!")
+        assert payload.get(TxEnum.KEY.name) is MessageEventTypes.NEW_SESSION.name, \
+            "Expected a new session but got {}".format(payload.get(TxEnum.KEY.name))
         initialization_payload = payload.get(TxEnum.CONTENT.name)
+        logging.info("New optimizer session is being set up...")
         self.optimizer = FederatedAveragingOptimizer(
                             initialization_payload,
                             self.dataset_manager

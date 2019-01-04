@@ -13,16 +13,6 @@ from core.blockchain.blockchain_utils import getter, setter
 from core.configuration import ConfigurationManager
 from core.dataset_manager import DatasetManager
 
-TEST_NONEXISTENT_KEY = 'nonexistence'
-TEST_SINGLE_KEY = 'singleton'
-TEST_MULTIPLE_KEY = 'multiplicity'
-TEST_VALUE = 'World!'
-
-@pytest.fixture(scope='session')
-def ipfs_client(good_config_manager):
-    good_config_manager = good_config_manager.get_config()
-    return ipfsapi.connect(good_config_manager.get('BLOCKCHAIN', 'host'), 
-                            good_config_manager.getint('BLOCKCHAIN', 'ipfs_port'))
 
 @pytest.fixture(scope='session')
 def good_config_manager():
@@ -167,7 +157,6 @@ def test_ed_directory_format(good_dataset_manager):
 
 '''
 uncomment when node is running
-
 def test_bad_metadata_post():
     try:
         rfp = os.path.join(currentdir, 'artifacts/dataset_manager_test_data')
@@ -176,5 +165,4 @@ def test_bad_metadata_post():
         assert False
     except NoMetadataFoundError:
         pass
-
 '''

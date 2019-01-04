@@ -1,4 +1,5 @@
 import logging
+import time
 
 from core.utils.enums 					import ActionableEventTypes, RawEventTypes, MessageEventTypes
 from core.utils.enums 					import JobTypes, callback_handler_no_default
@@ -40,37 +41,48 @@ class FederatedAveragingOptimizer(object):
 		"""
 		Initializes the optimizer.
 
-		Expects the `initialization_payload` dict to contain two entries:
+		Expects the `initialization_payload` dict to contain two dicts:
 
-			- `serialized_job`: the serialized DML Job
+			- data-provider specific information, incl. dataset_uuid etc.
 
-			- `optimizer_params`: the optimizer parameters (dict) needed to
-			initialize this optimizer (should contain the max_rounds and
-			num_averages_per_round)
+			- job specific information
+
+				- `serialized_job`: the serialized DML Job
+
+				- `optimizer_params`: the optimizer parameters (dict) needed to
+				initialize this optimizer (should contain the max_rounds and
+				num_averages_per_round)
 		
 		num_averages_per_round(int): how many weights this optimizer needs to incorporate
 		into its weighted running average before it's "heard enough" 
 		and can move on to training
 		max_rounds(int): how many rounds of fed learning this optimizer wants to do
 		"""
-		logging.info("Setting up Optimizer")
-		serialized_job = initialization_payload.get('serialized_job')
+		logging.info("Setting up Optimizer...")
+		data_provider_info = initialization_payload.get(TxEnum.KEY.name)
+		job_info = initialization_payload.get(TxEnum.CONTENT.name)
+		serialized_job = job_info.get('serialized_job')
 		self.job = deserialize_job(serialized_job)
-		mappings = dataset_manager.get_mappings()
+		self.job.uuid = data_provider_info.get("dataset_uuid")
+		self.job.label_column_name = data_provider_info.get("label_column_name")
 		assert self.job.uuid, "uuid of job not set!"
-		assert self.job.uuid in mappings, "uuid not found in mappings"
-		self.job.raw_filepath = mappings[self.job.uuid]
-		optimizer_params = initialization_payload.get('optimizer_params')
-
+		assert dataset_manager.validate_key(self.job.uuid), "uuid not found in mappings"
+		self.job.raw_filepath = dataset_manager.get_mappings()[self.job.uuid]
+		optimizer_params = job_info.get('optimizer_params')
 		self.curr_averages_this_round = 0
+		self.job.sigma_omega = 0
 		self.num_averages_per_round = optimizer_params.get('num_averages_per_round')
 		self.curr_round = 0
 		self.max_rounds = optimizer_params.get('max_rounds')
 		self.initialization_complete = False
+		# Set other participants so that the optimizer knows which other nodes 
+		# it's expected to hear messages from for future session_info messages
+		participants = job_info.get('participants')
+		self.other_participants = [participant for participant in participants
+									if participant != self.job.uuid]
 		self.LEVEL1_CALLBACKS = {
 			RawEventTypes.JOB_DONE.name: self._handle_job_done,
 			RawEventTypes.NEW_MESSAGE.name: self._handle_new_info,
-			MessageEventTypes.NEW_SESSION.name: self._do_nothing,
 		}
 		self.LEVEL2_JOB_DONE_CALLBACKS = {
 			JobTypes.JOB_TRAIN.name: self._done_training,
@@ -82,6 +94,7 @@ class FederatedAveragingOptimizer(object):
 		self.LEVEL_2_NEW_INFO_CALLBACKS = {
 			MessageEventTypes.NEW_WEIGHTS.name: self._received_new_weights,
 			MessageEventTypes.TERMINATE.name: self._received_termination,
+			MessageEventTypes.NEW_SESSION.name: self._do_nothing,
 		}
 
 		logging.info("Optimizer has been set up!")
@@ -165,7 +178,8 @@ class FederatedAveragingOptimizer(object):
 		"""
 		new_weights = dmlresult_obj.results.get('weights')
 		self.job.omega = dmlresult_obj.results.get('omega')
-		self.job.sigma_omega = self.job.omega
+		# if we don't have sigma_omega yet, we will now
+		self.job.sigma_omega = self.job.omega + self.job.sigma_omega
 		self._update_weights(new_weights)
 		self.job.job_type = JobTypes.JOB_COMM.name
 		# TODO: Key management PR
@@ -182,7 +196,7 @@ class FederatedAveragingOptimizer(object):
 		new_weights = dmlresult_obj.results.get('weights')
 		self._update_weights(new_weights)
 		# Update our memory of the weights we've seen
-		self.job.sigma_omega = dmlresult_obj.job.sigma_omega + dmlresult_obj.job.omega
+		self.job.sigma_omega = max(self.job.sigma_omega, dmlresult_obj.job.sigma_omega) + dmlresult_obj.job.omega
 		self.curr_averages_this_round += 1
 		if self.curr_averages_this_round >= self.num_averages_per_round:
 			logging.info("DONE WITH ROUND {} OF FEDERATED LEARNING!".format(self.curr_round))
@@ -192,12 +206,18 @@ class FederatedAveragingOptimizer(object):
 			self.job.sigma_omega = 0
 			self.curr_round += 1
 			if self.curr_round >= self.max_rounds:
+				# validate how good my end model was
+				# self.job.job_type = JobTypes.JOB_VAL.name
+				# return ActionableEventTypes.SCHEDULE_JOBS, self.job 
 				return ActionableEventTypes.TERMINATE.name, self.job
 			else:
 				return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 		else:
 			return ActionableEventTypes.NOTHING.name, None
 
+	def _done_validating(self, dmlresult_obj):
+		logging.info("Validation accuracy: {}".format(dmlresult_obj.results['val_stats']))
+		return ActionableEventTypes.TERMINATE.name, self.job
 	# Handlers for new information from the gateway
 
 	def _handle_new_info(self, payload):
@@ -220,9 +240,12 @@ class FederatedAveragingOptimizer(object):
 		blockchain.	
 		"""
 		logging.info("Received new weights!")
+		# wait until we have sigma_omega of our own
+		# TODO: ?????
 		received_job = deserialize_job(payload[TxEnum.CONTENT.name])
 		self.job.job_type = JobTypes.JOB_AVG.name
 		self.job.omega = received_job.omega
+		self.job.sigma_omega += received_job.sigma_omega if not self.job.sigma_omega else self.job.sigma_omega
 		self.job.new_weights = received_job.weights
 		return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 

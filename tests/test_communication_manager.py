@@ -13,6 +13,7 @@ from tests.testing_utils                import make_serialized_job_with_uuid, se
 from core.utils.enums                   import RawEventTypes, JobTypes, MessageEventTypes
 from core.utils.keras                   import serialize_weights
 from core.blockchain.blockchain_utils   import TxEnum
+from core.utils.dmljob                  import deserialize_job
 from core.dataset_manager               import DatasetManager
 
 
@@ -41,14 +42,19 @@ def mnist_uuid():
     return 'd16c6e86-d103-4e71-8741-ee1f888d206c'
 
 @pytest.fixture(scope='session')
+def new_session_key(mnist_uuid):
+    return {"dataset_uuid": mnist_uuid, "label_column_name": "label"}
+
+@pytest.fixture(scope='session')
 def new_session_event(mnist_uuid):
-    serialized_job = make_serialized_job_with_uuid(mnist_uuid)
+    serialized_job = serialize_job(make_initialize_job(make_model_json()))
     new_session_event = {
-        TxEnum.KEY.name: None,
-        TxEnum.CONTENT.name: {
-            "optimizer_params": {"listen_bound": 2, "total_bound": 2},
-            "serialized_job": serialized_job
-        }
+        # TxEnum.KEY.name: None,
+        # TxEnum.CONTENT.name: {
+            "optimizer_params": {"num_averages_per_round": 2, "max_rounds": 2},
+            "serialized_job": serialized_job,
+            "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', 'd16c6e86-d103-4e71-8741-ee1f888d206c']
+        # }
     }
     return new_session_event
 
@@ -67,15 +73,14 @@ def test_communication_manager_fails_if_not_configured(new_session_event):
     communication_manager = CommunicationManager()
     try:
         communication_manager.inform(
-            MessageEventTypes.NEW_SESSION.name,
+            RawEventTypes.NEW_MESSAGE.name,
             new_session_event
         )
         raise Exception("This should have raised an exception")
     except Exception as e:
-        assert str(e) == "Dataset Manager has not been set. Communication \
-             Manager needs to be configured first!"
+        assert str(e) == "Dataset Manager has not been set. Communication Manager needs to be configured first!"
 
-def test_communication_manager_creates_new_sessions(dataset_manager, new_session_event, config_manager, ipfs_client):
+def test_communication_manager_creates_new_sessions(new_session_key, dataset_manager, new_session_event, config_manager, ipfs_client):
     """
     Ensures that upon receiving an initialization job, the Communication Manager
     will make an optimizer.
@@ -84,13 +89,21 @@ def test_communication_manager_creates_new_sessions(dataset_manager, new_session
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler, dataset_manager)
     scheduler.configure(communication_manager, ipfs_client)
+    nested_dict = {
+        TxEnum.KEY.name: new_session_key,
+        TxEnum.CONTENT.name: new_session_event
+    }
+    args = {
+        TxEnum.KEY.name: MessageEventTypes.NEW_SESSION.name,
+        TxEnum.CONTENT.name: nested_dict
+    }
     communication_manager.inform(
-        MessageEventTypes.NEW_SESSION.name,
-        new_session_event
+        RawEventTypes.NEW_MESSAGE.name,
+        args
     )
     assert communication_manager.optimizer
 
-def test_communication_manager_can_inform_new_job_to_the_optimizer(dataset_manager, config_manager, ipfs_client, mnist_uuid):
+def test_communication_manager_can_inform_new_job_to_the_optimizer(new_session_key, dataset_manager, config_manager, ipfs_client, mnist_uuid, new_session_event):
     """
     Ensures that Communication Manager can tell the optimizer of something,
     and that the job will transfer correctly.
@@ -99,22 +112,18 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer(dataset_manag
     scheduler = DMLScheduler(config_manager)
     communication_manager.configure(scheduler, dataset_manager)
     scheduler.configure(communication_manager, ipfs_client)
-    true_job = make_initialize_job(make_model_json())
-    true_job.hyperparams['epochs'] = 10
-    true_job.hyperparams['batch_size'] = 128
-    true_job.hyperparams['split'] = .05
-    true_job.uuid = mnist_uuid
-    serialized_job = serialize_job(true_job)                
-    new_session_event = {
-        TxEnum.KEY.name: None,
-        TxEnum.CONTENT.name: {
-            "optimizer_params": {},
-            "serialized_job": serialized_job
-        }
+    nested_dict = {
+        TxEnum.KEY.name: new_session_key,
+        TxEnum.CONTENT.name: new_session_event
     }
+    args = {
+        TxEnum.KEY.name: MessageEventTypes.NEW_SESSION.name,
+        TxEnum.CONTENT.name: nested_dict
+    }
+    true_job = deserialize_job(nested_dict[TxEnum.CONTENT.name]['serialized_job'])
     communication_manager.inform(
-        MessageEventTypes.NEW_SESSION.name,
-        new_session_event
+        RawEventTypes.NEW_MESSAGE.name,
+        args
     )
     optimizer_job = communication_manager.optimizer.job
     assert optimizer_job.weights == true_job.weights
