@@ -63,4 +63,3 @@ class DBClient(object):
 				continue
 		raise Exception('Getting classifications failed.')
 		
-		

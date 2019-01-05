@@ -42,27 +42,3 @@ class EDComponent(object):
 		"""
 		ax = df1.plot.scatter(column1, column2)
 		return df2.plot.scatter(column1, column2, ax=ax)
-
-	def statistics_columns(self, df1, df2, column1, column2):
-		"""
-		Generates a descriptive statistic summary of the central tendency, 
-		dispersion and shape of each dataframe's corresponding column.
-		This can only work if the columns have (python) numerical values.
-
-		@param pandas Dataframe df_first:
-		@param pandas Dataframe df_second:
-		@param str column1: name of the first column
-		@param str column2: name of the second column
-		"""
-		return df1[column1].describe(), df2[column2].describe()
-
-	def statistics(self, df, column):
-		"""
-		Generates a descriptive statistic summary of the central tendency, 
-		dispersion and shape of all columns in each dataframe.
-		This can only work if the columns have (python) numerical values.
-
-		@param pandas Dataframe df_first:
-		@param str column1: name of the first column
-		"""
-		return df[column].describe()

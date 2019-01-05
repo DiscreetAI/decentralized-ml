@@ -2,42 +2,49 @@ import pytest
 import pandas as pd 
 import numpy as np 
 import json
-from core import *
+from core.orchestrator import Orchestrator
+from core.dataset import Dataset
+
+
+@pytest.fixture(scope='session')
+def fruit_df():
+    df = pd.DataFrame()
+    df['fruit'] = ['Apple']
+    df['size'] = ['Large']
+    df['color'] = ['red']
+    return df
+
+@pytest.fixture(scope='session')
+def fruit_dataset(fruit_df):
+    fruit_dict = {}
+
+    key = 'dataset1'
+    value = (fruit_df.to_json(), fruit_df.describe().to_json())
+    data_tuple = (key, value)
+
+    return Dataset(data_tuple)
 
 @pytest.fixture
-def orchestrator():
-    orchestrator = Orchestrator()
-    orchestrator.ed_datasets = [{'dataset0_fruit': ('fruit', {'fruit': 'Apple', 'size': 'Large', 'color': 'Red'})},
-         {'dataset1_fruit': ('fruit', {'fruit': 'Orange', 'size': 'Medium', 'color': 'Purple'})}, 
-         {'dataset2_fruit': ('fruit', {'fruit': 'Berries', 'size': 'Mini', 'color': 'Orange'})}, 
-         {'dataset3_fruit': ('fruit', {'fruit': 'Grapes', 'size': 'XL', 'color': 'Yellow'})}, 
-         {'dataset4_fruit': ('fruit', {'fruit': 'Candy', 'size': 'Small', 'color': 'Red'})}, 
-         {'dataset5_fruit': ('fruit', {'fruit': 'Chocolate', 'size': 'Large', 'color': 'Blue'})},
-         {'dataset6_fruit': ('fruit', {'fruit': 'Bla', 'size': 'Small', 'color': 'Green'})}, 
-         {'dataset0_games': ('games', {'real': 10, 'barca': 0})},
-         {'dataset1_games': ('games', {'real': 2, 'barca': 4})},
-         {'dataset2_games': ('games', {'real': 0, 'barca': 20})},
-         {'dataset3_games': ('games', {'real': 1, 'barca': 3})},
-         {'dataset4_games': ('games', {'real': 0, 'barca': 4})},
-         {'dataset5_games': ('games', {'real': 9, 'barca': 7})},
-         {'dataset6_games': ('games', {'real': 1, 'barca': 6})}]
+def orchestrator(fruit_dataset):
+    orchestrator = Orchestrator(None, None)
+    orchestrator.datasets = [fruit_dataset] * 5
     return orchestrator
 
-def test_validate_ed_dataset(orchestrator):
+def test_validate_dataset(orchestrator):
     """
-    Tests validation by the Orchestrator on ed_datasets indices access. 
+    Tests validation by the Orchestrator on datasets indices access. 
          1. Tests success when accessing a valid index.
         2. Tests failure when accessing an invalid index.
         3. Tests that we cannot access a dataset when no datasets available.
     """
-    orchestrator.validate_ed_dataset(3)
+    orchestrator.validate_dataset(3)
     with pytest.raises(AssertionError, match='Index must be non-negative.', message='Expecting: AssertionError due to negative index.'):
-        orchestrator.validate_ed_dataset(-4)
-    with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(orchestrator.ed_datasets), message='Expecting: AssertionError due to index out of bounds.')):
-        orchestrator.validate_ed_dataset(20)
-    orchestrator.ed_datasets = list()
+        orchestrator.validate_dataset(-4)
+    with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(orchestrator.datasets), message='Expecting: AssertionError due to index out of bounds.')):
+        orchestrator.validate_dataset(20)
+    orchestrator.datasets = list()
     with pytest.raises(AssertionError, match='No datasets available, make sure to query to create datasets.', message='Expecting: AssertionError due to empty datasets.'):
-        orchestrator.validate_ed_dataset(1)
+        orchestrator.validate_dataset(1)
 
 def test_validate_column(orchestrator): 
     """

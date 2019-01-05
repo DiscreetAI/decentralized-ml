@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 from core.db_client import DBClient
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def db_client():
     """
     Maintain instance of DB Client
@@ -13,12 +13,6 @@ def db_client():
     return DBClient(
         config_filepath='tests/artifacts/db_client/database_config.json'
     )
-
-def test_placeholder():
-    """
-    Just here so that build passes, will remove when we have tests
-    """
-    assert True
 
 def test_get_data_providers_with_category(db_client):
     """

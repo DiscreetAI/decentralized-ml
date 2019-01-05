@@ -4,7 +4,7 @@ import pytest
 from core.blockchain_client import BlockchainClient
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def blockchain_client():
     """
     Maintain instance of Blockchain Client
@@ -15,7 +15,7 @@ def blockchain_client():
 
 def test_blockchain_client_empty(blockchain_client):
     """
-    Check that retrieving labels with specified category works.
+    Check that retrieving labels ineligible category raises an AssertionError.
     """
     with pytest.raises(AssertionError):
         blockchain_client.get_dataset('no_key')

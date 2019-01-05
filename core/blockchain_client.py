@@ -19,7 +19,7 @@ class BlockchainClient(object):
     KEY = 'KEY'
     MESSAGES = 'MESSAGES'
 
-    def __init__(self, config_filepath: str = 'blockchain_config.json') -> None:
+    def __init__(self, config_filepath: str = 'core/blockchain_config.json') -> None:
         """
         Connect with running IPFS node.
         """
