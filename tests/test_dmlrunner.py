@@ -38,8 +38,7 @@ def cleanup(transformed_filepath, transformed_filepath_2):
 def config_manager():
     config_manager = ConfigurationManager()
     config_manager.bootstrap(
-        config_filepath='tests/artifacts/runner_scheduler/configuration.ini'
-    )
+        config_filepath='tests/artifacts/runner_scheduler/configuration.ini')
     return config_manager
 
 @pytest.fixture(scope='session')
@@ -90,6 +89,17 @@ def train_dmlresult_obj(config_manager, split_dmlresult_obj, init_dmlresult_obj,
                 )
     result = runner.run_job(train_job)
     return result
+
+def test_dmlrunner_uniform_initialization(config_manager, ipfs_client):
+    runner = DMLRunner(config_manager)
+    runner.configure(ipfs_client)
+    initialize_job = make_initialize_job(make_model_json(), small_filepath)
+    result = runner.run_job(initialize_job).results
+    first_weights = result['weights']
+    initialize_job = make_initialize_job(make_model_json(), small_filepath)
+    result = runner.run_job(initialize_job).results
+    second_weights = result['weights']
+    assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(first_weights, second_weights))
 
 def test_dmlrunner_communicate_job(config_manager, train_dmlresult_obj, ipfs_client):
     runner = DMLRunner(config_manager)

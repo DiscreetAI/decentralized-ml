@@ -26,9 +26,9 @@ class KerasPerceptron(GenericKerasModel):
 
     def build_model(self):
         model = Sequential()
-        model.add(Dense(self.n_hidden1, input_shape=(self.n_input,), activation='relu'))
-        model.add(Dense(self.n_hidden2, activation='relu'))
-        model.add(Dense(self.n_classes, activation='linear'))
+        model.add(Dense(self.n_hidden1, input_shape=(self.n_input,), activation='relu', kernel_initializer=keras.initializers.glorot_uniform(seed=14)))
+        model.add(Dense(self.n_hidden2, activation='relu', kernel_initializer=keras.initializers.glorot_uniform(seed=15)))
+        model.add(Dense(self.n_classes, activation='linear', kernel_initializer=keras.initializers.glorot_uniform(seed=16)))
         # model.summary()
         return model
 
