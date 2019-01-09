@@ -58,7 +58,7 @@ def communication_manager():
 def dataset_manager():
     class MockDatasetManager:
         def __init__(self):
-            self.mappings = {1234: "hello"}
+            self.mappings = {1357: "hello"}
         def validate_key(self, key):
             return key in self.mappings.keys()
     return MockDatasetManager()
@@ -76,41 +76,10 @@ def test_blockchain_gateway_can_be_initialized(
     blockchain_gateway = BlockchainGateway()
     assert blockchain_gateway is not None	
 
-def test_blockchain_gateway_can_listen_decentralized_learning(
-    blockchain_gateway, communication_manager):
-    """
-    Uses Mock Communication Manager to ensure that the Gateway
-    can listen for decentralized learning.
-    """
-    serialized_job = serialize_job(make_initialize_job(make_model_json()))
-    new_session_event = {
-        "optimizer_params": "this cannot be empty",
-        "serialized_job": serialized_job
-    }
-    tx_receipt = setter(
-        blockchain_gateway._client, 
-        {"dataset_uuid": 1234, "label_column_name": "label"},
-        blockchain_gateway._port, 
-        new_session_event, 
-        True
-    )
-    assert tx_receipt
-    blockchain_gateway._listen(blockchain_gateway._handle_new_session_creation,
-        blockchain_gateway._filter_new_session)
-    # at this point we should listen for decentralized learning
-    # hear it (filter_new_session() == True)
-    # and update our communication manager
-    assert communication_manager.dummy_msg_type == RawEventTypes.NEW_MESSAGE.name, \
-        "Wrong msg_type"
-    assert communication_manager.data_provider_info == {
-        "dataset_uuid": 1234, "label_column_name": "label"
-    }
-    communication_manager.reset()
-
 def test_blockchain_gateway_filters_sessions(
     blockchain_gateway, communication_manager):
     """
-    Ensures that the gatewawy won't intercept messages not intended for it
+    Ensures that the gateway won't intercept messages not intended for it
     """
     serialized_job = serialize_job(make_initialize_job(make_model_json()))
     new_session_event = {
@@ -122,7 +91,7 @@ def test_blockchain_gateway_filters_sessions(
         {"dataset_uuid": 5678, "label_column_name": "label"},
         blockchain_gateway._port, 
         new_session_event, 
-        True
+        flag=True
     )
     assert tx_receipt
     blockchain_gateway._listen(blockchain_gateway._handle_new_session_creation,
@@ -137,6 +106,38 @@ def test_blockchain_gateway_filters_sessions(
         "Shouldn't have heard anything!"
     assert communication_manager.job_info == "None", \
         "Shouldn't have heard anything!"
+
+def test_blockchain_gateway_can_listen_decentralized_learning(
+    blockchain_gateway, communication_manager):
+    """
+    Uses Mock Communication Manager to ensure that the Gateway
+    can listen for decentralized learning.
+    """
+    serialized_job = serialize_job(make_initialize_job(make_model_json()))
+    new_session_event = {
+        "optimizer_params": "this cannot be empty",
+        "serialized_job": serialized_job
+    }
+    tx_receipt = setter(
+        blockchain_gateway._client, 
+        {"dataset_uuid": 1357, "label_column_name": "label"},
+        blockchain_gateway._port, 
+        new_session_event, 
+        True
+    )
+    assert tx_receipt
+    blockchain_gateway._listen(blockchain_gateway._handle_new_session_creation,
+        blockchain_gateway._filter_new_session)
+    # at this point we should listen for decentralized learning
+    # hear it (filter_new_session() == True)
+    # and update our communication manager
+    assert communication_manager.dummy_msg_type == RawEventTypes.NEW_MESSAGE.name, \
+        "Wrong msg_type"
+    assert communication_manager.data_provider_info == {
+        "dataset_uuid": 1357, "label_column_name": "label"
+    }
+    communication_manager.reset()
+
 # TODO: This will be implemented once we figure out how.	
 # def test_handle_decentralized_learning(blockchain_gateway):	
 #     """To be implemented."""

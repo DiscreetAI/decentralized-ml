@@ -56,7 +56,7 @@ def get_diffs(global_state: list, local_state: list) -> list:
     Return list of transactions that are present in `global_state` but not in
     `local_state`
     """
-    return global_state[len(local_state):]
+    return list(filter(lambda elem: elem not in local_state, global_state))
 
 # TODO: consider merging the two methods below into one
 
@@ -67,9 +67,9 @@ def filter_diffs(global_state_wrapper: object, local_state: list,
     Provided the freshly-downloaded state, call a handler on each transaction
     that was not already present in our own state and return the new state
     """
-    new_state = get_diffs(global_state_wrapper.get(TxEnum.MESSAGES.name, {}), 
+    state_diffs = get_diffs(global_state_wrapper.get(TxEnum.MESSAGES.name, {}), 
                             local_state)
-    return list(map(map_method, filter(filter_method, new_state)))
+    return (state_diffs, list(map(map_method, filter(filter_method, state_diffs))))
 
 ##############################################################################
 ###                                REQUESTS                                ###
@@ -114,12 +114,13 @@ def getter(client: object, key: str, local_state: list, port: int, timeout: int,
     object from IPFS. This pulls from the global state but DOES NOT update the
     local state
     """
-    new_state = local_state + filter_diffs(get_global_state(host, port, timeout),
-                                            local_state)
+    state_diffs, filtered_diffs = filter_diffs(get_global_state(host, port, timeout),
+                                                local_state)
+    new_state = local_state + state_diffs
     return download(client, key, new_state)
 
-def setter(client: object, key: str, port: int, value: object,
-            flag: bool = False, host: str = '127.0.0.1') -> str:
+def setter(client: object, key: str, port: int, value: object, flag: bool = False, 
+            host: str = '127.0.0.1', state_append: object = False) -> str:
     """
     Provided a key and a JSON/np.array object, upload the object to IPFS and
     then store the hash as the value on the blockchain. The key should be a
@@ -131,10 +132,13 @@ def setter(client: object, key: str, port: int, value: object,
     on_chain_value = upload(client, value) if value else None
     key = upload(client, key) if flag else key
     tx = Transaction(key, on_chain_value)
+    tx_receipt = None
     try:
         tx_receipt = make_setter_call(host, port, tx.get_tx())
     except Exception as e:
         logging.info("HTTP POST error, got: {0}".format(e))
+    if state_append != False:
+        state_append.append(tx.get_tx())
     return tx_receipt.text
 
 ##############################################################################

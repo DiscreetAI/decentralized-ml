@@ -58,6 +58,17 @@ def new_session_event(mnist_uuid):
     }
     return new_session_event
 
+def setup_client(config_manager, ipfs_client, dataset_manager):
+    class MockGateway(object):
+        def __init__(self):
+            self.state = []
+    communication_manager = CommunicationManager()
+    scheduler = DMLScheduler(config_manager)
+    blockchain_gateway = MockGateway()
+    communication_manager.configure(scheduler, dataset_manager)
+    scheduler.configure(communication_manager, ipfs_client, blockchain_gateway)
+    return communication_manager, scheduler
+
 def test_communication_manager_can_be_initialized():
     """
     Very simple check. Checks if the Communication Manager can initialize.
@@ -80,15 +91,13 @@ def test_communication_manager_fails_if_not_configured(new_session_event):
     except Exception as e:
         assert str(e) == "Dataset Manager has not been set. Communication Manager needs to be configured first!"
 
-def test_communication_manager_creates_new_sessions(new_session_key, dataset_manager, new_session_event, config_manager, ipfs_client):
+def test_communication_manager_creates_new_sessions(new_session_key, new_session_event, 
+    dataset_manager, config_manager, ipfs_client):
     """
     Ensures that upon receiving an initialization job, the Communication Manager
     will make an optimizer.
     """
-    communication_manager = CommunicationManager()
-    scheduler = DMLScheduler(config_manager)
-    communication_manager.configure(scheduler, dataset_manager)
-    scheduler.configure(communication_manager, ipfs_client)
+    communication_manager, scheduler = setup_client(config_manager, ipfs_client, dataset_manager)
     nested_dict = {
         TxEnum.KEY.name: new_session_key,
         TxEnum.CONTENT.name: new_session_event
@@ -103,15 +112,13 @@ def test_communication_manager_creates_new_sessions(new_session_key, dataset_man
     )
     assert communication_manager.optimizer
 
-def test_communication_manager_can_inform_new_job_to_the_optimizer(new_session_key, dataset_manager, config_manager, ipfs_client, mnist_uuid, new_session_event):
+def test_communication_manager_can_inform_new_job_to_the_optimizer(new_session_key, new_session_event, 
+    dataset_manager, config_manager, ipfs_client):
     """
     Ensures that Communication Manager can tell the optimizer of something,
     and that the job will transfer correctly.
     """
-    communication_manager = CommunicationManager()
-    scheduler = DMLScheduler(config_manager)
-    communication_manager.configure(scheduler, dataset_manager)
-    scheduler.configure(communication_manager, ipfs_client)
+    communication_manager, scheduler = setup_client(config_manager, ipfs_client, dataset_manager)
     nested_dict = {
         TxEnum.KEY.name: new_session_key,
         TxEnum.CONTENT.name: new_session_event

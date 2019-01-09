@@ -173,7 +173,7 @@ class FederatedAveragingOptimizer(object):
 		DML Job of type communication and modifies the current state of the job.
 
 		NOTE: Assumes that the training succeeded. In the future, we may care
-		about a degree of accuracy needed to be reached before updating the
+		about a degree of accuracy needing to be reached before updating the
 		weights.
 		"""
 		new_weights = dmlresult_obj.results.get('weights')
@@ -190,7 +190,11 @@ class FederatedAveragingOptimizer(object):
 		"""
 		"LEVEL 2" Callback for a Communication job.
 		"""
-		return ActionableEventTypes.NOTHING.name, None
+		if self.num_averages_per_round:
+			return ActionableEventTypes.NOTHING.name, None
+		# else continue training, don't need to wait to hear new weights
+		self.job.job_type = JobTypes.JOB_TRAIN.name
+		return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 	
 	def _done_averaging(self, dmlresult_obj):
 		new_weights = dmlresult_obj.results.get('weights')

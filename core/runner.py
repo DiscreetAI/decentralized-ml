@@ -57,14 +57,15 @@ class DMLRunner(object):
             JobTypes.JOB_AVG.name: self._average,
             JobTypes.JOB_COMM.name: self._communicate,
         }
+        self.JOBS_NEEDING_STATE = [JobTypes.JOB_COMM.name]
     
     def configure(self, ipfs_client):
         """
-        Sets up IPFS client for _communicate.
+        Sets up IPFS client for _communicate
         """
         self._client = ipfs_client
 
-    def run_job(self, job):
+    def run_job(self, job, state=None):
         """
         Identifies a DMLJob type and executes it.
 
@@ -78,7 +79,10 @@ class DMLRunner(object):
             self.JOB_CALLBACKS,
         )
         try:
-            results = callback(job)
+            if job.job_type in self.JOBS_NEEDING_STATE:
+                results = callback(job, state)
+            else:
+                results = callback(job)
         except Exception as e:
             logging.error("RunnerError: " + str(e))
             results = DMLResult(
@@ -255,7 +259,7 @@ class DMLRunner(object):
                 )
         return results
 
-    def _communicate(self, job):
+    def _communicate(self, job, state):
         """
         Communicates a message to the blockchain using the Runner's
         IPFS client, puts the tx_receipt in DMLResult.
@@ -265,6 +269,7 @@ class DMLRunner(object):
             key = job.key,
             port = self._port,
             value = serialize_job(job),
+            state_append=state
         )
         results = DMLResult(
             status='successful',

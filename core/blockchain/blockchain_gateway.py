@@ -2,6 +2,7 @@ import logging
 from threading import Event, Timer
 import time
 from typing import Callable, Tuple
+from multiprocessing import Manager
 
 import ipfsapi
 
@@ -29,7 +30,7 @@ class BlockchainGateway(object):
         """
         Initialize state, keys to empty lists. Everything else is left to configure().
         """
-        self.state = []
+        self.state = Manager().list()
         self.event = Event()
         self.keys = []
 
@@ -69,18 +70,27 @@ class BlockchainGateway(object):
     def reset(self) -> None:
         """
         Reset the gateway
+        This causes the Scheduler/Runners to no longer influence the Gateway's state
         """
         self.event = Event()
-        self.state = []
+        self.state = Manager().list()
         logging.info("Gateway reset!")
     
+    def state_append(self, set_element):
+        """
+        Called by other Setter methods used in the rest of the service.
+        Making sure that the service doesn't pick up weights that were
+        already generated.
+        """
+        logging.info("appending to state: {}".format(set_element))
+        self.state.append(set_element)
     # Private methods to manage listening
 
-    def _update_local_state(self, global_state_wrapper: dict) -> None:
+    def _update_local_state(self, filtered_diffs: list) -> None:
         """
         Helper function to update the local state with freshly downloaded global state.
         """
-        self.state = global_state_wrapper.get(TxEnum.MESSAGES.name, {})
+        self.state.extend(filtered_diffs)
     
     def _listen(self, callback: Callable, 
                 event_filter: Callable) -> Tuple[Callable, Callable]:
@@ -92,8 +102,9 @@ class BlockchainGateway(object):
         Else, returns the arguments it was passed.
         """
         global_state_wrapper = get_global_state(self._host, self._port, self._timeout)
-        filtered_diffs = filter_diffs(global_state_wrapper, self.state, event_filter)
-        self._update_local_state(global_state_wrapper)
+        state_diffs, filtered_diffs = filter_diffs(global_state_wrapper, self.state, event_filter)
+        # return filtered_diffs
+        self._update_local_state(state_diffs)
         if filtered_diffs:
             return callback(filtered_diffs)
         else:

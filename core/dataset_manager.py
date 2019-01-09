@@ -77,7 +77,7 @@ class DatasetManager():
         self._db_client = db_client
     
     def validate_key(self, key):
-        return key in self._mappings.keys()
+        return key in self.get_mappings().keys()
     
     def _validate_data(self):
         """

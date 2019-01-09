@@ -6,6 +6,7 @@ from core.dataset_manager import DatasetManager
 from core.communication_manager import CommunicationManager
 from core.scheduler import DMLScheduler
 from core.blockchain.blockchain_gateway import BlockchainGateway
+from core.db_client import DBClient
 
 
 def bootstrap():
@@ -29,15 +30,23 @@ def bootstrap():
         # TODO: Can this log the exception?
         # logging.info("IPFS daemon not started, got: {0}".format(e))
         raise(e)
+    # 2. Set up Database Client.
+    db_client = None
+    try:
+        db_client = DBClient(config_manager)
+    except Exception as e:
+        pass
     # 2. Set up Dataset Manager.
     dataset_manager = DatasetManager(
         config_manager=config_manager
     )
-    dataset_manager.configure(ipfs_client=client)
+    dataset_manager.configure(ipfs_client=client, db_client=db_client)
     dataset_manager.bootstrap()
     
     # 3. Set up the Communication Manager.
     communication_manager = CommunicationManager()
+
+    blockchain_gateway = BlockchainGateway()
 
     # 4. Set up the Execution Pipeline (Scheduler, Runners)
     # and run the Scheduler's cron on a new thread.
@@ -46,7 +55,8 @@ def bootstrap():
     )
     scheduler.configure(
         communication_manager=communication_manager,
-        ipfs_client=client
+        ipfs_client=client,
+        blockchain_gateway=blockchain_gateway
     )
     t1 = threading.Thread(
         target=scheduler.start_cron,
@@ -62,10 +72,10 @@ def bootstrap():
     )
 
     # 6. Set up Blockchain Gateway and start listening on a new thread.
-    blockchain_gateway = BlockchainGateway()
     blockchain_gateway.configure(config_manager=config_manager,
         communication_manager=communication_manager,
-        ipfs_client=client)
+        ipfs_client=client,
+        dataset_manager=dataset_manager)
     t2 = threading.Thread(
         target=blockchain_gateway.start_cron,
         args=(0.05,),
