@@ -32,13 +32,18 @@ class CategoryComponent(object):
 		TODO: Parsing and handling the parameters for bc.getter().
 		"""
 		try:
+<<<<<<< HEAD
 			data_providers_df = self.db_client._get_data_providers_with_category(category)
+=======
+			data_providers_df = self.db_client.get_data_providers_with_category(category)
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 		except Exception as e:
 			return {'Success': False, 'Error': str(e)}
 		if data_providers_df.empty: 
 			error_message = 'Category: {} has no data providers.'
 			return {'Success': False, 'Error': error_message.format(category)}
 		providers_list = data_providers_df['data_provider']
+		print(providers_list)
 		result = list()
 		for provider in providers_list:
 			ed_directory = self.blockchain_client.get_dataset(provider)

@@ -56,7 +56,7 @@ def blockchain_client(fruit_result, futbol_result):
 @pytest.fixture(scope='session')
 def db_client():
 	class DBClient:
-		def _get_data_providers_with_category(self, category):
+		def get_data_providers_with_category(self, category):
 			if category == 'success':
 				df = pd.DataFrame(columns=['data_provider'])
 				df['data_provider'] = ['fruit', 'games']

@@ -49,7 +49,15 @@ class Orchestrator(object):
             """
             sender.disabled = True
             category_text = category_widget.value.strip().lower()
+<<<<<<< HEAD
             self.datasets = self.category_component.get_datasets_with_category(category_text)
+=======
+            result = self.category_component.get_datasets_with_category(category_text)
+            if result['Success']:
+                self.datasets = result['Result']
+            else:
+                print(result['Error'])
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
             sender.disabled = False
 
 
@@ -138,6 +146,7 @@ class Orchestrator(object):
         OPTIONS[4]: 'compare using describe' needs two datasets and two corresponding columns.
         """
         if (self.method == OPTIONS[0]):
+<<<<<<< HEAD
             validate_dataset(self.dataset1_index)
 
             dataset1 = self.datasets[self.dataset1_index]
@@ -153,10 +162,29 @@ class Orchestrator(object):
             df = dataset1.sample
             validate_column(df, self.column1)
             validate_column(df, self.column2)
+=======
+            self.dataset1_index = int(self.dataset1_index)
+            self.validate_dataset(self.dataset1_index)
+            dataset1 = self.datasets[self.dataset1_index]
+            df = dataset1.sample
+
+            self.validate_column(df, self.column1)
+            return self.ed_component.histogram(df, self.column1)
+
+        elif (self.method == OPTIONS[1]):
+            self.dataset1_index = int(self.dataset1_index)
+            self.validate_dataset(self.dataset1_index)
+
+            dataset1 = self.datasets[self.dataset1_index]
+            df = dataset1.sample
+            self.validate_column(df, self.column1)
+            self.validate_column(df, self.column2)
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return self.ed_component.scatter(df, self.column1, self.column2)
 
         elif (self.method == OPTIONS[2]):
+<<<<<<< HEAD
             validate_dataset(self.dataset1_index)
             validate_dataset(self.dataset2_index)
 
@@ -167,20 +195,46 @@ class Orchestrator(object):
             dataset2 = self.datasets[self.dataset2_index]
             df2 = dataset2.sample
             validate_column(df2, self.column1)
+=======
+            self.dataset1_index = int(self.dataset1_index)
+            self.dataset1_index = int(self.dataset1_index)
+            self.dataset2_index = int(self.dataset2_index)
+            self.validate_dataset(self.dataset1_index)
+            self.validate_dataset(self.dataset2_index)
+
+            dataset1 = self.datasets[self.dataset1_index]
+            df1 = dataset1.sample
+            self.validate_column(df1, self.column1)
+
+            dataset2 = self.datasets[self.dataset2_index]
+            df2 = dataset2.sample
+            self.validate_column(df2, self.column1)
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
 
         elif (self.method == OPTIONS[3]):
+<<<<<<< HEAD
             validate_dataset(self.dataset1_index)
 
             dataset1 = self.datasets[self.dataset1_index]
             df = dataset1.metadata
             validate_column(df, self.column1)
             metadata1 = df[column1]
+=======
+            self.dataset1_index = int(self.dataset1_index)
+            self.validate_dataset(self.dataset1_index)
+
+            dataset1 = self.datasets[self.dataset1_index]
+            df = dataset1.metadata
+            self.validate_column(df, self.column1)
+            metadata1 = df[self.column1]
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return metadata1
 
         elif (self.method == OPTIONS[4]):
+<<<<<<< HEAD
             validate_dataset(self.dataset1_index)
             validate_dataset(self.dataset2_index)
 
@@ -193,6 +247,22 @@ class Orchestrator(object):
             df2 = dataset2.metadata
             validate_column(df2, self.column2)
             metadata2 = df2[column2]
+=======
+            self.dataset1_index = int(self.dataset1_index)
+            self.dataset2_index = int(self.dataset2_index)
+            self.validate_dataset(self.dataset1_index)
+            self.validate_dataset(self.dataset2_index)
+
+            dataset1 = self.datasets[self.dataset1_index]
+            df = dataset1.metadata
+            self.validate_column(df, self.column1)
+            metadata1 = df[self.column1]
+
+            dataset2 = self.datasets[self.dataset2_index]
+            df2 = dataset2.metadata
+            self.validate_column(df2, self.column2)
+            metadata2 = df2[self.column2]
+>>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return metadata1, metadata2
 

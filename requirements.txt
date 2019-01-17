@@ -6,3 +6,5 @@ pytest==3.6.2
 requests==2.18.4
 ipywidgets==7.4.2
 ipfsapi==0.4.2.post1
+keras==2.1.5
+tensorflow==1.7.0
