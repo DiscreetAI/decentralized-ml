@@ -16,24 +16,33 @@ class Orchestrator(object):
     - Manages logic between DBClient, EDComponent, and CategoryComponent. 
     - Gets input from user with the help of DLDL Notebook.
     """ 
-    def __init__(self, category_component, ed_component):
+    def __init__(self, category_component, ed_component, dml_client):
         """
         Initialize Orchestrator instance.
         """
         self.category_component = category_component
         self.ed_component = ed_component
+        self.dml_client = dml_client
         self.datasets = list()
         self.method = None
         self.dataset1_index = None
         self.dataset2_index = None
         self.column1 = None
         self.column2 = None
+        self.default_style = {'description_width': 'initial'}
+        self.participants = []
+        self.batch_size = None
+        self.epochs = None
+        self.split = None
+        self.avg_type = None
+        self.opt_type = None
+        self.num_rounds = None
  
-    def get_dataset_samples(self):
+    def get_datasets(self):
         """
         Return a list of dataset samples to the user.
         """
-        return [dataset.sample for dataset in self.datasets]
+        return self.datasets
 
     def category_name(self):
         """
@@ -49,15 +58,11 @@ class Orchestrator(object):
             """
             sender.disabled = True
             category_text = category_widget.value.strip().lower()
-<<<<<<< HEAD
-            self.datasets = self.category_component.get_datasets_with_category(category_text)
-=======
             result = self.category_component.get_datasets_with_category(category_text)
             if result['Success']:
                 self.datasets = result['Result']
             else:
                 print(result['Error'])
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
             sender.disabled = False
 
 
@@ -94,14 +99,14 @@ class Orchestrator(object):
             dataset1_widget = widgets.Text(
                 value=None,
                 placeholder='',
-                description='Dataset 1:',
+                description='Dataset 1',
                 disabled=False,
 
             )
             dataset2_widget = widgets.Text(
                 value=None,
                 placeholder='',
-                description='Dataset 2:',
+                description='Dataset 2',
                 disabled=False,
 
             )
@@ -135,6 +140,165 @@ class Orchestrator(object):
             display(button)
             button.on_click(store)
 
+    def select_datasets(self):
+        """
+        Display frontend for selecting datasets.
+        """
+        add_tab_button = widgets.Button(description='Add Dataset')
+        remove_tab_button = widgets.Button(description='Remove Dataset')
+
+        def add_tab(sender):
+            children = list(tab.children)
+            children.append(text_list)
+            tab.children = children
+            tab.set_title(len(children) - 1, 'Dataset {}'.format(len(children)))
+
+        def remove_tab(sender):
+            children = list(tab.children)
+            if len(children) > 1:
+                children.pop()
+            tab.children = children
+
+        add_tab_button.on_click(add_tab)
+        remove_tab_button.on_click(remove_tab)
+        button_list = widgets.HBox([add_tab_button, remove_tab_button])
+
+        uuid_text = widgets.Text(description='UUID')
+        label_column_text = widgets.Text(
+                description='Label Column Name', 
+                style=self.default_style
+            )
+        text_arr = [uuid_text, label_column_text, button_list]
+        text_list = widgets.VBox(text_arr)
+        text_list.texts = text_arr
+
+        tab = widgets.Tab()
+        tab.children = []
+        add_tab(None)
+
+        display(tab)
+
+        def set_up_participants(sender):
+            sender.disabled = True
+
+            participants = []
+            for dataset in tab.children:
+                uuid_widget, label_column_widget = dataset.texts
+                uuid = uuid_text.value.strip()
+                label_column_name = label_column_widget.value.strip()
+
+                assert uuid in uuid_to_dataset, \
+                    "Dataset with UUID {} does not exist in list!".format(uuid)
+                dataset = self.uuid_to_dataset[uuid]
+                self.validate_column(label_column_name, dataset.sample)
+
+                participants.append(
+                    {
+                        'dataset_uuid': uuid,
+                        'label_column_name': label_column_name
+                    }
+                )
+            self.participants = participants
+
+            sender.disabled = False
+
+
+        button = widgets.Button(description='Submit')
+        display(button)
+
+    def parameters(self):
+        """
+        Display frontend for entering in rest of DML parameters.
+        """
+        def store(sender):
+            """
+            Validate parameters, and then store them.
+            """
+            sender.disabled = True
+
+            batch_size = batch_widget.value.strip()
+            epochs = int(epochs_widget.value.strip())
+            split = float(split_widget.value.strip())
+            assert split >= 0 and split <= 1, \
+                "split must be between 0 and 1!"
+            num_rounds = int(num_rounds_widget.value.strip())
+
+            self.batch_size = batch_size
+            self.epochs = epochs
+            self.split = split
+            self.avg_type = avg_type_widget.value.strip()
+            self.opt_type = opt_type_widget.value.strip()
+            self.num_rounds = num_rounds
+
+            sender.disabled = False
+
+        batch_widget = widgets.Text(
+            value=None,
+            placeholder='',
+            description='Batch Size:',
+            disabled=False,
+
+        )
+        epochs_widget = widgets.Text(
+            value=None,
+            placeholder='',
+            description='Epochs:',
+            disabled=False,
+        )
+        split_widget = widgets.Text(
+            value=None,
+            placeholder='',
+            description='Split:',
+            disabled=False,
+
+        )
+        avg_type_widget = widgets.Text(
+            value=None,
+            placeholder='',
+            description='Avg Type:',
+            disabled=False,
+
+        )
+        opt_type_widget = widgets.Text(
+            options=OPTIONS,
+            placeholder='',
+            description='Opt Type:',
+            disabled=False
+        )
+        num_rounds_widget = widgets.Text(
+            options=OPTIONS,
+            placeholder='',
+            description='# of Rounds:',
+            disabled=False
+        )
+        button = widgets.Button(description='Submit')
+
+        display(batch_widget)
+        display(epochs_widget)
+        display(split_widget)
+        display(avg_type_widget)
+        display(opt_type_widget)
+        display(num_rounds_widget)
+
+        button.on_click(store)
+        display(button)
+
+    def conduct_dml(self, model):
+        """
+        Send DML Client the necessary parameters for training of the model.
+        """
+        self.dml_client.decentralized_learn(
+            model=model,
+            participants=self.participants,
+            batch_size=self.batch_size,
+            epochs=self.epochs,
+            split=self.split,
+            avg_type=self.avg_type,
+            opt_type=self.opt_type,
+            num_rounds=self.num_rounds
+        )
+
+
     def visualize(self): 
         """
         Returns the corresponding plot.
@@ -146,23 +310,6 @@ class Orchestrator(object):
         OPTIONS[4]: 'compare using describe' needs two datasets and two corresponding columns.
         """
         if (self.method == OPTIONS[0]):
-<<<<<<< HEAD
-            validate_dataset(self.dataset1_index)
-
-            dataset1 = self.datasets[self.dataset1_index]
-            df = dataset1.sample
-
-            validate_column(df, self.column1)
-            return self.ed_component.histogram(df, self.column1)
-
-        elif (self.method == OPTIONS[1]):
-            validate_dataset(self.dataset1_index)
-
-            dataset1 = self.datasets[self.dataset1_index]
-            df = dataset1.sample
-            validate_column(df, self.column1)
-            validate_column(df, self.column2)
-=======
             self.dataset1_index = int(self.dataset1_index)
             self.validate_dataset(self.dataset1_index)
             dataset1 = self.datasets[self.dataset1_index]
@@ -179,23 +326,10 @@ class Orchestrator(object):
             df = dataset1.sample
             self.validate_column(df, self.column1)
             self.validate_column(df, self.column2)
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return self.ed_component.scatter(df, self.column1, self.column2)
 
         elif (self.method == OPTIONS[2]):
-<<<<<<< HEAD
-            validate_dataset(self.dataset1_index)
-            validate_dataset(self.dataset2_index)
-
-            dataset1 = self.datasets[self.dataset1_index]
-            df = dataset1.sample
-            validate_column(df1, self.column1)
-
-            dataset2 = self.datasets[self.dataset2_index]
-            df2 = dataset2.sample
-            validate_column(df2, self.column1)
-=======
             self.dataset1_index = int(self.dataset1_index)
             self.dataset1_index = int(self.dataset1_index)
             self.dataset2_index = int(self.dataset2_index)
@@ -209,19 +343,10 @@ class Orchestrator(object):
             dataset2 = self.datasets[self.dataset2_index]
             df2 = dataset2.sample
             self.validate_column(df2, self.column1)
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return self.ed_component.scatter_compare(df1, df2, self.column1, self.column2)
 
         elif (self.method == OPTIONS[3]):
-<<<<<<< HEAD
-            validate_dataset(self.dataset1_index)
-
-            dataset1 = self.datasets[self.dataset1_index]
-            df = dataset1.metadata
-            validate_column(df, self.column1)
-            metadata1 = df[column1]
-=======
             self.dataset1_index = int(self.dataset1_index)
             self.validate_dataset(self.dataset1_index)
 
@@ -229,25 +354,10 @@ class Orchestrator(object):
             df = dataset1.metadata
             self.validate_column(df, self.column1)
             metadata1 = df[self.column1]
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return metadata1
 
         elif (self.method == OPTIONS[4]):
-<<<<<<< HEAD
-            validate_dataset(self.dataset1_index)
-            validate_dataset(self.dataset2_index)
-
-            dataset1 = self.datasets[self.dataset1_index]
-            df = dataset1.metadata
-            validate_column(df, self.column1)
-            metadata1 = df[column1]
-
-            dataset2 = self.datasets[self.dataset2_index]
-            df2 = dataset2.metadata
-            validate_column(df2, self.column2)
-            metadata2 = df2[column2]
-=======
             self.dataset1_index = int(self.dataset1_index)
             self.dataset2_index = int(self.dataset2_index)
             self.validate_dataset(self.dataset1_index)
@@ -262,7 +372,6 @@ class Orchestrator(object):
             df2 = dataset2.metadata
             self.validate_column(df2, self.column2)
             metadata2 = df2[self.column2]
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 
             return metadata1, metadata2
 
@@ -279,3 +388,12 @@ class Orchestrator(object):
     def validate_column(self, df, column):
         assert column in df.columns, 'Invalid column {0}'.format(column)
         assert np.issubdtype(df[column].dtype, np.number), 'Column type must be numerical, not {0}.'.format(df[column].dtype) 
+    
+    def _set_up_uuid_lookup(self):
+        """
+        When datasets are set, set up dictionary to facilitate lookup of 
+        datasets by uuid (useful for dataset selection step).
+        """
+        self.uuid_to_dataset = dict(
+            [(dataset.uuid, dataset) for dataset in self.datasets]
+        )

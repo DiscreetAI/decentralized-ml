@@ -32,11 +32,7 @@ class CategoryComponent(object):
 		TODO: Parsing and handling the parameters for bc.getter().
 		"""
 		try:
-<<<<<<< HEAD
-			data_providers_df = self.db_client._get_data_providers_with_category(category)
-=======
 			data_providers_df = self.db_client.get_data_providers_with_category(category)
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
 		except Exception as e:
 			return {'Success': False, 'Error': str(e)}
 		if data_providers_df.empty: 

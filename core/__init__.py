@@ -6,6 +6,7 @@ from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
 from core.blockchain_client import BlockchainClient
+from core.dml_client import DMLClient
 import numpy as np
 
 
@@ -21,13 +22,10 @@ class Explora(Orchestrator):
            in Orchestrator
         2. We maintain use of dependency injection, which simplifies testing.
         """
-        db_client = DBClient()
-        blockchain_client = BlockchainClient()
+        db_client = None
+        blockchain_client = None
+        dml_client = None
         category_component = CategoryComponent(db_client, blockchain_client)
         ed_component = EDComponent()
-<<<<<<< HEAD
-        Orchestrator.__init__(category_component, ed_component)
-=======
-        Orchestrator.__init__(self, category_component, ed_component)
->>>>>>> 712ffd951f821d7ba396aa4d59e670c68a0b301e
+        Orchestrator.__init__(self, category_component, ed_component, dml_client)
 
