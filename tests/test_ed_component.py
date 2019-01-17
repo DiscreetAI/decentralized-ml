@@ -26,7 +26,7 @@ def fruit_dataset(fruit_df):
 
 @pytest.fixture
 def orchestrator(fruit_dataset):
-    orchestrator = Orchestrator(None, None)
+    orchestrator = Orchestrator(None, None, None)
     orchestrator.datasets = [fruit_dataset] * 5
     return orchestrator
 
