@@ -398,7 +398,7 @@ class Orchestrator(object):
         self._validate_column(label_column_name, dataset.sample)
 
     def _validate_parameters(self, batch_size, epochs, split, avg_type, \
-        opt_type, avg_type, num_rounds):
+        opt_type, num_rounds):
         """
         Validate remaining details of training in DMLRequest
         """
