@@ -5,7 +5,6 @@ from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
 import numpy as np
-from core.dml_request import DMLRequest
 
 
 OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
@@ -31,7 +30,13 @@ class Orchestrator(object):
         self.column1 = None
         self.column2 = None
         self.default_style = {'description_width': 'initial'}
-        self.dml_request = DMLRequest()
+        self.participants = []
+        self.batch_size = None
+        self.epochs = None
+        self.split = None
+        self.avg_type = None
+        self.opt_type = None
+        self.num_rounds = None
  
     def get_datasets(self):
         """
@@ -189,7 +194,7 @@ class Orchestrator(object):
                         'label_column_name': label_column_name
                     }
                 )
-            self.dml_request.participants = participants
+            self.participants = participants
 
             sender.disabled = False
 
@@ -216,12 +221,12 @@ class Orchestrator(object):
             self._validate_parameters(batch_size, epochs, split, avg_type, \
                 opt_type, num_rounds)
 
-            self.dml_request.batch_size = int(batch_size)
-            self.dml_request.epochs = int(epochs)
-            self.dml_request.split = float(split)
-            self.dml_request.avg_type = avg_type
-            self.dml_request.opt_type = opt_type
-            self.dml_request.num_rounds = int(num_rounds)
+            self.batch_size = int(batch_size)
+            self.epochs = int(epochs)
+            self.split = float(split)
+            self.avg_type = avg_type
+            self.opt_type = opt_type
+            self.num_rounds = int(num_rounds)
 
             sender.disabled = False
 
@@ -280,9 +285,18 @@ class Orchestrator(object):
         """
         Send DML Client the necessary parameters for training of the model.
         """
-        self.dml_request.model = model
+        self.model = model
         self._sanity_check_dml_request()
-        self.dml_client.decentralized_learn(self.dml_request)
+        self.dml_client.decentralized_learn(
+            model=self.model,
+            participants=self.participants,
+            batch_size=self.batch_size,
+            epochs=self.epochs,
+            split=self.split,
+            avg_type=self.avg_type,
+            opt_type=self.opt_type,
+            num_rounds=self.num_rounds
+        )
 
     def visualize(self): 
         """
@@ -400,12 +414,11 @@ class Orchestrator(object):
         Sanity check that all parameters of request are set before sending to
         DMLClient
         """
-        assert self.dml_request.participants, "Participants not set!"
-        assert self.dml_request.batch_size and self.dml_request.epochs \
-            and self.dml_request.split and self.dml_request.avg_type \
-            and self.dml_request.opt_type and self.dml_request.num_rounds, \
-                "Remaining parameters not set!"
-        assert self.dml_request.model, "Model not set!"
+        assert self.participants, "Participants not set!"
+        assert self.batch_size and self.epochs and self.dml_request.split \
+            and self.avg_type and self.opt_type and self.num_rounds, \
+            "Remaining parameters not set!"
+        assert self.model, "Model not set!"
 
     def _is_float(self, string):
         """
