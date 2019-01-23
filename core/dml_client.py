@@ -5,7 +5,7 @@ import time
 
 import ipfsapi
 
-from core.blockchain_client import BlockchainClient
+from core.blockchain_client import BlockchainClient, TxEnum, Transaction
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -46,28 +46,27 @@ class DMLClient(BlockchainClient):
         # We post the participants as well so that each participant will know 
         # which keys to accept messages from in the future
         new_session_event = {
-            BlockchainClient.KEY: None,
-            BlockchainClient.CONTENT: {
+            TxEnum.KEY.name: None,
+            TxEnum.CONTENT.name: {
                 "optimizer_params": optimizer,
                 "serialized_job": serialized_job,
                 "participants": participants
             }
         }
         # Add dict to IPFS for later retrieval over blockchain
-        key_vals = [self.client.add_json(participant) for
+        key_vals = [self._upload(self.client, participant) for
                             participant in participants]
         on_chain_value = self.client.add_json(new_session_event)
         # Currently, by definition a 'new session' tx has key==value.
         # If this changes in future, then this should also be changed.
-        txs = [{BlockchainClient.KEY: key_val, 
-                BlockchainClient.CONTENT: on_chain_value} for key_val in key_vals]
+        txs = [Transaction(key_val, on_chain_value, round_num=0) for key_val in key_vals]
         timeout = time.time() + self.timeout
         tx_receipts = []
         # Post to blockchain
         for tx in txs:
             while time.time() < timeout:
                 try:
-                    tx_receipts.append(self._make_setter_call(tx))
+                    tx_receipts.append(self._make_setter_call(self.host, self.port, tx.get_tx()))
                     break
                 except (UnboundLocalError, requests.exceptions.ConnectionError) as e:
                     logging.info("HTTP SET error, got: {0}".format(e))
