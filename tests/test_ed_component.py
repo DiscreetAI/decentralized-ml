@@ -26,7 +26,7 @@ def fruit_dataset(fruit_df):
 
 @pytest.fixture
 def orchestrator(fruit_dataset):
-    orchestrator = Orchestrator(None, None)
+    orchestrator = Orchestrator(None, None, None)
     orchestrator.datasets = [fruit_dataset] * 5
     return orchestrator
 
@@ -37,14 +37,14 @@ def test_validate_dataset(orchestrator):
         2. Tests failure when accessing an invalid index.
         3. Tests that we cannot access a dataset when no datasets available.
     """
-    orchestrator.validate_dataset(3)
+    orchestrator._validate_dataset(3)
     with pytest.raises(AssertionError, match='Index must be non-negative.', message='Expecting: AssertionError due to negative index.'):
-        orchestrator.validate_dataset(-4)
+        orchestrator._validate_dataset(-4)
     with pytest.raises(AssertionError, match='Index out of range. Length of datasets is {0}'.format(len(orchestrator.datasets), message='Expecting: AssertionError due to index out of bounds.')):
-        orchestrator.validate_dataset(20)
+        orchestrator._validate_dataset(20)
     orchestrator.datasets = list()
     with pytest.raises(AssertionError, match='No datasets available, make sure to query to create datasets.', message='Expecting: AssertionError due to empty datasets.'):
-        orchestrator.validate_dataset(1)
+        orchestrator._validate_dataset(1)
 
 def test_validate_column(orchestrator): 
     """
@@ -54,10 +54,10 @@ def test_validate_column(orchestrator):
         3. Tests failure when accessing a column in a dataframe but with non-numerical values.
     """
     df1 = pd.DataFrame(np.random.randn(50, 4), columns=list('ABCD'))
-    orchestrator.validate_column(df1, 'A')
+    orchestrator._validate_column(df1, 'A')
     s = '[{"Country":"USA","Name":"Ryan"},{"Country":"Sweden","Name":"Sam"},{"Country":"Brazil","Name":"Ralf"}]'
     df2 = pd.DataFrame(json.loads(s))
     with pytest.raises(AssertionError, match= 'Invalid column E', message='Expecting: AssertionError due to non-existent column.'):
-        orchestrator.validate_column(df1, 'E')
+        orchestrator._validate_column(df1, 'E')
     with pytest.raises(AssertionError, match='Column type must be numerical, not {0}.'.format(df2['Country'].dtype), message='Expecting: AssertionError due to non-numerical type.'):
-        orchestrator.validate_column(df2, 'Country')
+        orchestrator._validate_column(df2, 'Country')

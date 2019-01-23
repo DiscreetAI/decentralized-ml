@@ -78,8 +78,8 @@ def test_success(category_component, fruit_df, futbol_df):
 	get_datasets_with_category.
 	"""
 	category_component_dict = category_component.get_datasets_with_category('success')
-	assert category_component_dict ['Success']
-	result = category_component_dict['Result']
+	assert category_component_dict ['success']
+	result = category_component_dict['datasets']
 	assert len(result) == 4, 'Four datasets should have been found'
 	first, second, third, fourth = result
 	assert first.uuid == 'dataset1' \
@@ -98,8 +98,8 @@ def test_failure(category_component):
 	get_datasets_with_category.
 	"""
 	category_component_dict = category_component.get_datasets_with_category('failure')
-	assert not category_component_dict['Success']
-	assert category_component_dict['Error'] == 'Category: failure has no data providers.'
+	assert not category_component_dict['success']
+	assert category_component_dict['error'] == 'Category: failure has no data providers.'
 
 
 def test_exception(category_component): 
@@ -109,8 +109,8 @@ def test_exception(category_component):
 	get_datasets_with_category.
 	"""
 	category_component_dict = category_component.get_datasets_with_category('exception')
-	assert not category_component_dict['Success']
-	assert category_component_dict['Error'] == 'error'
+	assert not category_component_dict['success']
+	assert category_component_dict['error'] == 'error'
 
 
 

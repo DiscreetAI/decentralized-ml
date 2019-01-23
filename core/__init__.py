@@ -6,6 +6,7 @@ from core.db_client import DBClient
 import pandas as pd
 from core.ed_component import EDComponent
 from core.blockchain_client import BlockchainClient
+from core.dml_client import DMLClient
 import numpy as np
 
 
@@ -23,7 +24,8 @@ class Explora(Orchestrator):
         """
         db_client = DBClient()
         blockchain_client = BlockchainClient()
+        dml_client = DMLClient()
         category_component = CategoryComponent(db_client, blockchain_client)
         ed_component = EDComponent()
-        Orchestrator.__init__(self, category_component, ed_component)
+        Orchestrator.__init__(self, category_component, ed_component, dml_client)
 
