@@ -90,6 +90,7 @@ class BlockchainClient(object):
         # assert TxEnum.CONTENT.name in value
         ipfs_hash = self._content_to_ipfs(client, value)
         return str(ipfs_hash)
+    
     def _content_to_ipfs(self, client: object, content: dict) -> str:
         """
         Helper function to deploy a Python object onto IPFS, returns an IPFS hash
