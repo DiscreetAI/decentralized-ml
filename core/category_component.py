@@ -34,16 +34,23 @@ class CategoryComponent(object):
 		try:
 			data_providers_df = self.db_client.get_data_providers_with_category(category)
 		except Exception as e:
-			return {'Success': False, 'Error': str(e)}
+			return {'success': False, 'error': str(e)}
 		if data_providers_df.empty: 
 			error_message = 'Category: {} has no data providers.'
-			return {'Success': False, 'Error': error_message.format(category)}
+			return {'success': False, 'error': error_message.format(category)}
 		providers_list = data_providers_df['data_provider']
-		print(providers_list)
-		result = list()
+		datasets = list()
+		uuid_to_dataset = dict()
+
 		for provider in providers_list:
 			ed_directory = self.blockchain_client.get_dataset(provider)
 			for item in ed_directory.items():
 				dataset = Dataset(item)
-				result.append(dataset)
-		return {'Success': True, 'Result': result}
+				datasets.append(dataset)
+				uuid_to_dataset[dataset.uuid] = dataset
+				
+		return	{
+				'success': True, 
+				'datasets': datasets,
+				'uuid_to_dataset': uuid_to_dataset
+				}

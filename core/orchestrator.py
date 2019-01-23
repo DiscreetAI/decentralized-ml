@@ -24,6 +24,7 @@ class Orchestrator(object):
         self.ed_component = ed_component
         self.dml_client = dml_client
         self.datasets = list()
+        self.uuid_to_dataset = dict()
         self.method = None
         self.dataset1_index = None
         self.dataset2_index = None
@@ -60,8 +61,8 @@ class Orchestrator(object):
             category_text = category_widget.value.strip().lower()
             result = self.category_component.get_datasets_with_category(category_text)
             if result['Success']:
-                self.datasets = result['Result']
-                self._set_up_uuid_lookup()
+                self.datasets = result['datasets']
+                self.uuid_to_dataset = result['uuid_to_dataset']
             else:
                 print(result['Error'])
             sender.disabled = False
@@ -436,11 +437,4 @@ class Orchestrator(object):
         """
         return string.isdigit()
 
-    def _set_up_uuid_lookup(self):
-        """
-        When datasets are set, set up dictionary to facilitate lookup of 
-        datasets by uuid (useful for dataset selection step).
-        """
-        self.uuid_to_dataset = dict(
-            [(dataset.uuid, dataset) for dataset in self.datasets]
-        )
+    
