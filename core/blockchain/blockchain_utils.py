@@ -44,6 +44,8 @@ def ipfs_to_content(client: object, ipfs_hash: str) -> object:
 def content_to_ipfs(client: object, content: dict) -> str:
     """
     Helper function to deploy a Python object onto IPFS, returns an IPFS hash
+    # TODO: Figure out how to calculate the multihash without actually pushing
+    the object to IPFS. This is possible with 'ipfs add -n' via CLI.
     """
     return client.add_json(content)
 
@@ -119,8 +121,8 @@ def getter(client: object, key: str, local_state: list, port: int, timeout: int,
     new_state = local_state + state_diffs
     return download(client, key, new_state)
 
-def setter(client: object, key: str, port: int, value: object, flag: bool = False, 
-            host: str = '127.0.0.1', state_append: object = False) -> str:
+def setter(client: object, key: str, port: int, round_num: int, value: object,
+            flag: bool = False, host: str = '127.0.0.1', state_append: object = False) -> str:
     """
     Provided a key and a JSON/np.array object, upload the object to IPFS and
     then store the hash as the value on the blockchain. The key should be a
@@ -131,7 +133,7 @@ def setter(client: object, key: str, port: int, value: object, flag: bool = Fals
     logging.info("Setting to blockchain...")
     on_chain_value = upload(client, value) if value else None
     key = upload(client, key) if flag else key
-    tx = Transaction(key, on_chain_value)
+    tx = Transaction(key, on_chain_value, round_num)
     tx_receipt = None
     try:
         tx_receipt = make_setter_call(host, port, tx.get_tx())
@@ -151,6 +153,7 @@ class TxEnum(Enum):
     """
     KEY = "KEY"
     CONTENT = "CONTENT"
+    ROUND = "ROUND"
     MESSAGES = "MESSAGES"
 
 class Transaction(object):
@@ -158,12 +161,14 @@ class Transaction(object):
     Object that represents transactions with the specification outlined:
         `{
             'key': ...
-            'value': ...
+            'content': ...
          }`
     """
-    def __init__(self, key: str, value: str) -> None:
+    def __init__(self, key: str, content: str, round_num: int) -> None:
         self.key = key
-        self.value = value
+        self.content = content
+        self.round_num = round_num
 
     def get_tx(self) -> dict:
-       return {TxEnum.KEY.name: self.key, TxEnum.CONTENT.name: self.value}
+       return {TxEnum.KEY.name: self.key, TxEnum.CONTENT.name: self.content,
+                TxEnum.ROUND.name: self.round_num}

@@ -6,8 +6,8 @@ from multiprocessing import Manager
 
 import ipfsapi
 
-from core.blockchain.blockchain_utils   import (filter_diffs, TxEnum,
-                                                get_global_state, ipfs_to_content)
+from core.blockchain.blockchain_utils   import (filter_diffs, get_global_state,
+                                                ipfs_to_content, Transaction, TxEnum)
 from core.utils.enums                   import RawEventTypes, MessageEventTypes
 
 
@@ -44,7 +44,7 @@ class BlockchainGateway(object):
         config = config_manager.get_config()
         self._host = config.get("BLOCKCHAIN", "host")
         self._port = config.getint("BLOCKCHAIN", "http_port")
-        self._timeout = config.getint("BLOCKCHAIN", "timeout")        
+        self._timeout = config.getint("BLOCKCHAIN", "timeout")
         self._client = ipfs_client
 
     # Public methods for CRON
@@ -59,14 +59,14 @@ class BlockchainGateway(object):
                         self._handle_new_session_creation,
                         self._filter_new_session
         )
-   
+
     def stop_cron(self) -> None:
         """
         Stop the CRON method.
         """
         self.event.set()
         logging.info("Cron stopped!")
-  
+
     def reset(self) -> None:
         """
         Reset the gateway
@@ -75,7 +75,7 @@ class BlockchainGateway(object):
         self.event = Event()
         self.state = Manager().list()
         logging.info("Gateway reset!")
-    
+
     def state_append(self, set_element):
         """
         Called by other Setter methods used in the rest of the service.
@@ -109,7 +109,7 @@ class BlockchainGateway(object):
             return callback(filtered_diffs)
         else:
             return callback, event_filter
-   
+
     def _listen_as_event(self, 
                         period_in_mins: float, 
                         callback: Callable, 
@@ -134,32 +134,30 @@ class BlockchainGateway(object):
             assert TxEnum.KEY.name in tx
             key = tx.get(TxEnum.KEY.name)
             value = tx.get(TxEnum.CONTENT.name)
-            args = {TxEnum.KEY.name: MessageEventTypes.NEW_SESSION.name,
-                TxEnum.CONTENT.name: {
-                    TxEnum.KEY.name: ipfs_to_content(self._client, key),
-                    TxEnum.CONTENT.name: ipfs_to_content(self._client, value)
-                }
-            }
+            args = Transaction(MessageEventTypes.NEW_SESSION.name,
+                                Transaction(ipfs_to_content(self._client, key),
+                                            ipfs_to_content(self._client, value), 0).get_tx(),
+                                0).get_tx()
             self.communication_manager.inform(RawEventTypes.NEW_MESSAGE.name, args)
         list(map(handler, txs))
         return self._handle_new_session_info, self._filter_new_session_info
-    
+
     def _filter_new_session(self, tx: dict) -> bool:
         """
         Only allows new-session transactions through.
         """
         try:
             key_dict = ipfs_to_content(self._client, tx.get(TxEnum.KEY.name))
-            return self._dataset_manager.validate_key(key_dict["dataset_uuid"])
+            return self._dataset_manager.validate_key(key_dict["dataset_uuid"]) and tx.get(TxEnum.ROUND.name) == 0
         except:
             return False
-    
+
     def _filter_new_session_info(self, tx: dict) -> bool:
         """
         Only allows new-session-info transactions through.
         """
-        return tx.get(TxEnum.KEY.name) != tx.get(TxEnum.CONTENT.name)
-    
+        return tx.get(TxEnum.ROUND.name) > 0
+
     def _handle_new_session_info(self, txs: list) -> Tuple[Callable, Callable]:
         """
         Maps the handler onto all relevant transactions.
@@ -168,8 +166,8 @@ class BlockchainGateway(object):
         def handler(tx):
             key = tx.get(TxEnum.KEY.name)
             value = tx.get(TxEnum.CONTENT.name)
-            args = {TxEnum.KEY.name: MessageEventTypes.NEW_WEIGHTS.name, 
-                    TxEnum.CONTENT.name: ipfs_to_content(self._client, value)}
+            args = Transaction(MessageEventTypes.NEW_WEIGHTS.name,
+                                ipfs_to_content(self._client, value), 0).get_tx()
             # TODO: Put into in-memory datastore.
             self.communication_manager.inform(
                 RawEventTypes.NEW_MESSAGE.name,args)

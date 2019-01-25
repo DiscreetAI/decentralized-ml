@@ -11,7 +11,8 @@ def make_communicate_job(key, weights):
     communicate_job = DMLJob(
         JobTypes.JOB_COMM.name,
         key,
-        "keras"
+        "keras",
+        round_num=420,
     )
     communicate_job.key = key
     return communicate_job

@@ -148,11 +148,13 @@ def test_optimizer_schedules_training_after_initialization(initialization_payloa
     for job in job_arr:
         assert job.job_type == JobTypes.JOB_TRAIN.name
 
-def test_optimizer_schedules_communication_after_training(initialization_payload, dataset_manager, train_dmlresult_obj):
+def test_optimizer_schedules_communication_after_training(initialization_payload, dataset_manager, init_dmlresult_obj, train_dmlresult_obj):
     optimizer = FederatedAveragingOptimizer(
                     initialization_payload, 
                     dataset_manager
                 )
+    init_dmlresult_obj.job = init_dmlresult_obj.job.copy_constructor()
+    event_type, job_arr = optimizer.ask(RawEventTypes.JOB_DONE.name, init_dmlresult_obj)
     trained_weights = train_dmlresult_obj.results['weights']
     train_dmlresult_obj.job = train_dmlresult_obj.job.copy_constructor()
     event_type, job_arr = optimizer.ask(RawEventTypes.JOB_DONE.name, train_dmlresult_obj)

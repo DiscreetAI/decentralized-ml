@@ -130,9 +130,7 @@ def test_dmlrunner_uniform_initialization(config_manager, ipfs_client):
     assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(first_weights, second_weights))
 
 def test_dmlrunner_communicate_job(runner, train_dmlresult_obj, blockchain_gateway):
-    comm_job = train_dmlresult_obj.job.copy_constructor()
-    comm_job.job_type = JobTypes.JOB_COMM.name
-    comm_job.key = "test"
+    comm_job = make_communicate_job("testkey", "testweights")
     # now gateway should know the current state, which should be nothing
     assert len(blockchain_gateway.state) == 0
     # now we'll setter and hopefully append to the gateway's state

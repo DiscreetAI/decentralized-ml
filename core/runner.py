@@ -18,7 +18,7 @@ from core.utils.keras import serialize_weights, deserialize_weights
 from core.utils.dmlresult import DMLResult
 from core.utils.dmljob import serialize_job
 from core.utils.enums import JobTypes, callback_handler_no_default
-from core.blockchain.blockchain_utils import setter
+from core.blockchain.blockchain_utils import setter, content_to_ipfs
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -264,11 +264,13 @@ class DMLRunner(object):
         Communicates a message to the blockchain using the Runner's
         IPFS client, puts the tx_receipt in DMLResult.
         """
+        assert job.round_num, "Nonzero round number is needed for this message!"
         tx_receipt = setter(
             client=self._client,
-            key = job.key,
+            key = content_to_ipfs(self._client, serialize_weights(job.key)),
             port = self._port,
             value = serialize_job(job),
+            round_num = job.round_num,
             state_append=state
         )
         results = DMLResult(

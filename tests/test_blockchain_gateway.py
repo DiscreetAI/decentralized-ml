@@ -1,8 +1,8 @@
-import tests.context	
-import pytest	
+import tests.context
+import pytest
 import ipfsapi
 
-from core.configuration                 import ConfigurationManager	
+from core.configuration                 import ConfigurationManager
 from core.blockchain.blockchain_gateway import BlockchainGateway
 from core.utils.enums                   import RawEventTypes, MessageEventTypes
 from core.blockchain.blockchain_utils   import setter, TxEnum
@@ -11,21 +11,21 @@ from tests.testing_utils import make_initialize_job, make_model_json
 
 
 @pytest.fixture(scope='session')
-def config_manager():	
+def config_manager():
     config_manager = ConfigurationManager()
-    config_manager.bootstrap(	
-        config_filepath='tests/artifacts/blockchain/configuration.ini'	
-    )	
-    return config_manager	
+    config_manager.bootstrap(
+        config_filepath='tests/artifacts/blockchain/configuration.ini'
+    )
+    return config_manager
 
 @pytest.fixture(scope='session')
 def ipfs_client(config_manager):
     config = config_manager.get_config()
-    return ipfsapi.connect(config.get('BLOCKCHAIN', 'host'), 
+    return ipfsapi.connect(config.get('BLOCKCHAIN', 'host'),
                             config.getint('BLOCKCHAIN', 'ipfs_port'))
 
 @pytest.fixture(scope='session')
-def communication_manager():		
+def communication_manager():
     class MockCommunicationManager:
         def __init__(self):
             self.dummy_msg_type = "None"
@@ -65,16 +65,16 @@ def dataset_manager():
 
 @pytest.fixture	(scope='session')
 def blockchain_gateway(
-    config_manager, communication_manager, ipfs_client, dataset_manager):	
+    config_manager, communication_manager, ipfs_client, dataset_manager):
     blockchain_gateway = BlockchainGateway()
-    blockchain_gateway.configure(config_manager, communication_manager, 
+    blockchain_gateway.configure(config_manager, communication_manager,
                                 ipfs_client, dataset_manager)
-    return blockchain_gateway	
+    return blockchain_gateway
 
 def test_blockchain_gateway_can_be_initialized(
-    config_manager, communication_manager):	
+    config_manager, communication_manager):
     blockchain_gateway = BlockchainGateway()
-    assert blockchain_gateway is not None	
+    assert blockchain_gateway is not None
 
 def test_blockchain_gateway_filters_sessions(
     blockchain_gateway, communication_manager):
@@ -87,10 +87,11 @@ def test_blockchain_gateway_filters_sessions(
         "serialized_job": serialized_job
     }
     tx_receipt = setter(
-        blockchain_gateway._client, 
+        blockchain_gateway._client,
         {"dataset_uuid": 5678, "label_column_name": "label"},
-        blockchain_gateway._port, 
-        new_session_event, 
+        blockchain_gateway._port,
+        0,
+        new_session_event,
         flag=True
     )
     assert tx_receipt
@@ -119,10 +120,11 @@ def test_blockchain_gateway_can_listen_decentralized_learning(
         "serialized_job": serialized_job
     }
     tx_receipt = setter(
-        blockchain_gateway._client, 
+        blockchain_gateway._client,
         {"dataset_uuid": 1357, "label_column_name": "label"},
-        blockchain_gateway._port, 
-        new_session_event, 
+        blockchain_gateway._port,
+        0,
+        new_session_event,
         True
     )
     assert tx_receipt
@@ -138,19 +140,19 @@ def test_blockchain_gateway_can_listen_decentralized_learning(
     }
     communication_manager.reset()
 
-# TODO: This will be implemented once we figure out how.	
-# def test_handle_decentralized_learning(blockchain_gateway):	
+# TODO: This will be implemented once we figure out how.
+# def test_handle_decentralized_learning(blockchain_gateway):
 #     """To be implemented."""
-#     pass	
-# def test_listen_new_weights(blockchain_gateway):	
-#     """To be implemented."""	
-#     pass	
-# def test_handle_new_weights(blockchain_gateway):	
-#     """To be implemented."""	
-#     pass	
-# def test_listen_terminate(blockchain_gateway):	
-#     """To be implemented."""	
-#     pass	
-# def test_handle_terminate(blockchain_gateway):	
-#     """To be implemented."""	
+#     pass
+# def test_listen_new_weights(blockchain_gateway):
+#     """To be implemented."""
+#     pass
+# def test_handle_new_weights(blockchain_gateway):
+#     """To be implemented."""
+#     pass
+# def test_listen_terminate(blockchain_gateway):
+#     """To be implemented."""
+#     pass
+# def test_handle_terminate(blockchain_gateway):
+#     """To be implemented."""
 #     pass

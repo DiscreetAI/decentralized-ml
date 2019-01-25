@@ -6,7 +6,7 @@ from core.utils.enums 					import JobTypes, callback_handler_no_default
 from core.utils.dmljob 					import deserialize_job, DMLJob
 from core.utils.keras 					import serialize_weights
 from core.utils.dmlresult 				import DMLResult
-from core.blockchain.blockchain_utils	import TxEnum
+from core.blockchain.blockchain_utils	import TxEnum, content_to_ipfs
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -72,7 +72,7 @@ class FederatedAveragingOptimizer(object):
 		self.curr_averages_this_round = 0
 		self.job.sigma_omega = 0
 		self.num_averages_per_round = optimizer_params.get('num_averages_per_round')
-		self.curr_round = 0
+		self.curr_round = 1
 		self.max_rounds = optimizer_params.get('max_rounds')
 		self.initialization_complete = False
 		# Set other participants so that the optimizer knows which other nodes 
@@ -145,6 +145,7 @@ class FederatedAveragingOptimizer(object):
 		"""
 		new_weights = dmlresult_obj.results.get('weights')
 		self._update_weights(new_weights)
+		self._update_old_weights()
 		if self.initialization_complete:
 			return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 		else:
@@ -180,10 +181,11 @@ class FederatedAveragingOptimizer(object):
 		self.job.omega = dmlresult_obj.results.get('omega')
 		# if we don't have sigma_omega yet, we will now
 		self.job.sigma_omega = self.job.omega + self.job.sigma_omega
+		# TODO: Key validation in next PR
+		self.job.key = self.old_weights
 		self._update_weights(new_weights)
 		self.job.job_type = JobTypes.JOB_COMM.name
-		# TODO: Key management PR
-		self.job.key = "test"
+		self.job.round_num = self.curr_round
 		return ActionableEventTypes.SCHEDULE_JOBS.name, [self.job]
 
 	def _done_communicating(self, dmlresult_obj):
@@ -206,10 +208,12 @@ class FederatedAveragingOptimizer(object):
 			logging.info("DONE WITH ROUND {} OF FEDERATED LEARNING!".format(self.curr_round))
 			self.job.job_type = JobTypes.JOB_TRAIN.name
 			self.curr_averages_this_round = 0
-			# Reset sigma_omega for new round of learning
+			# Reset everything for new round of learning
+			self._update_old_weights()
 			self.job.sigma_omega = 0
 			self.curr_round += 1
-			if self.curr_round >= self.max_rounds:
+			self.job.round_num += 1
+			if self.curr_round > self.max_rounds:
 				# validate how good my end model was
 				# self.job.job_type = JobTypes.JOB_VAL.name
 				# return ActionableEventTypes.SCHEDULE_JOBS, self.job 
@@ -269,6 +273,12 @@ class FederatedAveragingOptimizer(object):
 		with the correct weights. Mutates, does not return anything.
 		"""
 		self.job.weights = weights
+
+	def _update_old_weights(self):
+		"""
+		Helper function to update the old_weights instance variable.
+		"""
+		self.old_weights = self.job.weights
 
 	def _do_nothing(self, payload):
 		"""

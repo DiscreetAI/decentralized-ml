@@ -127,14 +127,16 @@ def test_federated_learning_two_clients_automated(new_session_event, new_session
         key=new_session_key, 
         port=blockchain_gateway._port,
         value=new_session_event, 
-        flag=True
+        flag=True,
+        round_num=0
     )
     tx_receipt_two = setter(
         client=blockchain_gateway._client,
         key=new_session_key_two, 
         port=blockchain_gateway._port,
         value=new_session_event, 
-        flag=True
+        flag=True,
+        round_num=0
     )
     assert tx_receipt
     assert tx_receipt_two
@@ -142,9 +144,9 @@ def test_federated_learning_two_clients_automated(new_session_event, new_session
     scheduler_2.start_cron(period_in_mins=0.01)
     blockchain_gateway.start_cron(period_in_mins=0.01)
     blockchain_gateway_2.start_cron(period_in_mins=0.01)
-    timeout = 40 + time.time()
+    timeout = 44 + time.time()
     while time.time() < timeout and (len(scheduler.processed) != 8 or len(scheduler_2.processed) != 8):
-        time.sleep(5)
+        time.sleep(3)
     scheduler.stop_cron()
     scheduler_2.stop_cron()
     blockchain_gateway.stop_cron()
@@ -177,14 +179,16 @@ def test_federated_learning_two_clients_manual(new_session_event, new_session_ke
         key=new_session_key, 
         port=blockchain_gateway._port,
         value=new_session_event, 
-        flag=True
+        flag=True,
+        round_num=0
     )
     tx_receipt_two = setter(
         client=blockchain_gateway._client,
         key=new_session_key_two, 
         port=blockchain_gateway._port,
         value=new_session_event, 
-        flag=True
+        flag=True,
+        round_num=0
     )
     assert tx_receipt
     assert tx_receipt_two

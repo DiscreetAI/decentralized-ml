@@ -45,6 +45,7 @@ def test_blockchain_utils_setter_simple(config, ipfs_client):
     tx_receipt = setter(client=ipfs_client,
         key=TEST_SINGLE_KEY,
         port=config.getint('BLOCKCHAIN', 'http_port'),
+        round_num=0,
         value=TEST_VALUE,
     )
     assert tx_receipt, "Setting failed"
@@ -68,12 +69,14 @@ def test_blockchain_utils_setter_multiple_values(config, ipfs_client):
     tx_receipt = setter(client=ipfs_client,
         key=TEST_MULTIPLE_KEY,
         port=config.getint('BLOCKCHAIN', 'http_port'),
+        round_num=0,
         value=TEST_VALUE,
     )
     assert tx_receipt, "Setting failed"
     tx_receipt = setter(client=ipfs_client,
         key=TEST_MULTIPLE_KEY,
         port=config.getint('BLOCKCHAIN', 'http_port'),
+        round_num=0,
         value=TEST_VALUE,
     )
     assert tx_receipt, "Setting failed"
