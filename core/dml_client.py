@@ -37,19 +37,17 @@ class DMLClient(BlockchainClient):
         @optimizer: dict returned by make_optimizer()
         """
         job_to_post = {}
-        job_to_post["job_type"] = ""
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
         job_to_post["hyperparams"] = model["hyperparams"]
-        serialized_job = {"job_data": job_to_post}
         # We post the participants as well so that each participant will know 
         # which keys to accept messages from in the future
         new_session_event = {
             TxEnum.KEY.name: None,
             TxEnum.CONTENT.name: {
                 "optimizer_params": optimizer,
-                "serialized_job": serialized_job,
+                "serialized_job": job_to_post,
                 "participants": participants
             }
         }
