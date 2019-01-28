@@ -2,6 +2,7 @@ import json
 import logging
 import requests
 import time
+import uuid
 
 import ipfsapi
 
@@ -37,6 +38,7 @@ class DMLClient(BlockchainClient):
         @optimizer: dict returned by make_optimizer()
         """
         job_to_post = {}
+        job_to_post["uuid"] = model.get("uuid", uuid.uuid4())
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
@@ -152,7 +154,7 @@ class DMLClient(BlockchainClient):
             num_rounds=num_rounds,
             # this means that each node has to wait for all other nodes
             # before moving on. (well, technically RN n-1 since key management but)
-            num_averages_per_round=len(participants)
+            num_averages_per_round=len(participants),
         )
         self._validate_participants(participants)
         keys, receipt = self._learn(
