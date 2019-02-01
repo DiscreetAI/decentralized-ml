@@ -116,7 +116,7 @@ class DMLClient(BlockchainClient):
         assert all(["label_column_name" in dct for dct in participants]), \
             "Supervised learning needs a column to be specified as the label column"
     
-    def _make_optimizer(self, opt_type="fed_avg", 
+    def _make_optimizer(self, opt_type="FEDERATED_AVERAGING", 
                         num_rounds=1, num_averages_per_round=1):
         """
         Helper function for decentralized_learn.
@@ -124,7 +124,7 @@ class DMLClient(BlockchainClient):
         NOTE: Currently the only parameter that "really" needs to be set is
         num_rounds
         """
-        assert opt_type in ["fed_avg"], \
+        assert opt_type in ["FEDERATED_AVERAGING", "CLOUD_CONNECTED"], \
             "Optimizer '{0}' is not supported.".format(opt_type)
         optimizer_params = {
             "optimizer_type": opt_type,
