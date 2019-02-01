@@ -6,8 +6,7 @@ from core.configuration                 import ConfigurationManager
 from core.blockchain.blockchain_gateway import BlockchainGateway
 from core.utils.enums                   import RawEventTypes, MessageEventTypes
 from core.blockchain.blockchain_utils   import setter, TxEnum
-from core.utils.dmljob                  import deserialize_job, serialize_job
-from tests.testing_utils import make_initialize_job, make_model_json
+from tests.testing_utils                import make_initialize_job, make_serialized_job
 
 
 @pytest.fixture(scope='session')
@@ -43,11 +42,10 @@ def communication_manager():
             self.data_provider_info = initialization_payload.get(TxEnum.KEY.name)
             self.job_info = initialization_payload.get(TxEnum.CONTENT.name)
             serialized_job = self.job_info.get('serialized_job')
-            self.job = deserialize_job(serialized_job)
-            self.job.uuid = self.data_provider_info.get("dataset_uuid")
-            self.job.label_column_name = self.data_provider_info.get(
+            self.job_data = {}
+            self.job_data["dataset_uuid"] = self.data_provider_info.get("dataset_uuid")
+            self.job_data["label_column_name"] = self.data_provider_info.get(
                 "label_column_name")
-            assert self.job.uuid, "uuid of job not set!"
         def reset(self):
             self.dummy_msg_type = "None"
             self.data_provider_info = "None"
@@ -81,7 +79,7 @@ def test_blockchain_gateway_filters_sessions(
     """
     Ensures that the gateway won't intercept messages not intended for it
     """
-    serialized_job = serialize_job(make_initialize_job(make_model_json()))
+    serialized_job = make_serialized_job()
     new_session_event = {
         "optimizer_params": "",
         "serialized_job": serialized_job
@@ -102,7 +100,7 @@ def test_blockchain_gateway_filters_sessions(
     # and therefore not update our communication manager
     assert communication_manager.dummy_msg_type == "None", \
         "Shouldn't have heard anything but heard a message with uuid {}".format(
-            communication_manager.job.uuid)
+            communication_manager.job_data["dataset_uuid"])
     assert communication_manager.data_provider_info == "None", \
         "Shouldn't have heard anything!"
     assert communication_manager.job_info == "None", \
@@ -114,7 +112,7 @@ def test_blockchain_gateway_can_listen_decentralized_learning(
     Uses Mock Communication Manager to ensure that the Gateway
     can listen for decentralized learning.
     """
-    serialized_job = serialize_job(make_initialize_job(make_model_json()))
+    serialized_job = make_serialized_job()
     new_session_event = {
         "optimizer_params": "this cannot be empty",
         "serialized_job": serialized_job

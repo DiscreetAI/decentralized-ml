@@ -16,7 +16,6 @@ from core.utils.keras import train_keras_model, validate_keras_model
 
 from core.utils.keras import serialize_weights, deserialize_weights
 from core.utils.dmlresult import DMLResult
-from core.utils.dmljob import serialize_job
 from core.utils.enums import JobTypes, callback_handler_no_default
 from core.blockchain.blockchain_utils import setter, content_to_ipfs
 
@@ -167,7 +166,7 @@ class DMLRunner(object):
 
         # Get the right omega based on the averaging type.
         if avg_type == 'data_size':
-            omega = data_count * split
+            omega = float(data_count * split)
         elif avg_type == 'val_acc':
             val_stats = self._validate(
                 job,
@@ -269,7 +268,7 @@ class DMLRunner(object):
             client=self._client,
             key = content_to_ipfs(self._client, serialize_weights(job.key)),
             port = self._port,
-            value = serialize_job(job),
+            value = job.serialize_job(),
             round_num = job.round_num,
             state_append=state
         )
@@ -360,8 +359,13 @@ class DMLRunner(object):
         Average the weights in the job weighted by their omegas.
         """
         assert list(job.new_weights), "No new_weights supplied to average!"
+        job.new_weights = deserialize_weights(job.new_weights)
+        assert isinstance(job.new_weights[0], np.ndarray), "should have been ndarray but was {}".format(type(job.new_weights[0]))
         assert job.omega, "No omega supplied to average!"
+        assert isinstance(job.omega, float), job.omega
         assert job.sigma_omega, "No sigma_omega supplied to average!"
+        assert isinstance(job.sigma_omega, float), job.sigma_omega
+        assert isinstance(job.weights[0], np.ndarray), "should have been ndarray but was {}".format(type(job.weights[0]))
         averaged_weights = self._weighted_running_avg(job.weights, job.new_weights, job.sigma_omega, job.omega)
         result = DMLResult(
             status='successful',

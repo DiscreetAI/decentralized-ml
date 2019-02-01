@@ -61,7 +61,7 @@ class DMLScheduler(object):
 		"""
 		Add a job to the queue.
 		"""
-		assert type(dml_job) is DMLJob, "Job is not of type DMLJob."
+		assert isinstance(dml_job, DMLJob), "Job is not of type DMLJob."
 		logging.info("Scheduling job...{}".format(dml_job.job_type))
 		self.queue.put(dml_job)
 

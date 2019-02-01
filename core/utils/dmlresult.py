@@ -1,4 +1,4 @@
-from core.utils.dmljob import serialize_job, deserialize_job
+# from core.utils.dmljob import serialize_job, deserialize_job
 
 class DMLResult(object):
     """
@@ -34,38 +34,41 @@ class DMLResult(object):
         self.results = results
         self.error_message = error_message
 
+# NOTE: If this class ever becomes more useful than a dictionary,
+# steps should be taken to reimplement this functionality.
 
-def serialize_result(dmlresult_job):
-    """
-    Serializes a DML Result object into a dictionary.
+# def serialize_result(dmlresult_job):
+#     """
+#     Serializes a DML Result object into a dictionary.
 
-    Args:
-        dmlresult_job (DMLResult): result object.
+#     Args:
+#         dmlresult_job (DMLResult): result object.
 
-    Returns:
-        dict: The serialized version of the DML Result.
-    """
-    return {
-        'status': dmlresult_job.status,
-        'job': serialize_job(dmlresult_job.job),
-        'results': dmlresult_job.results,
-        'error_message': dmlresult_job.error_message,
-    }
+#     Returns:
+#         dict: The serialized version of the DML Result.
+        
+#     """
+#     return {
+#         'status': dmlresult_job.status,
+#         'job': serialize_job(dmlresult_job.job),
+#         'results': dmlresult_job.results,
+#         'error_message': dmlresult_job.error_message,
+#     }
 
 
-def deserialize_result(serialized_result):
-    """
-    Deserializes a serialized version of a DML Result object.
+# def deserialize_result(serialized_result):
+#     """
+#     Deserializes a serialized version of a DML Result object.
 
-    Args:
-        serialized_result (dict): serialized version of a DML Result object.
+#     Args:
+#         serialized_result (dict): serialized version of a DML Result object.
 
-    Returns:
-        DMLResult: A DML Result object from serialized_result.
-    """
-    return DMLResult(
-        status=serialized_result['status'],
-        job=deserialize_job(serialized_result['job']),
-        results=serialized_result['results'],
-        error_message=serialized_result['error_message'],
-    )
+#     Returns:
+#         DMLResult: A DML Result object from serialized_result.
+#     """
+#     return DMLResult(
+#         status=serialized_result['status'],
+#         job=deserialize_job(serialized_result['job']),
+#         results=serialized_result['results'],
+#         error_message=serialized_result['error_message'],
+#     )

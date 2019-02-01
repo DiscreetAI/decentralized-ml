@@ -12,9 +12,10 @@ from core.configuration         import ConfigurationManager
 from core.dataset_manager       import DatasetManager
 from core.utils.keras           import serialize_weights, deserialize_weights
 from core.utils.enums           import JobTypes
-from tests.testing_utils        import make_initialize_job, make_model_json, make_communicate_job
-from tests.testing_utils        import make_train_job, make_validate_job, make_hyperparams
+from tests.testing_utils        import make_initialize_job, make_communicate_job
+from tests.testing_utils        import make_train_job, make_validate_job
 from tests.testing_utils        import make_split_job
+from core.utils.dmljob          import DMLAverageJob
 from core.blockchain.blockchain_gateway import BlockchainGateway
 from core.blockchain.blockchain_utils   import setter
 
@@ -76,17 +77,13 @@ def small_filepath():
 
 @pytest.fixture(scope='session')
 def init_dmlresult_obj(runner, small_filepath):
-    initialize_job = make_initialize_job(make_model_json(), small_filepath)
+    initialize_job = make_initialize_job(small_filepath)
     result = runner.run_job(initialize_job)
     return result
 
 @pytest.fixture(scope='session')
 def split_dmlresult_obj(runner, mnist_filepath):
-    model_json = make_model_json()
-    split_job = make_split_job(
-                            model_json, 
-                            mnist_filepath,
-                        )
+    split_job = make_split_job(mnist_filepath,)
     split_job.hyperparams['split'] = 0.75
     job_results = runner.run_job(split_job)
     return job_results
@@ -97,9 +94,7 @@ def train_dmlresult_obj(runner, split_dmlresult_obj, init_dmlresult_obj, small_f
     session_filepath = split_dmlresult_obj.results['session_filepath']
     datapoint_count = split_dmlresult_obj.results['datapoint_count']
     train_job = make_train_job(
-                    make_model_json(), 
-                    initial_weights, 
-                    make_hyperparams(split=1),
+                    initial_weights,
                     session_filepath,
                     datapoint_count
                 )
@@ -121,10 +116,10 @@ def runner(config_manager, ipfs_client):
 def test_dmlrunner_uniform_initialization(config_manager, ipfs_client):
     runner = DMLRunner(config_manager)
     runner.configure(ipfs_client)
-    initialize_job = make_initialize_job(make_model_json(), small_filepath)
+    initialize_job = make_initialize_job(small_filepath)
     result = runner.run_job(initialize_job).results
     first_weights = result['weights']
-    initialize_job = make_initialize_job(make_model_json(), small_filepath)
+    initialize_job = make_initialize_job(small_filepath)
     result = runner.run_job(initialize_job).results
     second_weights = result['weights']
     assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(first_weights, second_weights))
@@ -149,11 +144,7 @@ def test_dmlrunner_initialize_job_returns_list_of_nparray(init_dmlresult_obj):
 
 def test_dmlrunner_transform_and_split( \
         runner, small_filepath):
-    model_json = make_model_json()
-    split_job = make_split_job(
-                            model_json, 
-                            small_filepath
-                        )
+    split_job = make_split_job(small_filepath)
     split_job.hyperparams['split'] = 0.75
     job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
@@ -171,7 +162,6 @@ def test_dmlrunner_transform_and_split( \
 def test_dmlrunner_train_job_returns_weights_omega_and_stats( \
         train_dmlresult_obj):
     result = train_dmlresult_obj
-    session_filepath = result.job.session_filepath
     results = result.results
     new_weights = results['weights']
     omega = results['omega']
@@ -184,21 +174,15 @@ def test_dmlrunner_train_job_returns_weights_omega_and_stats( \
 
 def test_dmlrunner_same_train_job_with_split_1( \
         runner, mnist_filepath):
-    model_json = make_model_json()
-    hyperparams = make_hyperparams(split=1)
-    initialize_job = make_initialize_job(model_json)
-    initial_weights = runner.run_job(initialize_job).results['weights']
-    split_job = make_split_job(
-                            model_json, 
-                            mnist_filepath
-                        )
+    split_job = make_split_job(mnist_filepath)
+    split_job.hyperparams['split'] = 1
     job_results = runner.run_job(split_job)
     session_filepath = job_results.results['session_filepath']
     datapoint_count = job_results.results['datapoint_count']
+    initialize_job = make_initialize_job()
+    initial_weights = runner.run_job(initialize_job).results['weights']
     train_job = make_train_job(
-                    model_json, 
                     initial_weights, 
-                    hyperparams, 
                     session_filepath,
                     datapoint_count
                 )
@@ -216,8 +200,6 @@ def test_dmlrunner_same_train_job_with_split_1( \
 
 def test_dmlrunner_validate_job_returns_stats( \
         runner, mnist_filepath, train_dmlresult_obj):
-    model_json = make_model_json()
-    hyperparams = make_hyperparams()
     job_results = train_dmlresult_obj
     session_filepath = job_results.job.session_filepath
     datapoint_count = job_results.job.datapoint_count
@@ -225,15 +207,12 @@ def test_dmlrunner_validate_job_returns_stats( \
     assert result.status == 'successful'
     results = result.results
     new_weights = results['weights']
-    omega = results['omega']
-    train_stats = results['train_stats']
-    hyperparams['split'] = 1 - hyperparams['split']
-    validate_job = make_validate_job(model_json, 
+    validate_job = make_validate_job(
                     new_weights, 
-                    hyperparams, 
                     session_filepath,
                     datapoint_count
                 )
+    validate_job.hyperparams['split'] = 1 - validate_job.hyperparams['split']
     result = runner.run_job(validate_job)
     assert result.status == 'successful'
     results = result.results
@@ -245,15 +224,15 @@ def test_dmlrunner_initialize_job_weights_can_be_serialized(init_dmlresult_obj):
     initial_weights = init_dmlresult_obj.results['weights']
     same_weights = deserialize_weights(serialize_weights(initial_weights))
     assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(same_weights, initial_weights)) 
-    session_filepath = init_dmlresult_obj.job.session_filepath
 
 def test_dmlrunner_averaging_weights(runner, train_dmlresult_obj):
-    avg_job = train_dmlresult_obj.job.copy_constructor()
     initial_weights = train_dmlresult_obj.results['weights']
     assert initial_weights
-    avg_job.weights = initial_weights
-    avg_job.new_weights = initial_weights
-    avg_job.omega = train_dmlresult_obj.results['omega']
-    avg_job.sigma_omega = avg_job.omega
+    avg_job = DMLAverageJob(
+        omega=train_dmlresult_obj.results['omega'],
+        sigma_omega=train_dmlresult_obj.results['omega'],
+        weights=initial_weights,
+        new_weights=serialize_weights(initial_weights)
+    )
     averaged_weights = runner._average(avg_job).results['weights']
     assert all(np.allclose(arr1, arr2) for arr1,arr2 in zip(averaged_weights, initial_weights))

@@ -8,12 +8,11 @@ from core.communication_manager         import CommunicationManager
 from core.runner                        import DMLRunner
 from core.scheduler                     import DMLScheduler
 from core.configuration                 import ConfigurationManager
-from tests.testing_utils                import make_initialize_job, make_model_json
-from tests.testing_utils                import make_serialized_job_with_uuid, serialize_job
+from tests.testing_utils                import make_initialize_job
+from tests.testing_utils                import make_serialized_job
 from core.utils.enums                   import RawEventTypes, JobTypes, MessageEventTypes
 from core.utils.keras                   import serialize_weights
 from core.blockchain.blockchain_utils   import TxEnum
-from core.utils.dmljob                  import deserialize_job
 from core.dataset_manager               import DatasetManager
 
 
@@ -47,13 +46,13 @@ def new_session_key(mnist_uuid):
 
 @pytest.fixture(scope='session')
 def new_session_event(mnist_uuid):
-    serialized_job = serialize_job(make_initialize_job(make_model_json()))
+    serialized_job = make_serialized_job()
     new_session_event = {
         # TxEnum.KEY.name: None,
         # TxEnum.CONTENT.name: {
             "optimizer_params": {"num_averages_per_round": 2, "max_rounds": 2},
             "serialized_job": serialized_job,
-            "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', 'd16c6e86-d103-4e71-8741-ee1f888d206c']
+            "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', mnist_uuid]
         # }
     }
     return new_session_event
@@ -127,17 +126,15 @@ def test_communication_manager_can_inform_new_job_to_the_optimizer(new_session_k
         TxEnum.KEY.name: MessageEventTypes.NEW_SESSION.name,
         TxEnum.CONTENT.name: nested_dict
     }
-    true_job = deserialize_job(nested_dict[TxEnum.CONTENT.name]['serialized_job'])
+    true_job = nested_dict[TxEnum.CONTENT.name]['serialized_job']
     communication_manager.inform(
         RawEventTypes.NEW_MESSAGE.name,
         args
     )
-    optimizer_job = communication_manager.optimizer.job
-    assert optimizer_job.weights == true_job.weights
-    assert optimizer_job.serialized_model == true_job.serialized_model
-    assert optimizer_job.framework_type == true_job.framework_type
-    assert optimizer_job.hyperparams == true_job.hyperparams
-    assert optimizer_job.label_column_name == true_job.label_column_name
+    optimizer_job = communication_manager.optimizer.job_data
+    assert optimizer_job["serialized_model"] == true_job["serialized_model"]
+    assert optimizer_job["framework_type"] == true_job["framework_type"]
+    assert optimizer_job["hyperparams"] == true_job["hyperparams"]
 
 # NOTE: The following are tests that we will implement soon.
 
