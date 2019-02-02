@@ -17,11 +17,11 @@ class DMLClient(BlockchainClient):
     Has the same prerequisites as BlockchainClient
     """
 
-    def __init__(self, config_filepath: str = 'blockchain_config.json') -> None:
+    def __init__(self, config: object) -> None:
         """
         Connect with running IPFS node.
         """
-        super().__init__(config_filepath)
+        super().__init__(config)
 
     # helper function implementation
 

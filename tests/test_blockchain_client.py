@@ -1,17 +1,22 @@
 import tests.context
 import pytest
+import configparser
 
 from core.blockchain_client import BlockchainClient
 
 
 @pytest.fixture(scope='session')
-def blockchain_client():
+def config():
+    config = configparser.ConfigParser()
+    config.read('tests/artifacts/blockchain_client/configuration.ini')
+    return config
+
+@pytest.fixture(scope='session')
+def blockchain_client(config):
     """
     Maintain instance of Blockchain Client
     """
-    return BlockchainClient(
-        config_filepath='tests/artifacts/blockchain_client/blockchain_config.json'
-    )
+    return BlockchainClient(config)
 
 def test_blockchain_client_empty(blockchain_client):
     """

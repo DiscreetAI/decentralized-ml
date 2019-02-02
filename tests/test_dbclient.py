@@ -3,16 +3,23 @@ import tests.context
 import psycopg2
 import pytest
 import pandas as pd
+import configparser
+
 from core.db_client import DBClient
 
+
 @pytest.fixture(scope='session')
-def db_client():
+def config():
+    config = configparser.ConfigParser()
+    config.read('tests/artifacts/db_client/configuration.ini')
+    return config
+
+@pytest.fixture(scope='session')
+def db_client(config):
     """
     Maintain instance of DB Client
     """
-    return DBClient(
-        config_filepath='tests/artifacts/db_client/database_config.json'
-    )
+    return DBClient(config)
 
 def test_get_data_providers_with_category(db_client):
     """

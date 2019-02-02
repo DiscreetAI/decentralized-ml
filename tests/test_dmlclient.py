@@ -1,5 +1,6 @@
 import tests.context
 import pytest
+import configparser
 
 from keras.models import Sequential
 from keras.layers import Dense, Activation
@@ -7,13 +8,17 @@ from keras.layers import Dense, Activation
 from core.dml_client import DMLClient
 
 @pytest.fixture(scope='session')
-def dml_client():
+def config():
+    config = configparser.ConfigParser()
+    config.read('tests/artifacts/blockchain_client/configuration.ini')
+    return config
+
+@pytest.fixture(scope='session')
+def dml_client(config):
     """
     DMLClient instance
     """
-    return DMLClient(
-        config_filepath='tests/artifacts/blockchain_client/blockchain_config.json'
-    )
+    return DMLClient(config)
 
 @pytest.fixture(scope='session')
 def ipfs_client(dml_client):

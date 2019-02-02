@@ -17,16 +17,15 @@ class BlockchainClient(object):
         The lotion app: `node app_trivial.js` from dagora-chain
     """
 
-    def __init__(self, config_filepath: str = 'core/blockchain_config.json') -> None:
+    def __init__(self, config: object) -> None:
         """
         Connect with running IPFS node.
         """
-        with open(config_filepath) as f:
-            config = json.load(f)
-        self.host = config.get("host")
-        self.ipfs_port = config.get("ipfs_port")
-        self.port = config.get("http_port")
-        self.timeout = config.get("timeout")
+        self.host = config.get("BLOCKCHAIN_CLIENT", "host")
+        self.ipfs_port = config.getint("BLOCKCHAIN_CLIENT", "ipfs_port")
+        self.port = config.getint("BLOCKCHAIN_CLIENT", "http_port")
+        self.timeout = config.getint("BLOCKCHAIN_CLIENT", "timeout")
+
         self.client = None
         try:
             self.client = ipfsapi.connect(self.host, self.ipfs_port)
