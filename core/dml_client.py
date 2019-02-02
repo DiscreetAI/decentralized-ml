@@ -2,6 +2,7 @@ import json
 import logging
 import requests
 import time
+import uuid
 
 import ipfsapi
 
@@ -37,19 +38,18 @@ class DMLClient(BlockchainClient):
         @optimizer: dict returned by make_optimizer()
         """
         job_to_post = {}
-        job_to_post["job_type"] = ""
+        job_to_post["job_uuid"] = model.get("job_uuid", str(uuid.uuid4()))
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
         job_to_post["hyperparams"] = model["hyperparams"]
-        serialized_job = {"job_data": job_to_post}
         # We post the participants as well so that each participant will know 
         # which keys to accept messages from in the future
         new_session_event = {
             TxEnum.KEY.name: None,
             TxEnum.CONTENT.name: {
                 "optimizer_params": optimizer,
-                "serialized_job": serialized_job,
+                "serialized_job": job_to_post,
                 "participants": participants
             }
         }
@@ -116,7 +116,7 @@ class DMLClient(BlockchainClient):
         assert all(["label_column_name" in dct for dct in participants]), \
             "Supervised learning needs a column to be specified as the label column"
     
-    def _make_optimizer(self, opt_type="fed_avg", 
+    def _make_optimizer(self, opt_type="FEDERATED_AVERAGING", 
                         num_rounds=1, num_averages_per_round=1):
         """
         Helper function for decentralized_learn.
@@ -124,7 +124,7 @@ class DMLClient(BlockchainClient):
         NOTE: Currently the only parameter that "really" needs to be set is
         num_rounds
         """
-        assert opt_type in ["fed_avg"], \
+        assert opt_type in ["FEDERATED_AVERAGING", "CLOUD_CONNECTED"], \
             "Optimizer '{0}' is not supported.".format(opt_type)
         optimizer_params = {
             "optimizer_type": opt_type,
@@ -135,7 +135,7 @@ class DMLClient(BlockchainClient):
 
     def decentralized_learn(self, model: object, participants, batch_size: int=32, 
             epochs: int=10, split: float=1, avg_type: str="data_size",
-            opt_type="fed_avg", num_rounds=1):
+            opt_type="FEDERATED_AVERAGING", num_rounds=1):
         """
         Public method exposed to Explora to enable end users to submit decentralized
         training session instantiations to the blockchain.
@@ -154,7 +154,7 @@ class DMLClient(BlockchainClient):
             num_rounds=num_rounds,
             # this means that each node has to wait for all other nodes
             # before moving on. (well, technically RN n-1 since key management but)
-            num_averages_per_round=len(participants)
+            num_averages_per_round=len(participants),
         )
         self._validate_participants(participants)
         keys, receipt = self._learn(

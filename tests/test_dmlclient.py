@@ -51,9 +51,9 @@ def test_dml_client_serializes_job_correctly(dml_client, ipfs_client, model, par
     )
     content = ipfs_client.get_json(key)["CONTENT"]
     true_model_json = model.to_json()
-    assert true_model_json == content["serialized_job"]["job_data"]["serialized_model"]
+    assert true_model_json == content["serialized_job"]["serialized_model"]
     assert participants == content["participants"]
-    assert content["optimizer_params"]["optimizer_type"] == "fed_avg"
+    assert content["optimizer_params"]["optimizer_type"] == "FEDERATED_AVERAGING"
 
 def test_dml_client_validates_label_column_name(dml_client, model, participants):
     participants.append({"dataset_uuid": 666})
