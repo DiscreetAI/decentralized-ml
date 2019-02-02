@@ -38,7 +38,7 @@ class DMLClient(BlockchainClient):
         @optimizer: dict returned by make_optimizer()
         """
         job_to_post = {}
-        job_to_post["uuid"] = model.get("uuid", uuid.uuid4())
+        job_to_post["uuid"] = model.get("uuid", str(uuid.uuid4()))
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
@@ -135,7 +135,7 @@ class DMLClient(BlockchainClient):
 
     def decentralized_learn(self, model: object, participants, batch_size: int=32, 
             epochs: int=10, split: float=1, avg_type: str="data_size",
-            opt_type="fed_avg", num_rounds=1):
+            opt_type="FEDERATED_AVERAGING", num_rounds=1):
         """
         Public method exposed to Explora to enable end users to submit decentralized
         training session instantiations to the blockchain.
