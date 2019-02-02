@@ -3,7 +3,7 @@ import time
 
 from core.utils.enums 					import ActionableEventTypes, RawEventTypes, MessageEventTypes
 from core.utils.enums 					import JobTypes, callback_handler_no_default
-from core.utils.dmljob 					import (DMLJob, DMLAverageJob, DMLCommunicateJob, \
+from core.utils.dmljob 					import (DMLJob, DMLAverageJob, DMLCommunicateJob, DMLServerJob, \
 												DMLInitializeJob, DMLSplitJob, DMLTrainJob, DMLValidateJob)
 from core.utils.keras 					import serialize_weights, deserialize_weights
 from core.utils.dmlresult 				import DMLResult
@@ -23,10 +23,6 @@ class FederatedAveragingOptimizer(object):
 	abstraction between routing messages internally and making decisions on
 	what messages to route and to where.
 
-	The Optimizer stores the DML Job throghout the lifecycle of a DML Session,
-	and passes it to the Communication Manager so it can be routed wherever
-	needed.
-
 	This particular optimizer works with callbacks:
 
 		- There are "LEVEL 1" callbacks, which represent the types of Raw Events
@@ -40,7 +36,8 @@ class FederatedAveragingOptimizer(object):
 
 	def __init__(self, initialization_payload, dataset_manager):
 		"""
-		Initializes the optimizer.
+		Initializes the basic optimizer, which does not communicate with
+		the status_server or with Explora.
 
 		Expects the `initialization_payload` dict to contain two dicts:
 
@@ -205,6 +202,7 @@ class FederatedAveragingOptimizer(object):
 		self.job_data["job_type"] = JobTypes.JOB_COMM.name
 		self.job_data["round_num"] = self.curr_round
 		comm_job = DMLCommunicateJob(
+			# TODO: Consider synchronization issues
 			round_num=self.curr_round,
 			key=self.old_weights,
 			weights=self.job_data["weights"],

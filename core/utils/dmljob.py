@@ -4,6 +4,7 @@ import numpy as np
 from core.utils.keras import serialize_weights, deserialize_weights
 from core.utils.enums import JobTypes
 
+
 class DMLJob(object):
     """
     DML Job
@@ -259,3 +260,32 @@ class DMLAverageJob(DMLJob):
         self.omega = omega
         self.sigma_omega = sigma_omega
         self.new_weights = new_weights
+
+class DMLServerJob(DMLJob):
+    """
+    DML Job for submitting Statistics
+
+    Holds information specifically needed for submitting statistics
+
+    """
+
+    def __init__(
+        self,
+        job_uuid,
+        dataset_uuid,
+        round_num,
+        statistics
+        ):
+        """
+        Initializes a DML Server Job object.
+
+        Args:
+            uuid (str): uuid of the job for the server to identify.
+            statistics (dict): statistics about the training process which just
+                                finished, to be sent to the server
+        """
+        self.job_type = JobTypes.JOB_STATS.name
+        self.job_uuid = job_uuid
+        self.dataset_uuid = dataset_uuid
+        self.round_num = round_num
+        self.statistics = statistics

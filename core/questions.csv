@@ -10,6 +10,7 @@ What is the host for HTTP?,BLOCKCHAIN,host,127.0.0.1
 What is the timeout?,BLOCKCHAIN,timeout,5
 What category would you label this data,DATASET_MANAGER,category,default_category
 What is the fraction of data to be sampled,DATASET_MANAGER,sample_fraction,0.01
+SECRET,RUNNER,server_url,http://status-server.jn6tkty4uh.us-west-1.elasticbeanstalk.com/jobs
 SECRET,DB_CLIENT,user,datashark
 SECRET,DB_CLIENT,db,datasharkdb
 SECRET,DB_CLIENT,host,datasharkdatabase.cwnzqu4zi2kl.us-west-1.rds.amazonaws.com

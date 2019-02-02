@@ -21,6 +21,8 @@ class JobTypes(Enum):
         to rest of the nodes via blockchain.
 
         JOB_SPLIT: Split the data and put it into new folders.
+
+        JOB_STATS: Submit statistics to a cloud server
         #TODO: Implement transformation of the data
     """
     JOB_TRAIN = "TRAIN"
@@ -29,6 +31,7 @@ class JobTypes(Enum):
     JOB_AVG = "AVERAGE"
     JOB_COMM = "COMMUNICATE"
     JOB_SPLIT = "SPLIT"
+    JOB_STATS = "STATISTICS"
 
 class MessageEventTypes(Enum):
     """
@@ -83,13 +86,20 @@ class ActionableEventTypes(Enum):
     TERMINATE = "TERMINATE"
     NOTHING = "NOTHING"
 
+class OptimizerTypes(Enum):
+    """
+    Different types of Optimizers.
+    """
+    FEDAVG = "FEDERATED_AVERAGING"
+    CLOUDCONN = "CLOUD_CONNECTED"
+
 def callback_handler_with_default(callback_type, callback_dict, default="NOTHING"):
     """
     Util function to return a callback from a dictionary that falls back to a
     default callback specified by `default`. The fallback is
     `callback_dict[default]`.
     """
-    return _callback_handler(callback_type, callback_dict, True, "NOTHING")
+    return _callback_handler(callback_type, callback_dict, True, default)
 
 def callback_handler_no_default(callback_type, callback_dict):
     """

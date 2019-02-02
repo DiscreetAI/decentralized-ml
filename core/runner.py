@@ -6,6 +6,8 @@ import os
 import ipfsapi
 import pandas as pd
 import numpy as np
+import requests
+import json
 
 from core.configuration import ConfigurationManager
 from custom.keras import model_from_serialized, get_optimizer
@@ -48,6 +50,7 @@ class DMLRunner(object):
         self.iden = str(uuid.uuid4())[:8]
         self.config = dict(config.items("RUNNER"))
         self._port = config.getint('BLOCKCHAIN', 'http_port')
+        self._server_url = config.get('RUNNER', 'server_url')
         self.JOB_CALLBACKS = {
             JobTypes.JOB_TRAIN.name: self._train,
             JobTypes.JOB_INIT.name: self._initialize,
@@ -55,6 +58,7 @@ class DMLRunner(object):
             JobTypes.JOB_SPLIT.name: self._split_data,
             JobTypes.JOB_AVG.name: self._average,
             JobTypes.JOB_COMM.name: self._communicate,
+            JobTypes.JOB_STATS.name: self._post_statistics
         }
         self.JOBS_NEEDING_STATE = [JobTypes.JOB_COMM.name]
     
@@ -278,6 +282,29 @@ class DMLRunner(object):
             results={
                 'receipt': tx_receipt,
             },
+            error_message="",
+        )
+        return results
+
+    def _post_statistics(self, job):
+        """
+        Posts statistics about a training job to a cloud server
+        """
+        assert job.statistics, "No statistics to be served"
+        server_url = "{0}/{1}/{2}".format(self._server_url, job.job_uuid, job.dataset_uuid)
+        response = requests.post(
+            url=server_url,
+            headers={'content-type': 'application/json'},
+            json={
+                'round_num': job.round_num,
+                'dataset_stats': job.statistics
+            }
+        )
+        response_dict = json.loads(response.text)
+        results = DMLResult(
+            status='successful',
+            job=job,
+            results={'receipt': response_dict['status']},
             error_message="",
         )
         return results

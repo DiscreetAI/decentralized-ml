@@ -10,6 +10,7 @@ from tests.testing_utils              import (make_initialize_job, make_train_jo
 from core.utils.enums                 import (JobTypes, RawEventTypes, \
                                             ActionableEventTypes, MessageEventTypes)
 from core.fed_avg_optimizer           import FederatedAveragingOptimizer
+from core.cloud_connected_optimizer   import CloudConnectedOptimizer
 from core.runner                      import DMLRunner
 from core.configuration               import ConfigurationManager
 from core.dataset_manager             import DatasetManager
@@ -54,6 +55,24 @@ def initialization_payload(small_uuid):
         TxEnum.KEY.name: {"dataset_uuid": small_uuid, "label_column_name": "label"},
         TxEnum.CONTENT.name: {
             "optimizer_params": {"num_averages_per_round": 2, "max_rounds": 2},
+            "serialized_job": serialized_job,
+            "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', 'd16c6e86-d103-4e71-8741-ee1f888d206c']
+        }
+    }
+    return new_session_event
+
+@pytest.fixture(scope='session')
+def initialization_payload_cloud(small_uuid):
+    serialized_job = make_serialized_job()
+    serialized_job["job_uuid"] = "1234"
+    new_session_event = {
+        TxEnum.KEY.name: {"dataset_uuid": small_uuid, "label_column_name": "label"},
+        TxEnum.CONTENT.name: {
+            "optimizer_params": {
+                "num_averages_per_round": 2, 
+                "max_rounds": 2,
+                "optimizer_type": "CLOUD_CONNECTED"
+            },
             "serialized_job": serialized_job,
             "participants": ['0fcf9cbb-39df-4ad6-9042-a64c87fecfb3', 'd16c6e86-d103-4e71-8741-ee1f888d206c']
         }
@@ -109,6 +128,18 @@ def train_dmlresult_obj(runner, split_dmlresult_obj, init_dmlresult_obj, small_f
     result = runner.run_job(train_job)
     return result
 
+def test_cloudconn_optimizer_schedules_serving_after_training(initialization_payload_cloud, dataset_manager, init_dmlresult_obj, train_dmlresult_obj):
+    optimizer = CloudConnectedOptimizer(
+                    initialization_payload_cloud, 
+                    dataset_manager
+                )
+    event_type, job_arr = optimizer.ask(RawEventTypes.JOB_DONE.name, init_dmlresult_obj)
+    event_type, job_arr = optimizer.ask(RawEventTypes.JOB_DONE.name, train_dmlresult_obj)
+    assert event_type == ActionableEventTypes.SCHEDULE_JOBS.name
+    assert len(job_arr) == 2
+    assert job_arr[0].job_type == JobTypes.JOB_COMM.name
+    assert job_arr[1].job_type == JobTypes.JOB_STATS.name
+
 def test_optimizer_fails_on_wrong_event_type(initialization_payload, dataset_manager):
     optimizer = FederatedAveragingOptimizer(
                     initialization_payload, 
@@ -121,7 +152,7 @@ def test_optimizer_fails_on_wrong_event_type(initialization_payload, dataset_man
     except Exception as e:
         assert str(e) == "Invalid callback passed!"
 
-def test_optimizer_can_kickoff(initialization_payload, dataset_manager):
+def test_optimizer_can_kickoff(runner, initialization_payload, dataset_manager):
     optimizer = FederatedAveragingOptimizer(
                     initialization_payload, 
                     dataset_manager

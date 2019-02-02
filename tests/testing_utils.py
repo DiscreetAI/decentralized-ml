@@ -1,7 +1,7 @@
 from models.keras_perceptron    import KerasPerceptron
 from custom.keras               import get_optimizer
 from core.utils.enums           import JobTypes, RawEventTypes
-from core.utils.dmljob          import (DMLJob, DMLCommunicateJob, \
+from core.utils.dmljob          import (DMLCommunicateJob, \
                                         DMLAverageJob, DMLInitializeJob, DMLSplitJob, \
                                         DMLTrainJob, DMLValidateJob)
 from data.iterators             import count_datapoints

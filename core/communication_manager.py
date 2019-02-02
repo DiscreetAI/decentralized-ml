@@ -1,8 +1,9 @@
 import logging
 
 from core.utils.enums                   import RawEventTypes, MessageEventTypes, ActionableEventTypes
-from core.utils.enums                   import callback_handler_no_default
+from core.utils.enums                   import callback_handler_no_default, OptimizerTypes, callback_handler_with_default
 from core.fed_avg_optimizer             import FederatedAveragingOptimizer
+from core.cloud_connected_optimizer     import CloudConnectedOptimizer
 from core.utils.dmljob                  import DMLJob
 from core.blockchain.blockchain_utils   import TxEnum
 
@@ -40,6 +41,10 @@ class CommunicationManager(object):
             ActionableEventTypes.SCHEDULE_JOBS.name: self._schedule_jobs,
             ActionableEventTypes.TERMINATE.name: self._terminate_session,
             ActionableEventTypes.NOTHING.name: self._do_nothing,
+        }
+        self.OPTIMIZER_CALLBACK = {
+            OptimizerTypes.FEDAVG.name: FederatedAveragingOptimizer,
+            OptimizerTypes.CLOUDCONN.name: CloudConnectedOptimizer
         }
         logging.info("Communication Manager is set up!")
 
@@ -99,8 +104,15 @@ class CommunicationManager(object):
         assert payload.get(TxEnum.KEY.name) is MessageEventTypes.NEW_SESSION.name, \
             "Expected a new session but got {}".format(payload.get(TxEnum.KEY.name))
         initialization_payload = payload.get(TxEnum.CONTENT.name)
+        job_info = initialization_payload.get(TxEnum.CONTENT.name)
+        optimizer_type = job_info["optimizer_params"].get("optimizer_type", None)
+        optimizer_to_init = callback_handler_with_default(
+            optimizer_type, 
+            self.OPTIMIZER_CALLBACK,
+            OptimizerTypes.FEDAVG.name
+        )
         logging.info("New optimizer session is being set up...")
-        self.optimizer = FederatedAveragingOptimizer(
+        self.optimizer = optimizer_to_init(
                             initialization_payload,
                             self.dataset_manager
                         )

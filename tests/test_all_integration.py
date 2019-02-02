@@ -64,7 +64,11 @@ def cleanup(transformed_filepath):
 def new_session_event(mnist_uuid, mnist_uuid_two):
     serialized_job = make_serialized_job()
     new_session_event = {
-            "optimizer_params": {"num_averages_per_round": 1, "max_rounds": 2},
+            "optimizer_params": {
+                "num_averages_per_round": 1, 
+                "max_rounds": 2,
+                "optimizer_type": "FEDERATED_AVERAGING"
+            },
             "serialized_job": serialized_job,
             "participants": [mnist_uuid, mnist_uuid_two]
     }
