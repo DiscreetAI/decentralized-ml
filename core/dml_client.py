@@ -38,7 +38,7 @@ class DMLClient(BlockchainClient):
         @optimizer: dict returned by make_optimizer()
         """
         job_to_post = {}
-        job_to_post["uuid"] = model.get("uuid", str(uuid.uuid4()))
+        job_to_post["job_uuid"] = model.get("job_uuid", str(uuid.uuid4()))
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
