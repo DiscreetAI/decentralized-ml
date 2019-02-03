@@ -2,7 +2,6 @@ import json
 import logging
 import requests
 import time
-import uuid
 
 import ipfsapi
 
@@ -25,7 +24,7 @@ class DMLClient(BlockchainClient):
 
     # helper function implementation
 
-    def _learn(self, model=dict, participants=dict, optimizer=dict):
+    def _learn(self, model=dict, participants=dict, optimizer=dict, job_uuid=str):
         """
         Helper function for decentralized_learn.
         Provided a model and a list of participants who are expected to
@@ -36,9 +35,10 @@ class DMLClient(BlockchainClient):
         @model: dict returned by make_model()
         @participants: dict returned by make_participants()
         @optimizer: dict returned by make_optimizer()
+        @job_uuid: unique identifier for job
         """
         job_to_post = {}
-        job_to_post["job_uuid"] = model.get("job_uuid", str(uuid.uuid4()))
+        job_to_post["job_uuid"] = job_uuid
         job_to_post["serialized_model"] = model["serialized_model"]
         # NOTE: Currently we only support Keras, so this is hardcoded
         job_to_post["framework_type"] = model.get("framework_type", "keras")
@@ -133,7 +133,7 @@ class DMLClient(BlockchainClient):
         }
         return optimizer_params
 
-    def decentralized_learn(self, model: object, participants, batch_size: int=32, 
+    def decentralized_learn(self, job_uuid, model: object, participants, batch_size: int=32, 
             epochs: int=10, split: float=1, avg_type: str="data_size",
             opt_type="FEDERATED_AVERAGING", num_rounds=1):
         """
@@ -160,6 +160,7 @@ class DMLClient(BlockchainClient):
         keys, receipt = self._learn(
             model=model_dict,
             optimizer=optimizer_params,
-            participants=participants
+            participants=participants,
+            job_uuid=job_uuid
         )
         return keys

@@ -52,7 +52,7 @@ def participants():
 
 def test_dml_client_serializes_job_correctly(dml_client, ipfs_client, model, participants):
     key = dml_client.decentralized_learn(
-        model, participants
+        None, model, participants
     )
     content = ipfs_client.get_json(key)["CONTENT"]
     true_model_json = model.to_json()

@@ -1,10 +1,14 @@
 from ipywidgets import widgets
-from IPython.display import display, Image
+from IPython.display import display, Image, clear_output
+import pandas as pd
+import numpy as np
+import uuid
+import time
+import matplotlib.pyplot as plt
+
 from core.category_component import CategoryComponent
 from core.db_client import DBClient
-import pandas as pd
 from core.ed_component import EDComponent
-import numpy as np
 
 
 OPTIONS = ['histogram', 'scatter', 'compare using scatter', 'describe','compare using describe']
@@ -16,20 +20,28 @@ class Orchestrator(object):
     - Manages logic between DBClient, EDComponent, and CategoryComponent. 
     - Gets input from user with the help of DLDL Notebook.
     """ 
-    def __init__(self, category_component, ed_component, dml_client):
+    def __init__(self, category_component, ed_component, dml_client, status_server_client):
         """
         Initialize Orchestrator instance.
         """
+        #Clients
         self.category_component = category_component
         self.ed_component = ed_component
         self.dml_client = dml_client
+        self.status_server_client = status_server_client
+
+        #Stored dataset information
         self.datasets = list()
         self.uuid_to_dataset = dict()
+
+        #ED Component information
         self.method = None
         self.dataset1_index = None
         self.dataset2_index = None
         self.column1 = None
         self.column2 = None
+
+        #DML Client information
         self.default_style = {'description_width': 'initial'}
         self.participants = []
         self.batch_size = None
@@ -38,6 +50,7 @@ class Orchestrator(object):
         self.avg_type = None
         self.opt_type = None
         self.num_rounds = None
+        self.job_uuid = None
  
     def get_datasets(self):
         """
@@ -287,8 +300,10 @@ class Orchestrator(object):
         Send DML Client the necessary parameters for training of the model.
         """
         self.model = model
+        self.job_uuid = str(uuid.uuid4())
         self._sanity_check_dml_request()
         self.dml_client.decentralized_learn(
+            job_uuid=self.job_uuid,
             model=self.model,
             participants=self.participants,
             batch_size=self.batch_size,
@@ -298,6 +313,53 @@ class Orchestrator(object):
             opt_type=self.opt_type,
             num_rounds=self.num_rounds
         )
+        self._training_statistics()
+
+
+
+    def _training_statistics(self):
+        """
+        Frontend for displaying training statistics while training is active.
+
+        Constantly poll the Status Server for the latest statistics for each 
+        datasetIf any new dataset has updated statistics (i.e. new round), the 
+        output will be cleared and replaced with the latest statistics. Loop
+        terminates when training is done (i.e. all datasets have reached 
+        self.num_rounds)
+        """
+        training_finished = False
+        job_dict = self.status_server_client.get_latest_stats(self.job_uuid)
+        cached_round_nums = None
+
+        while(not training_finished):
+            job_dict = self.status_server_client.get_latest_stats(self.job_uuid)
+            new_round_nums = {
+                                dataset_uuid: dataset_dictionary['round_num'] \
+                                for dataset_uuid, dataset_dictionary in job_dict.items()
+                            }
+            if cached_round_nums and cached_round_nums == new_round_nums:
+                continue
+            clear_output()
+            if all(round_num == self.num_rounds for round_num in new_round_nums.values()):
+                training_finished = True
+
+            for dataset_uuid, dataset_dictionary in job_dict.items():
+                round_num = dataset_dictionary['round_num']
+                stats = dataset_dictionary['dataset_stats']['training_history']
+
+                print('Statistics for Dataset with UUID {}'.format(dataset_uuid))
+                print('\tRound Number: {}'.format(round_num))
+                
+                for stat_name, stat_arr in stats.items():
+                    title = "Plotting {} for each round".format(stat_name)
+                    pd.Series(stat_arr).plot(
+                        kind='line', 
+                        title=title, 
+                        xticks=range(len(stat_arr)))
+                    plt.show()
+                print()
+            cached_round_nums = new_round_nums
+
 
     def visualize(self): 
         """
