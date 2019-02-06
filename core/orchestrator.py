@@ -73,11 +73,11 @@ class Orchestrator(object):
             sender.disabled = True
             category_text = category_widget.value.strip().lower()
             result = self.category_component.get_datasets_with_category(category_text)
-            if result['Success']:
+            if result['success']:
                 self.datasets = result['datasets']
                 self.uuid_to_dataset = result['uuid_to_dataset']
             else:
-                print(result['Error'])
+                print(result['error'])
             sender.disabled = False
 
 
@@ -198,9 +198,9 @@ class Orchestrator(object):
 
             participants = []
             for dataset in tab.children:
-                uuid_widget, label_column_widget = dataset.texts
+                uuid_text, label_column_text, _ = dataset.texts
                 uuid = uuid_text.value.strip()
-                label_column_name = label_column_widget.value.strip()
+                label_column_name = label_column_text.value.strip()
                 self._validate_participant(uuid, label_column_name)
                 participants.append(
                     {
@@ -213,6 +213,7 @@ class Orchestrator(object):
             sender.disabled = False
 
         button = widgets.Button(description='Submit')
+        button.on_click(set_up_participants)
         display(button)
 
     def parameters(self):
@@ -328,11 +329,18 @@ class Orchestrator(object):
         self.num_rounds)
         """
         training_finished = False
-        job_dict = self.status_server_client.get_latest_stats(self.job_uuid)
         cached_round_nums = None
+        stats_available = False
+        print('No statistics available yet.')
 
         while(not training_finished):
-            job_dict = self.status_server_client.get_latest_stats(self.job_uuid)
+            try:
+                job_dict = self.status_server_client.get_latest_stats(self.job_uuid)
+            except AssertionError as e:
+                continue
+            if not stats_available:
+                clear_output()
+                stats_available = True
             new_round_nums = {
                                 dataset_uuid: dataset_dictionary['round_num'] \
                                 for dataset_uuid, dataset_dictionary in job_dict.items()
@@ -455,10 +463,10 @@ class Orchestrator(object):
         """
         Validate participant information.
         """
-        assert uuid in uuid_to_dataset, \
+        assert uuid in self.uuid_to_dataset, \
             "Dataset with UUID {} does not exist in list!".format(uuid)
         dataset = self.uuid_to_dataset[uuid]
-        self._validate_column(label_column_name, dataset.sample)
+        self._validate_column(dataset.sample, label_column_name)
 
     def _validate_parameters(self, batch_size, epochs, split, avg_type, \
         opt_type, num_rounds):
@@ -478,7 +486,7 @@ class Orchestrator(object):
         DMLClient
         """
         assert self.participants, "Participants not set!"
-        assert self.batch_size and self.epochs and self.dml_request.split \
+        assert self.batch_size and self.epochs and self.split \
             and self.avg_type and self.opt_type and self.num_rounds, \
             "Remaining parameters not set!"
         assert self.model, "Model not set!"
@@ -488,7 +496,7 @@ class Orchestrator(object):
         Helper method to determine if string is float.
         """
         try:
-            float(value)
+            float(string)
             return True
         except ValueError:
             return False

@@ -54,9 +54,11 @@ def test_dml_client_serializes_job_correctly(dml_client, ipfs_client, model, par
     key = dml_client.decentralized_learn(
         None, model, participants
     )
-    content = ipfs_client.get_json(key)["CONTENT"]
+    content = ipfs_client.get_json(key)
     true_model_json = model.to_json()
-    assert true_model_json == content["serialized_job"]["serialized_model"]
+    assert content["serialized_job"]["hyperparams"]
+    assert content["serialized_job"]["serialized_model"]["architecture"]
+    assert content["serialized_job"]["serialized_model"]["optimizer"]
     assert participants == content["participants"]
     assert content["optimizer_params"]["optimizer_type"] == "FEDERATED_AVERAGING"
 

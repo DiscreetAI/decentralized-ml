@@ -4,9 +4,72 @@ import requests
 import time
 
 import ipfsapi
+from keras import optimizers
 
 from core.blockchain_client import BlockchainClient, TxEnum, Transaction
 
+
+def get_optimizer(model):
+    def get_json_type(obj):
+        """Serialize any object to a JSON-serializable structure.
+        # Arguments
+            obj: the object to serialize
+        # Returns
+            JSON-serializable structure representing `obj`.
+        # Raises
+            TypeError: if `obj` cannot be serialized.
+        """
+        # if obj is a serializable Keras class instance
+        # e.g. optimizer, layer
+        if hasattr(obj, 'get_config'):
+            return {'class_name': obj.__class__.__name__,
+                    'config': obj.get_config()}
+
+        # if obj is any numpy type
+        if type(obj).__module__ == np.__name__:
+            if isinstance(obj, np.ndarray):
+                return {'type': type(obj),
+                        'value': obj.tolist()}
+            else:
+                return obj.item()
+
+        # misc functions (e.g. loss function)
+        if callable(obj):
+            return obj.__name__
+
+        # if obj is a python 'type'
+        if type(obj).__name__ == type.__name__:
+            return obj.__name__
+
+        raise TypeError('Not JSON Serializable:', obj)
+
+    if model.optimizer:
+        metadata = {}
+        if isinstance(model.optimizer, optimizers.TFOptimizer):
+            warnings.warn(
+                'TensorFlow optimizers do not '
+                'make it possible to access '
+                'optimizer attributes or optimizer state '
+                'after instantiation. '
+                'As a result, we cannot save the optimizer '
+                'as part of the model save file.'
+                'You will have to compile your model again '
+                'after loading it. '
+                'Prefer using a Keras optimizer instead '
+                '(see keras.io/optimizers).')
+        else:
+            metadata['training_config'] = json.dumps({
+                'optimizer_config': {
+                    'class_name': model.optimizer.__class__.__name__,
+                    'config': model.optimizer.get_config()
+                },
+                'loss': model.loss,
+                'metrics': model.metrics,
+                'sample_weight_mode': model.sample_weight_mode,
+                'loss_weights': model.loss_weights,
+            }, default=get_json_type)
+
+    return metadata
 
 logging.basicConfig(level=logging.DEBUG,
     format='[DMLClient] %(message)s')
@@ -46,12 +109,9 @@ class DMLClient(BlockchainClient):
         # We post the participants as well so that each participant will know 
         # which keys to accept messages from in the future
         new_session_event = {
-            TxEnum.KEY.name: None,
-            TxEnum.CONTENT.name: {
                 "optimizer_params": optimizer,
                 "serialized_job": job_to_post,
                 "participants": participants
-            }
         }
         # Add dict to IPFS for later retrieval over blockchain
         key_vals = [self._upload(self.client, participant) for
@@ -89,7 +149,12 @@ class DMLClient(BlockchainClient):
         assert avg_type in ['data_size', 'val_acc'], \
             "Averaging type '{0}' is not supported.".format(avg_type)
         model_dict = {}
-        model_json = model.to_json()
+        model_architecture = model.to_json()
+        model_optimizer = get_optimizer(model)
+        model_json = {
+            "architecture": model_architecture,
+            "optimizer": model_optimizer
+        }
         model_dict["serialized_model"] = model_json
         hyperparams = {}
         hyperparams["batch_size"] = batch_size
