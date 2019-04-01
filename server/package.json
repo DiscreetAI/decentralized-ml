@@ -16,7 +16,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./dist/server/server.js"
+    "tsc": "./node_modules/.bin/tsc",
+    "start": "PORT=8080 node ./dist/server/server.js"
   },
   "repository": {
     "type": "git",

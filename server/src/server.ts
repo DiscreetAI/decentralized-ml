@@ -1,36 +1,25 @@
-import * as express from 'express';
-import * as http from 'http';
 import * as WebSocket from 'ws';
+import * as http from 'http';
+import { app } from './endpoints';
 
-const app = express();
+let WSServer = WebSocket.Server;
+let server = http.createServer();
 
-// app.get('/new', (req, res) => {
-//   console.log("Starting DML Session...");
-//   res.end("Starting DML Session...");
-// })
+let wss = new WSServer({ server: server }); // Create WS server on top of HTTP.
 
-//initialize a simple http server
-const server = http.createServer(app);
+server.on('request', app); // Mount the app.
 
-//initialize the WebSocket server instance
-const wss = new WebSocket.Server({ server });
+wss.on('connection', function connection(ws) {
 
-wss.on('connection', (ws: WebSocket) => {
+  ws.on('message', function incoming(message) {
+    console.log(`Received: ${message}`);
+    ws.send(JSON.stringify({ answer: 42 }));
+  });
 
-    //connection is up, let's add a simple simple event
-    ws.on('message', (message: string) => {
-
-        //log the received message and send it back to the client
-        console.log('received: %s', message);
-        ws.send(`Hello, you sent -> ${message}`);
-    });
-
-    //send immediatly a feedback to the incoming connection
-    ws.send('Hi there, I am a WebSocket server');
+  console.log("New connection!");
+  ws.send(JSON.stringify({message: "new connection"}));
 });
 
-//start our server
-const PORT: any = process.env.PORT || 8999;
-server.listen(PORT, () => {
-    console.log(`Server started on port ${PORT} :)`);
+server.listen(process.env.PORT, function() {
+  console.log(`http/ws server listening on ${process.env.PORT}`);
 });
