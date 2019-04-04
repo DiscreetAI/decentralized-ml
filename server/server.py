@@ -47,6 +47,7 @@ class CloudNodeFactory(WebSocketServerFactory):
             print("unregistered client {}".format(client.peer))
             self.clients.remove(client)
 
+# // NOTE: We need to implement some ping-pong/ways to deal with disconnections.
 
 if __name__ == '__main__':
    import sys
