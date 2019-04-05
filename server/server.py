@@ -1,7 +1,7 @@
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
 
-import state
+from state import state
 
 class CloudNodeProtocol(WebSocketServerProtocol):
 

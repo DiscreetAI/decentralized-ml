@@ -1,4 +1,4 @@
-import state
+from state import state
 from model import decode_weights, keras_2_tfjs
 from message import Message
 

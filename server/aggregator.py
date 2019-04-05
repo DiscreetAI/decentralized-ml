@@ -1,60 +1,73 @@
-from state import state, state_lock
+from state import state, state_lock, reset_state
 from message import Message
 
 
 def handle_new_weights(serialized_message):
-    # // One of the clients has sent us a message.
+    # One of the clients has sent us a message.
     message = Message(serialized_message)
 
-    # // 1. If the round in the received message doesn't match the internal round,
-    # //    then discard the message.
+    # 1. If the round in the received message doesn't match the internal round,
+    # then discard the message.
     if state.current_round != message.current_round:
         return {
             "error": True,
             "message": "The round in the message doesn't match the current round."
         }
 
-    # // 2 Lock section/variables that will be changed...
+
+    # 2 Lock section/variables that will be changed...
     state_lock.acquire()
 
-    # // 2. If 'Continuation Criteria' isn't met...
-    if not check_continuation_criteria(message.continuation_criteria):
-    #     // 2.a. Do running weighted average on the new weights.
-    #     // 2.b. Update the number of nodes averaged (+1)
-        do_running_weighted_average(message.update)
 
-    # // 3. If 'Continuation Criteria' is met...
-    else:
+    # 3. Do running weighted average on the new weights.
+    do_running_weighted_average(message.update)
 
-    #     // 3.a. Update the number of nodes averaged (+1)
-        state.state["num_nodes_averaged"] += 1
 
-    #     // 3.b. Log the resulting weights for the user (for this round)
-        log_update(message)
+    # 4. Update the number of nodes averaged (+1)
+    state.state["num_nodes_averaged"] += 1
 
-    #     // 3.c. Update round number (+1)
+
+    # 5. Log this update.
+    log_update("UPDATE_RECEIVED", message)
+
+
+    # 6. If 'Continuation Criteria' is met...
+    if check_continuation_criteria(message.continuation_criteria):
+
+        # 6.a. Log the resulting weights for the user (for this round)
+        log_update("ROUND_COMPLETED", message)
+
+
+        # 6.b. Update round number (+1)
         state.state["current_round"] += 1
 
-    #     // 3.d. If 'Termination Criteria' isn't met, then kickstart a new FL round
-    #     //      NOTE: We need a way to swap the weights from the initial message
-    #     //      in node............
+
+        # 6.c. If 'Termination Criteria' isn't met, then kickstart a new FL round
+        # NOTE: We need a way to swap the weights from the initial message
+        # in node............
         if not check_termination_criteria(message.termination_criteria):
             kickstart_new_round()
+
 
     ##### NOTE: Change this to do a new round right after the last thing is averaged. It's better.
 
 
-    # // 4. If 'Termination Criteria' is met...
-    #
-    #     // 4.a. Log the resulting weights for the user (for this session)
-    #
-    #     // 4.b. Reset all state in the service and mark BUSY as false
-    #
-    # // 5. Release section/variables that were changed...
+    # 7. If 'Termination Criteria' is met...
+    if check_termination_criteria(message.termination_criteria):
+
+        # 7.a. Log the resulting weights for the user (for this session)
+        log_update("TRAINING_COMPLETED", message)
 
 
-def log_update(message):
+        # 7.b. Reset all state in the service and mark BUSY as false
+        reset_state()
+
+
+    # 8. Release section/variables that were changed...
+    state_lock.release()
+
+def log_update(type, message):
     """
     Connect using `state.state["logging_credentials"]`.
     """
-    pass
+    logging.debug
