@@ -10,6 +10,7 @@ def init():
     def reset_state():
         state = {
             "busy": False,
+            "session_id": None,
             "current_round": 0,
             "num_nodes_averaged": 0,
             "num_nodes_chosen": 0,

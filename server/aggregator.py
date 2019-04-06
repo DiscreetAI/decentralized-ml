@@ -11,8 +11,14 @@ def handle_new_weights(serialized_message, clients_list):
     # 0. Decode the message.
     message = Message(serialized_message)
 
-    # 1. If the round in the received message doesn't match the internal round,
-    # then discard the message.
+
+    # 1. Check things match.
+    if state.session_id != message.session_id:
+        return {
+            "error": True,
+            "message": "The session id in the message doesn't match the service's."
+        }
+
     if state.current_round != message.current_round:
         return {
             "error": True,

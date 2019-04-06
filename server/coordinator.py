@@ -1,3 +1,5 @@
+import uuid
+
 from state import state
 from model import decode_weights, keras_2_tfjs
 from message import Message
@@ -26,6 +28,7 @@ def start_new_session(serialized_message, clients_list):
     state.state["current_round"] = 1
     state.state["num_nodes_averaged"] = 0
     state.state["initial_message"] = serialized_message
+    state.state["session_id"] = str(uuid.uuid4())
 
     # // 4. According to the 'Selection Criteria', choose clients to forward
     # //    training messages to.
@@ -42,6 +45,7 @@ def start_new_session(serialized_message, clients_list):
         "action": "broadcast",
         "client_list": chosen_clients,
         "message": {
+            "session_id": state.state["session_id"],
             "round": 1,
             "model": tfjs_model,
             # message to client nodes TBD
