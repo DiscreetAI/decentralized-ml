@@ -2,7 +2,7 @@ from state import state
 from model import decode_weights, keras_2_tfjs
 from message import Message
 
-def start_new_session(serialized_message, clients_list, server):
+def start_new_session(serialized_message, clients_list):
 
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
     if state.state["busy"]:
@@ -21,18 +21,16 @@ def start_new_session(serialized_message, clients_list, server):
     # //    - Termination Criteria (i.e., 20 FL rounds completed)
     message = Message(serialized_message)
 
-
     # // 3. Set the internal round variable to 1, reset the number of nodes
-    # //    averaged to 0.
-    # //    Decode the weights and store them in memory.
-    # //    (Will be used for running weighted average.)
+    # //    averaged to 0, update the initial message.
     state.state["current_round"] = 1
     state.state["num_nodes_averaged"] = 0
-    state.state["current_weights"] = decode_weights(message.h5_model)
+    state.state["initial_message"] = serialized_message
 
     # // 4. According to the 'Selection Criteria', choose clients to forward
     # //    training messages to.
     chosen_clients = _choose_clients(message.selection_criteria, clients_list)
+    state.state["num_nodes_chosen"] = len(chosen_clients)
 
     # // 5. Convert .h5 model into TFJS model
     # // NOTE/TODO: This may have to be 'served' to the client and not passed...

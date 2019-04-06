@@ -6,14 +6,6 @@ import tensorflowjs as tfjs
 
 TEMP_FOLDER = 'temp'
 
-def decode_weights(h5_model_path):
-    """
-    Do Keras stuff here
-    """
-    model = keras.models.load_model(h5_model_path)
-    weights = model.get_weights()
-    return weights
-
 def keras_2_tfjs(h5_model_path):
     """
     Do Keras stuff here
@@ -28,6 +20,16 @@ def _test():
     out = keras_2_tfjs('../notebooks/saved_mlp_model_with_w.h5')
     print(out)
 
-def _test2():
-    out = decode_weights('../notebooks/saved_mlp_model_with_w.h5')
-    print(out)
+
+# def decode_weights(h5_model_path):
+#     """
+#     Do Keras stuff here
+#     """
+#     model = keras.models.load_model(h5_model_path)
+#     weights = model.get_weights()
+#     return weights
+
+
+# def _test2():
+#     out = decode_weights('../notebooks/saved_mlp_model_with_w.h5')
+#     print(out)
