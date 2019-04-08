@@ -116,7 +116,7 @@ def check_continuation_criteria(continuation_criteria):
     if "type" not in continuation_criteria:
         raise Exception("Continuation criteria is not well defined.")
 
-    if continuation_criteria["type"] == "percentage_averaged":
+    if continuation_criteria["type"] == "PERCENTAGE_AVERAGED":
         percentage = state.state["num_nodes_averaged"] / state.state["num_nodes_chosen"]
         return continuation_criteria["value"] >= percentage
     else:
@@ -130,7 +130,7 @@ def check_termination_criteria(termination_criteria):
     if "type" not in termination_criteria:
         raise Exception("Termination criteria is not well defined.")
 
-    if termination_criteria["type"] == "max_round":
+    if termination_criteria["type"] == "MAX_ROUND":
         return termination_criteria["value"] >= state.state["current_round"]
     else:
         raise Exception("Termination criteria is not well defined.")
