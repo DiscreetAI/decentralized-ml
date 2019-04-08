@@ -8,7 +8,14 @@ class MessageType(Enum):
 
 class Message:
     def __init__(self, serialized_message):
-        pass
+        self.type = serialized_message["type"]
 
     def serialize_message(self):
-        pass
+        return {
+            "type": self.type
+        }
+
+
+"""
+{"type": "NEW_SESSION"}
+"""

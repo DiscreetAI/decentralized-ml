@@ -1,16 +1,17 @@
 import logging
 
-from state import state, state_lock, reset_state
+import state
 from coordinator import start_new_session
 from message import Message
 
 
 logging.basicConfig(level=logging.DEBUG)
 
-def handle_new_weights(serialized_message, clients_list):
-    # 0. Decode the message.
-    message = Message(serialized_message)
-
+def handle_new_weights(message, clients_list):
+    return {
+        "error": True,
+        "message": "Error hereeeee."
+    }
 
     # 1. Check things match.
     if state.session_id != message.session_id:
@@ -62,6 +63,8 @@ def handle_new_weights(serialized_message, clients_list):
     # 8. Release section/variables that were changed...
     state_lock.release()
 
+    return {"error": False}
+
 
 def log_update(type, message):
     """
@@ -75,10 +78,10 @@ def kickstart_new_round(clients_list):
     Selects new nodes to run federated averaging with, and pass them the new
     averaged model.
     """
-    new_serialized_message = None # Make this up again! (but update things like
+    new_message = None # Make this up again! (but update things like
                                   # weights, round, etc...)
     state.state["busy"] = False
-    start_new_session(new_serialized_message, clients_list)
+    start_new_session(new_message, clients_list)
 
 
 def do_running_weighted_average(update):

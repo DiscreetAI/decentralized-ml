@@ -1,9 +1,20 @@
+import json
+import logging
+
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
 
-from state import state
+import state
+from message import Message, MessageType
+from coordinator import start_new_session
+from aggregator import handle_new_weights
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 class CloudNodeProtocol(WebSocketServerProtocol):
+
+    BINARY_MODE = False
 
     def onConnect(self, request):
         print("Client connecting: {}".format(request.peer))
@@ -15,19 +26,51 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
     def onMessage(self, payload, isBinary):
         if isBinary:
-            print("Binary message received: {} bytes".format(len(payload)))
+            logging.error("Binary message not supported.")
+            return
+
+        try:
+            serialized_message = json.loads(payload)
+        except Exception:
+            logging.error("Error converting JSON.")
+            return
+
+        logging.debug("Message received: {}".format(serialized_message))
+
+        try:
+            message = Message(serialized_message)
+        except Exception:
+            logging.error("Error deserializing message!")
+            self.sendMessage(json.dumps({"error": True, "message": "Error deserializing message!"}).encode(), isBinary)
+            return
+
+        if message.type == MessageType.NEW_SESSION.value:
+            logging.debug("New 'new session' message!")
+            results = start_new_session(message, self.factory.clients)
+            if results["error"]:
+                results_json = json.dumps(results)
+                self.sendMessage(results_json.encode(), isBinary)
+                return
+            if results["action"] == "broadcast":
+                for c in results["client_list"]:
+                    results_json = json.dumps(results["message"])
+                    c.sendMessage(results_json.encode(), isBinary)
+
+        elif message.type == MessageType.NEW_WEIGHTS.value:
+            logging.debug("New 'new weights' message!")
+            results = handle_new_weights(message, self.factory.clients)
+            if results["error"]:
+                results_json = json.dumps(results)
+                self.sendMessage(results_json.encode(), isBinary)
+                return
+            self.sendMessage(json.dumps({"error": False}).encode(), isBinary) # temporary
         else:
-            print("Text message received: {}".format(payload.decode('utf8')))
-
-        state.state["busy"] = True
-        print(self.factory.clients)
-
-        # echo back message verbatim
-        self.sendMessage(payload, isBinary)
+            logging.error("Unknown message type!")
+            error_json = json.dumps({"error": True, "message": "Unknown message type!"})
+            self.sendMessage(error_json.encode(), isBinary)
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed: {}".format(reason))
-        print(state.state)
         self.factory.unregister(self)
 
 

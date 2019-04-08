@@ -1,10 +1,14 @@
 import uuid
 
-from state import state
-from model import decode_weights, keras_2_tfjs
+import state
+from model import keras_2_tfjs
 from message import Message
 
-def start_new_session(serialized_message, clients_list):
+def start_new_session(message, clients_list):
+    return {
+        "error": True,
+        "message": "Hi I'm an error!"
+    }
 
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
     if state.state["busy"]:
@@ -21,13 +25,12 @@ def start_new_session(serialized_message, clients_list):
     # //    - Selection Criteria (i.e., nodes with more than 1000 data points)
     # //    - Continuation Criteria (i.e., 80% of selected nodes weights averaged)
     # //    - Termination Criteria (i.e., 20 FL rounds completed)
-    message = Message(serialized_message)
 
     # // 3. Set the internal round variable to 1, reset the number of nodes
     # //    averaged to 0, update the initial message.
     state.state["current_round"] = 1
     state.state["num_nodes_averaged"] = 0
-    state.state["initial_message"] = serialized_message
+    state.state["initial_message"] = message
     state.state["session_id"] = str(uuid.uuid4())
 
     # // 4. According to the 'Selection Criteria', choose clients to forward
