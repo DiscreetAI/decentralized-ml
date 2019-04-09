@@ -1,8 +1,17 @@
+import sys
+import uuid
 import json
 import logging
 
+from flask import Flask
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.internet import reactor
+from twisted.web.wsgi import WSGIResource
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
+from autobahn.twisted.resource import WebSocketResource
+from autobahn.twisted.resource import WSGIRootResource
 
 import state
 from message import Message, MessageType
@@ -13,8 +22,6 @@ from aggregator import handle_new_weights
 logging.basicConfig(level=logging.DEBUG)
 
 class CloudNodeProtocol(WebSocketServerProtocol):
-
-    BINARY_MODE = False
 
     def onConnect(self, request):
         print("Client connecting: {}".format(request.peer))
@@ -92,17 +99,26 @@ class CloudNodeFactory(WebSocketServerFactory):
 
 # // NOTE: We need to implement some ping-pong/ways to deal with disconnections.
 
-if __name__ == '__main__':
-   import sys
+app = Flask(__name__)
+app.secret_key = str(uuid.uuid4())
 
-   from twisted.python import log
-   from twisted.internet import reactor
+@app.route('/models')
+def serve_model():
+    return "hello there"
+
+if __name__ == '__main__':
+
    log.startLogging(sys.stdout)
 
    factory = CloudNodeFactory()
    factory.protocol = CloudNodeProtocol
+   wsResource = WebSocketResource(factory)
+
+   wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), app)
+   rootResource = WSGIRootResource(wsgiResource, {b'ws': wsResource})
+   site = Site(rootResource)
 
    state.init()
 
-   reactor.listenTCP(8999, factory)
+   reactor.listenTCP(8999, site)
    reactor.run()
