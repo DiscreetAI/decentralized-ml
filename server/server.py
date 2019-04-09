@@ -13,7 +13,7 @@ from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
 
 import state
-from message import Message, MessageType
+from message import MessageType, Message
 from coordinator import start_new_session
 from aggregator import handle_new_weights
 
@@ -44,10 +44,13 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         logging.debug("Message received: {}".format(serialized_message))
 
         try:
-            message = Message(serialized_message)
-        except Exception:
+            message = Message.make(serialized_message)
+        except Exception as e:
             logging.error("Error deserializing message!")
-            self.sendMessage(json.dumps({"error": True, "message": "Error deserializing message!"}).encode(), isBinary)
+            self.sendMessage(
+                json.dumps({"error": True, "message": "Error deserializing message: {}".format(e)}).encode(),
+                isBinary
+            )
             return
 
         if message.type == MessageType.NEW_SESSION.value:

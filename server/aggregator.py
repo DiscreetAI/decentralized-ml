@@ -2,17 +2,11 @@ import logging
 
 import state
 from coordinator import start_new_session
-from message import Message
 
 
 logging.basicConfig(level=logging.DEBUG)
 
 def handle_new_weights(message, clients_list):
-    return {
-        "error": True,
-        "message": "Error hereeeee."
-    }
-
     # 1. Check things match.
     if state.session_id != message.session_id:
         return {
@@ -63,7 +57,7 @@ def handle_new_weights(message, clients_list):
     # 8. Release section/variables that were changed...
     state_lock.release()
 
-    return {"error": False}
+    return {"error": False, "message": "Success."}
 
 
 def log_update(type, message):
