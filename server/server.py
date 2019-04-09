@@ -46,7 +46,14 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             logging.error("Error converting JSON.")
             return
 
-        logging.debug("Message received: {}".format(serialized_message))
+        logging.debug("Message received: {} {} {} {}".format(
+            serialized_message["type"],
+            serialized_message["hyperparams"],
+            serialized_message["selection_criteria"],
+            serialized_message["continuation_criteria"],
+            serialized_message["termination_criteria"],
+            serialized_message["h5_model"][:20],
+        ))
 
         # Deserialize message
         try:
@@ -94,6 +101,7 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             self.sendMessage(error_json.encode(), isBinary)
 
 
+
 class CloudNodeFactory(WebSocketServerFactory):
 
     def __init__(self):
@@ -130,6 +138,7 @@ def serve_model(filename):
         filename,
     )
 
+
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
@@ -139,7 +148,7 @@ if __name__ == '__main__':
    wsResource = WebSocketResource(factory)
 
    wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), app)
-   rootResource = WSGIRootResource(wsgiResource, {b'ws': wsResource})
+   rootResource = WSGIRootResource(wsgiResource, {b'': wsResource})
    site = Site(rootResource)
 
    state.init()

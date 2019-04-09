@@ -1,8 +1,9 @@
 import uuid
+import base64
 import logging
 
 import state
-from model import convert_and_save_model
+from model import convert_and_save_b64model
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -29,7 +30,7 @@ def start_new_session(message, clients_list):
     state.state["num_nodes_chosen"] = len(chosen_clients)
 
     # // 4. Convert .h5 model into TFJS model
-    _ = convert_and_save_model(message.h5_model)
+    _ = convert_and_save_b64model(message.h5_model)
 
     # // 5. Kickstart a DML Session with the TFJS model and round # 1
     return {
