@@ -1,11 +1,13 @@
 from enum import Enum
 
+
 class MessageType(Enum):
     NEW_SESSION = "NEW_SESSION"
     NEW_WEIGHTS = "NEW_WEIGHTS"
 
 
 class Message:
+
     @staticmethod
     def make(serialized_message):
         type, data = serialized_message["type"], serialized_message
@@ -48,4 +50,4 @@ class NewWeightsMessage(Message):
         self.session_id = serialized_message["session_id"]
         self.round = serialized_message["round"]
         self.action = serialized_message["action"]
-        self.hyperparams = serialized_message["hyperparams"]
+        self.results = serialized_message["results"]

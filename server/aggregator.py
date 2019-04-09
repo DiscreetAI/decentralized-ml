@@ -24,7 +24,7 @@ def handle_new_weights(message, clients_list):
     state_lock.acquire()
 
     # 3. Do running weighted average on the new weights.
-    do_running_weighted_average(message.update)
+    do_running_weighted_average(message.results)
 
     # 4. Update the number of nodes averaged (+1)
     state.state["num_nodes_averaged"] += 1
@@ -78,18 +78,18 @@ def kickstart_new_round(clients_list):
     start_new_session(new_message, clients_list)
 
 
-def do_running_weighted_average(update):
+def do_running_weighted_average(results):
     # If this is the first weights we're averaging, just update them and return
     if not state.state["current_weights"] or not state.state["sigma_omega"]:
-        state.state["current_weights"] = update["weights"]
-        state.state["sigma_omega"] = update["omega"]
+        state.state["current_weights"] = results["weights"]
+        state.state["sigma_omega"] = results["omega"]
         return
 
     # Get the variables ready
     current_weights = state.state["current_weights"]
     sigma_omega = state.state["sigma_omega"]
-    new_weights = update["weights"]
-    new_omega = update["omega"]
+    new_weights = results["weights"]
+    new_omega = results["omega"]
 
     # Run the math
     temp = np.multiply(current_weights, sigma_omega)

@@ -13,6 +13,7 @@ NEW_MESSAGE = {
     "h5_model": h5_model,
     "hyperparams": {
         "batch_size": 128,
+        "epochs": 10,
     },
     "selection_criteria": {
         "type": "ALL_NODES",
