@@ -112,7 +112,7 @@ def serve_model(filename):
     session_id = state.state["session_id"]
     round = state.state["current_round"]
     return send_from_directory(
-        app.root_path + '/temp/' + session_id + "/" + str(current_round),
+        app.root_path + '/temp/' + session_id + "/" + str(round),
         filename,
     )
 
