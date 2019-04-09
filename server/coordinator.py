@@ -40,18 +40,18 @@ def start_new_session(message, clients_list):
 
     # // 5. Convert .h5 model into TFJS model
     # // NOTE/TODO: This may have to be 'served' to the client and not passed...
-    tfjs_model = convert_and_save_model(message.h5_model)
+    _ = convert_and_save_model(message.h5_model)
 
     # // 6. Kickstart a DML Session with the TFJS model and round # 1
     return {
         "error": False,
-        "action": "broadcast",
+        "action": "BROADCAST",
         "client_list": chosen_clients,
         "message": {
             "session_id": state.state["session_id"],
             "round": 1,
-            "model": tfjs_model,
-            # message to client nodes TBD
+            "action": "TRAIN",
+            "hyperparams": message.hyperparams,
         }
     }
 

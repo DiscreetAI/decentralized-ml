@@ -57,7 +57,7 @@ class CloudNodeProtocol(WebSocketServerProtocol):
                 results_json = json.dumps(results)
                 self.sendMessage(results_json.encode(), isBinary)
                 return
-            if results["action"] == "broadcast":
+            if results["action"] == "BROADCAST":
                 for c in results["client_list"]:
                     results_json = json.dumps(results["message"])
                     c.sendMessage(results_json.encode(), isBinary)
