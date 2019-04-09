@@ -1,7 +1,7 @@
 import uuid
 
 import state
-from model import keras_2_tfjs
+from model import convert_and_save_model
 from message import Message
 
 def start_new_session(message, clients_list):
@@ -40,7 +40,7 @@ def start_new_session(message, clients_list):
 
     # // 5. Convert .h5 model into TFJS model
     # // NOTE/TODO: This may have to be 'served' to the client and not passed...
-    tfjs_model = keras_2_tfjs(message.h5_model)
+    tfjs_model = convert_and_save_model(message.h5_model)
 
     # // 6. Kickstart a DML Session with the TFJS model and round # 1
     return {
