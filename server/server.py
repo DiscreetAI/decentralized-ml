@@ -30,11 +30,16 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         print("WebSocket connection open.")
         self.factory.register(self)
 
+    def onClose(self, wasClean, code, reason):
+        print("WebSocket connection closed: {}".format(reason))
+        self.factory.unregister(self)
+
     def onMessage(self, payload, isBinary):
         if isBinary:
             logging.error("Binary message not supported.")
             return
 
+        # Convert message to JSON
         try:
             serialized_message = json.loads(payload)
         except Exception:
@@ -43,23 +48,28 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         logging.debug("Message received: {}".format(serialized_message))
 
+        # Deserialize message
         try:
             message = Message.make(serialized_message)
         except Exception as e:
             logging.error("Error deserializing message!")
-            self.sendMessage(
-                json.dumps({"error": True, "message": "Error deserializing message: {}".format(e)}).encode(),
-                isBinary
-            )
+            error_json = json.dumps({"error": True, "message": "Error deserializing message: {}".format(e)})
+            self.sendMessage(error_json.encode(), isBinary)
             return
 
+        # Process message
         if message.type == MessageType.NEW_SESSION.value:
             logging.debug("New 'new session' message!")
+
+            # Start new DML Session
             results = start_new_session(message, self.factory.clients)
+
+            # Error check
             if results["error"]:
-                results_json = json.dumps(results)
-                self.sendMessage(results_json.encode(), isBinary)
+                self.sendMessage(json.dumps(results).encode(), isBinary)
                 return
+
+            # Handle results
             if results["action"] == "BROADCAST":
                 for c in results["client_list"]:
                     results_json = json.dumps(results["message"])
@@ -67,20 +77,21 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         elif message.type == MessageType.NEW_WEIGHTS.value:
             logging.debug("New 'new weights' message!")
+
+            # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
+
+            # Error check
             if results["error"]:
-                results_json = json.dumps(results)
-                self.sendMessage(results_json.encode(), isBinary)
+                self.sendMessage(json.dumps(results).encode(), isBinary)
                 return
-            self.sendMessage(json.dumps({"error": False}).encode(), isBinary) # temporary
+
+            # Acknowledge message (temporarily! -- node doesn't need to know)
+            self.sendMessage(json.dumps({"error": False}).encode(), isBinary)
         else:
             logging.error("Unknown message type!")
             error_json = json.dumps({"error": True, "message": "Unknown message type!"})
             self.sendMessage(error_json.encode(), isBinary)
-
-    def onClose(self, wasClean, code, reason):
-        print("WebSocket connection closed: {}".format(reason))
-        self.factory.unregister(self)
 
 
 class CloudNodeFactory(WebSocketServerFactory):
