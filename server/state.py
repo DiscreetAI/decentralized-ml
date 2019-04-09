@@ -1,16 +1,14 @@
 def init():
-    global state
-    state = {}
-
     import threading
     global state_lock
     state_lock = threading.Lock()
 
     global reset_state
     def reset_state():
+        global state
         state = {
             "busy": False,
-            "session_id": None,
+            "session_id": "e81c7084-7d37-44bb-ad75-128d8de8c5e4",
             "current_round": 0,
             "num_nodes_averaged": 0,
             "num_nodes_chosen": 0,
