@@ -3,15 +3,14 @@ import uuid
 import json
 import logging
 
-from flask import Flask
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.internet import reactor
 from twisted.web.wsgi import WSGIResource
+from flask import Flask, send_from_directory
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
-from autobahn.twisted.resource import WebSocketResource
-from autobahn.twisted.resource import WSGIRootResource
+from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
 
 import state
 from message import Message, MessageType
@@ -102,9 +101,18 @@ class CloudNodeFactory(WebSocketServerFactory):
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
 
-@app.route('/models')
-def serve_model():
-    return "hello there"
+@app.route('/model/<path:filename>')
+def serve_model(filename):
+    """
+    Serves the models to the user.
+
+    TODO: Should do this through ngnix for a boost in performance. Should also
+    have some auth token -> session id mapping (security fix in the future).
+    """
+    return send_from_directory(
+        app.root_path + '/temp/' + state.state["session_id"],
+        filename,
+    )
 
 if __name__ == '__main__':
 
