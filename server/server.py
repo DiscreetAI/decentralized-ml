@@ -109,8 +109,10 @@ def serve_model(filename):
     TODO: Should do this through ngnix for a boost in performance. Should also
     have some auth token -> session id mapping (security fix in the future).
     """
+    session_id = state.state["session_id"]
+    round = state.state["current_round"]
     return send_from_directory(
-        app.root_path + '/temp/' + state.state["session_id"],
+        app.root_path + '/temp/' + session_id + "/" + str(current_round),
         filename,
     )
 

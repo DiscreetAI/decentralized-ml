@@ -8,7 +8,7 @@ def init():
         global state
         state = {
             "busy": False,
-            "session_id": "e81c7084-7d37-44bb-ad75-128d8de8c5e4",
+            "session_id": None,
             "current_round": 0,
             "num_nodes_averaged": 0,
             "num_nodes_chosen": 0,
