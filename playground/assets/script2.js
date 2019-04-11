@@ -108,6 +108,42 @@ async function _evaluateModel(model, data) {
   return [labels, preds];
 }
 
+async function saveModel(model, path) {
+  var results = await model.save('indexeddb://' + path);
+  console.log("Model saved into IndexedDB! Metadata: ", results);
+  return results;
+}
+
+async function getWeights(path) {
+  try {
+    var model = await _getModel(path);
+    return model["modelArtifacts"]["weightData"];
+  } catch(err) {
+    console.log(err);
+    return null;
+  }
+}
+
+function _getModel(path) {
+  return new Promise(function (resolve, reject) {
+    var openRequest = indexedDB.open("tensorflowjs",1);
+    openRequest.onsuccess = function() {
+        var db = openRequest.result;
+        var tx = db.transaction('models_store', 'readonly');
+        var store = tx.objectStore('models_store');
+        var request = store.get(path);
+        request.onsuccess = function() {
+          resolve(request.result);
+        }
+
+        request.onerror = function(e) { reject(e) }
+
+        tx.oncomplete = function() { db.close(); }
+    };
+    openRequest.onerror = function(e) { reject(e) }
+  });
+}
+
 // function makeModel() {
 //   const model = tf.sequential();
 //
@@ -177,6 +213,7 @@ async function run() {
   // Check that the model is correct by evaluating it on test data.
   const data = await getData();
   let model = await getModel();
+  await saveModel(model, 'not-trained');
   const accuracy = await getValidationAccuracy(model, data);
 
   const optimization_data = getOptimizationData();
@@ -184,6 +221,11 @@ async function run() {
 
   await retrainModel(model, data);
   const new_accuracy = await getValidationAccuracy(model, data);
+
+  await saveModel(model, 'trained');
+
+  var weights = await getWeights('trained'); // ArrayBuffer type
+  console.log("New weights: ", weights);
 }
 
 document.addEventListener('DOMContentLoaded', run);
