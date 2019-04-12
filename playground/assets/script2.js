@@ -114,35 +114,64 @@ async function saveModel(model, path) {
   return results;
 }
 
-async function getWeights(path) {
-  try {
-    var model = await _getModel(path);
-    return model["modelArtifacts"]["weightData"];
-  } catch(err) {
-    console.log(err);
-    return null;
+async function getWeights(model) {
+  var all_weights = [];
+  for (var i = 0; i < model.layers.length * 2; i++) {
+    // Time 2 so we can get the bias too.
+    let weights = model.getWeights()[i];
+    let weightsData = weights.dataSync();
+    let weightsList = Array.from(weightsData);
+    for (var j = 0; j < weightsList.length; j++) {
+      all_weights.push(weightsList[j]);
+    }
   }
+  return all_weights;
 }
 
-function _getModel(path) {
-  return new Promise(function (resolve, reject) {
-    var openRequest = indexedDB.open("tensorflowjs",1);
-    openRequest.onsuccess = function() {
-        var db = openRequest.result;
-        var tx = db.transaction('models_store', 'readonly');
-        var store = tx.objectStore('models_store');
-        var request = store.get(path);
-        request.onsuccess = function() {
-          resolve(request.result);
-        }
-
-        request.onerror = function(e) { reject(e) }
-
-        tx.oncomplete = function() { db.close(); }
-    };
-    openRequest.onerror = function(e) { reject(e) }
-  });
+export async function makeMockUpdateForCloudNode(session_id, round) {
+  let model = await getModel();
+  let weights = await getWeights(model);
+  return {
+    "type": "NEW_WEIGHTS",
+    "session_id": session_id,
+    "round": round,
+    "action": "TRAIN",
+    "results": {
+      "weights": weights,
+      "omega": 1000
+    }
+  };
 }
+
+// function _getModelFromStore(path) {
+//   return new Promise(function (resolve, reject) {
+//     var openRequest = indexedDB.open("tensorflowjs",1);
+//     openRequest.onsuccess = function() {
+//         var db = openRequest.result;
+//         var tx = db.transaction('models_store', 'readonly');
+//         var store = tx.objectStore('models_store');
+//         var request = store.get(path);
+//         request.onsuccess = function() {
+//           resolve(request.result);
+//         }
+//
+//         request.onerror = function(e) { reject(e) }
+//
+//         tx.oncomplete = function() { db.close(); }
+//     };
+//     openRequest.onerror = function(e) { reject(e) }
+//   });
+// }
+
+// function _arrayBufferToBase64( buffer ) {
+//     var binary = '';
+//     var bytes = new Uint8Array( buffer );
+//     var len = bytes.byteLength;
+//     for (var i = 0; i < len; i++) {
+//         binary += String.fromCharCode( bytes[ i ] );
+//     }
+//     return window.btoa( binary );
+// }
 
 // function makeModel() {
 //   const model = tf.sequential();
@@ -223,9 +252,6 @@ async function run() {
   const new_accuracy = await getValidationAccuracy(model, data);
 
   await saveModel(model, 'trained');
-
-  var weights = await getWeights('trained'); // ArrayBuffer type
-  console.log("New weights: ", weights);
 }
 
 document.addEventListener('DOMContentLoaded', run);
