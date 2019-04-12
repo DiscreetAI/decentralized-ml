@@ -20,7 +20,7 @@ def init():
                 "username": "",
                 "password": "",
             },
-            "initial_message": {},
+            "initial_message": None,
         }
 
     reset_state()

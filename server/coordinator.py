@@ -1,5 +1,4 @@
 import uuid
-import base64
 import logging
 
 import state
@@ -9,6 +8,8 @@ from model import convert_and_save_b64model
 logging.basicConfig(level=logging.DEBUG)
 
 def start_new_session(message, clients_list):
+    print("Starting new session...")
+
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
     if state.state["busy"]:
         return {
@@ -40,6 +41,33 @@ def start_new_session(message, clients_list):
         "message": {
             "session_id": state.state["session_id"],
             "round": 1,
+            "action": "TRAIN",
+            "hyperparams": message.hyperparams,
+        }
+    }
+
+
+def start_next_round(message, clients_list):
+    print("Starting next round...")
+
+    state.state["num_nodes_averaged"] = 0
+
+    # // 3. According to the 'Selection Criteria', choose clients to forward
+    # //    training messages to.
+    chosen_clients = _choose_clients(message.selection_criteria, clients_list)
+    state.state["num_nodes_chosen"] = len(chosen_clients)
+
+    # // 4. Convert .h5 model into TFJS model
+    _ = convert_and_save_b64model(message.h5_model)
+
+    # // 5. Kickstart a DML Session with the TFJS model and round # 1
+    return {
+        "error": False,
+        "action": "BROADCAST",
+        "client_list": chosen_clients,
+        "message": {
+            "session_id": state.state["session_id"],
+            "round": state.state["current_round"],
             "action": "TRAIN",
             "hyperparams": message.hyperparams,
         }

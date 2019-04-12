@@ -1,7 +1,6 @@
 import sys
 import uuid
 import json
-import logging
 
 from twisted.python import log
 from twisted.web.server import Site
@@ -17,8 +16,6 @@ from message import MessageType, Message
 from coordinator import start_new_session
 from aggregator import handle_new_weights
 
-
-logging.basicConfig(level=logging.DEBUG)
 
 class CloudNodeProtocol(WebSocketServerProtocol):
 
@@ -36,37 +33,29 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
     def onMessage(self, payload, isBinary):
         if isBinary:
-            logging.error("Binary message not supported.")
+            print("Binary message not supported.")
             return
 
         # Convert message to JSON
         try:
             serialized_message = json.loads(payload)
         except Exception:
-            logging.error("Error converting JSON.")
+            print("Error converting JSON.")
             return
-
-        logging.debug("Message received: {} {} {} {}".format(
-            serialized_message["type"],
-            serialized_message["hyperparams"],
-            serialized_message["selection_criteria"],
-            serialized_message["continuation_criteria"],
-            serialized_message["termination_criteria"],
-            serialized_message["h5_model"][:20],
-        ))
 
         # Deserialize message
         try:
             message = Message.make(serialized_message)
         except Exception as e:
-            logging.error("Error deserializing message!")
+            print("Error deserializing message!", e)
             error_json = json.dumps({"error": True, "message": "Error deserializing message: {}".format(e)})
             self.sendMessage(error_json.encode(), isBinary)
             return
 
         # Process message
         if message.type == MessageType.NEW_SESSION.value:
-            logging.debug("New 'new session' message!")
+            print("New 'new session' message!")
+            print("Message contents: {}".format(message))
 
             # Start new DML Session
             results = start_new_session(message, self.factory.clients)
@@ -83,7 +72,8 @@ class CloudNodeProtocol(WebSocketServerProtocol):
                     c.sendMessage(results_json.encode(), isBinary)
 
         elif message.type == MessageType.NEW_WEIGHTS.value:
-            logging.debug("New 'new weights' message!")
+            print("New 'new weights' message!")
+            print("Message contents: {}".format(message))
 
             # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
@@ -93,14 +83,21 @@ class CloudNodeProtocol(WebSocketServerProtocol):
                 self.sendMessage(json.dumps(results).encode(), isBinary)
                 return
 
-            # Acknowledge message (temporarily! -- node doesn't need to know)
-            self.sendMessage(json.dumps({"error": False}).encode(), isBinary)
+            # Handle message
+            if "action" in results:
+                if results["action"] == "BROADCAST":
+                    for c in results["client_list"]:
+                        results_json = json.dumps(results["message"])
+                        c.sendMessage(results_json.encode(), isBinary)
+            else:
+                # Acknowledge message (temporarily! -- node doesn't need to know)
+                self.sendMessage(json.dumps({"error": False, "message": "ack"}).encode(), isBinary)
         else:
-            logging.error("Unknown message type!")
+            print("Unknown message type!")
             error_json = json.dumps({"error": True, "message": "Unknown message type!"})
             self.sendMessage(error_json.encode(), isBinary)
 
-
+        print("[[DEBUG] State: {}".format(state.state))
 
 class CloudNodeFactory(WebSocketServerFactory):
 

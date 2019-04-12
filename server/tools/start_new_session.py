@@ -20,7 +20,7 @@ NEW_MESSAGE = {
     },
     "continuation_criteria": {
         "type": "PERCENTAGE_AVERAGED",
-        "value": 1.0
+        "value": 0.5
     },
     "termination_criteria": {
         "type": "MAX_ROUND",

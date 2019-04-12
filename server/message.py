@@ -1,5 +1,8 @@
+import json
+import base64
 from enum import Enum
 
+import numpy as np
 
 class MessageType(Enum):
     NEW_SESSION = "NEW_SESSION"
@@ -12,7 +15,6 @@ class Message:
     def make(serialized_message):
         type, data = serialized_message["type"], serialized_message
         for cls in Message.__subclasses__():
-            print(cls.type)
             if cls.type == type:
                 return cls(data)
         raise ValueError("Message type is invalid!")
@@ -35,6 +37,15 @@ class NewSessionMessage(Message):
         self.continuation_criteria = serialized_message["continuation_criteria"]
         self.termination_criteria = serialized_message["termination_criteria"]
 
+    def __repr__(self):
+        return json.dumps({
+            "h5_model": self.h5_model[:20],
+            "hyperparams": self.hyperparams,
+            "selection_criteria": self.selection_criteria,
+            "continuation_criteria": self.continuation_criteria,
+            "termination_criteria": self.termination_criteria,
+        })
+
 
 class NewWeightsMessage(Message):
     """
@@ -50,4 +61,19 @@ class NewWeightsMessage(Message):
         self.session_id = serialized_message["session_id"]
         self.round = serialized_message["round"]
         self.action = serialized_message["action"]
-        self.results = serialized_message["results"]
+        self.weights = np.array(
+            serialized_message["results"]["weights"],
+            dtype=np.dtype(float),
+        )
+        print("[DEBUG] size of weights {0}".format(self.weights.shape))
+        print("[DEBUG] inspect {}".format(self.weights[:10]))
+        self.omega = serialized_message["results"]["omega"]
+
+    def __repr__(self):
+        return json.dumps({
+            "session_id": self.session_id,
+            "round": self.round,
+            "action": self.action,
+            "weights": "omitted",
+            "omega": self.omega,
+        })

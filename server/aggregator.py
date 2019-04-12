@@ -1,30 +1,33 @@
+import numpy as np
 import logging
 
 import state
-from coordinator import start_new_session
+from coordinator import start_next_round
 
 
 logging.basicConfig(level=logging.DEBUG)
 
 def handle_new_weights(message, clients_list):
+    results = {"error": False, "message": "Success."}
+
     # 1. Check things match.
-    if state.session_id != message.session_id:
+    if state.state["session_id"] != message.session_id:
         return {
             "error": True,
             "message": "The session id in the message doesn't match the service's."
         }
 
-    if state.current_round != message.current_round:
+    if state.state["current_round"] != message.round:
         return {
             "error": True,
             "message": "The round in the message doesn't match the current round."
         }
 
     # 2 Lock section/variables that will be changed...
-    state_lock.acquire()
+    state.state_lock.acquire()
 
     # 3. Do running weighted average on the new weights.
-    do_running_weighted_average(message.results)
+    do_running_weighted_average(message)
 
     # 4. Update the number of nodes averaged (+1)
     state.state["num_nodes_averaged"] += 1
@@ -33,7 +36,7 @@ def handle_new_weights(message, clients_list):
     log_update("UPDATE_RECEIVED", message)
 
     # 6. If 'Continuation Criteria' is met...
-    if check_continuation_criteria(message.continuation_criteria):
+    if check_continuation_criteria(state.state["initial_message"].continuation_criteria):
         # 6.a. Log the resulting weights for the user (for this round)
         log_update("ROUND_COMPLETED", message)
 
@@ -43,28 +46,30 @@ def handle_new_weights(message, clients_list):
         # 6.c. If 'Termination Criteria' isn't met, then kickstart a new FL round
         # NOTE: We need a way to swap the weights from the initial message
         # in node............
-        if not check_termination_criteria(message.termination_criteria):
-            kickstart_new_round(clients_list)
+        if not check_termination_criteria(state.state["initial_message"].termination_criteria):
+            print("Going to the next round...")
+            results = kickstart_new_round(clients_list)
 
     # 7. If 'Termination Criteria' is met...
-    if check_termination_criteria(message.termination_criteria):
+    # (NOTE: can't and won't happen with step 6.c.)
+    if check_termination_criteria(state.state["initial_message"].termination_criteria):
         # 7.a. Log the resulting weights for the user (for this session)
         log_update("TRAINING_COMPLETED", message)
 
         # 7.b. Reset all state in the service and mark BUSY as false
-        reset_state()
+        state.reset_state()
 
     # 8. Release section/variables that were changed...
-    state_lock.release()
+    state.state_lock.release()
 
-    return {"error": False, "message": "Success."}
+    return results
 
 
 def log_update(type, message):
     """
     Connect using `state.state["logging_credentials"]`.
     """
-    logging.debug("[{0}]: {1}".format(type, message))
+    print("[{0}]: {1}".format(type, message))
 
 
 def kickstart_new_round(clients_list):
@@ -72,35 +77,36 @@ def kickstart_new_round(clients_list):
     Selects new nodes to run federated averaging with, and pass them the new
     averaged model.
     """
-    new_message = None # Make this up again! (but update things like
-                                  # weights, round, etc...)
     state.state["busy"] = False
-    start_new_session(new_message, clients_list)
+    new_message = state.state["initial_message"]
+    new_message.round = state.state["current_round"]
+    new_message.h5_model = new_message.h5_model # Need to swap this!
+    return start_next_round(new_message, clients_list)
 
 
-def do_running_weighted_average(results):
+def do_running_weighted_average(message):
     # If this is the first weights we're averaging, just update them and return
-    if not state.state["current_weights"] or not state.state["sigma_omega"]:
-        state.state["current_weights"] = results["weights"]
-        state.state["sigma_omega"] = results["omega"]
+    if state.state["current_weights"] is None or state.state["sigma_omega"] is None:
+        state.state["current_weights"] = message.weights
+        state.state["sigma_omega"] = message.omega
         return
 
     # Get the variables ready
     current_weights = state.state["current_weights"]
     sigma_omega = state.state["sigma_omega"]
-    new_weights = results["weights"]
-    new_omega = results["omega"]
+    new_weights = message.weights
+    new_omega = message.omega
 
     # Run the math
-    temp = np.multiply(current_weights, sigma_omega)
-    temp = np.add(temp, np.multiply(new_weights, new_omega))
-    new_sigma_omega = np.add(sigma_omega, new_omega)
-    new_weighted_avg = np.divide(temp, new_sigma_omega)
+    temp = np.multiply(current_weights, float(sigma_omega))
+    temp = np.add(temp, np.multiply(new_weights, float(new_omega)))
+    new_sigma_omega = sigma_omega + new_omega
+    new_weighted_avg = np.divide(temp, float(new_sigma_omega))
 
     # Update state
     print(new_weighted_avg, new_sigma_omega)
     state.state["current_weights"] = new_weighted_avg
-    state.state["current_omega"] = new_sigma_omega
+    state.state["sigma_omega"] = new_sigma_omega
 
 
 def check_continuation_criteria(continuation_criteria):
@@ -112,7 +118,7 @@ def check_continuation_criteria(continuation_criteria):
 
     if continuation_criteria["type"] == "PERCENTAGE_AVERAGED":
         percentage = state.state["num_nodes_averaged"] / state.state["num_nodes_chosen"]
-        return continuation_criteria["value"] >= percentage
+        return continuation_criteria["value"] <= percentage
     else:
         raise Exception("Continuation criteria is not well defined.")
 
@@ -125,6 +131,6 @@ def check_termination_criteria(termination_criteria):
         raise Exception("Termination criteria is not well defined.")
 
     if termination_criteria["type"] == "MAX_ROUND":
-        return termination_criteria["value"] >= state.state["current_round"]
+        return termination_criteria["value"] < state.state["current_round"]
     else:
         raise Exception("Termination criteria is not well defined.")
