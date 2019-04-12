@@ -2,8 +2,10 @@ import os
 import uuid
 import json
 import base64
+from functools import reduce
 
 import keras
+import numpy as np
 import tensorflowjs as tfjs
 
 import state
@@ -26,15 +28,26 @@ def convert_and_save_b64model(base64_h5_model):
         fp.write(h5_model_bytes)
 
     # Convert and save model for serving
-    return convert_and_save_model(h5_model_path)
+    return _convert_and_save_model(h5_model_path)
 
+def convert_and_save_model(round):
+    session_id = state.state["session_id"]
+    round = state.state["current_round"]
+    model_path = os.path.join(TEMP_FOLDER, session_id)
+    h5_model_path = model_path + '/model{}.h5'.format(round)
+    return _convert_and_save_model(h5_model_path)
 
-def convert_and_save_model(h5_model_path):
+def _convert_and_save_model(h5_model_path):
     session_id = state.state["session_id"]
     round = state.state["current_round"]
     converted_model_path = os.path.join(TEMP_FOLDER, session_id, str(round))
 
     _keras_2_tfjs(h5_model_path, converted_model_path)
+
+    model_json_path = converted_model_path + "/model.json"
+    with open(model_json_path, 'r') as fp:
+        model_json = json.loads(fp.read())
+        state.state["weights_shape"] = model_json["weightsManifest"][0]["weights"]
 
     metadata_path = converted_model_path + '/metadata.json'
     metadata = {
@@ -46,6 +59,27 @@ def convert_and_save_model(h5_model_path):
 
     return converted_model_path
 
+def swap_weights():
+    model_path = os.path.join(TEMP_FOLDER, state.state["session_id"])
+    h5_model_path = model_path + '/model.h5'
+    model = keras.models.load_model(h5_model_path)
+
+    weights_flat = state.state["current_weights"]
+    weights_shape = state.state["weights_shape"]
+    weights, start = [], 0
+    for shape_data in weights_shape:
+        shape = shape_data["shape"]
+        size = reduce(lambda x, y: x*y, shape)
+        weights_np = np.array(weights_flat[start:start+size])
+        weights_np.resize(tuple(shape))
+        weights.append(weights_np)
+        start += size
+    model.set_weights(weights)
+
+    round = state.state["current_round"]
+    new_h5_model_path = model_path + '/model{0}.h5'.format(round)
+    model.save(new_h5_model_path)
+
 def _keras_2_tfjs(h5_model_path, path_to_save):
     """
     Do Keras stuff here
@@ -53,10 +87,9 @@ def _keras_2_tfjs(h5_model_path, path_to_save):
     model = keras.models.load_model(h5_model_path)
     tfjs.converters.save_keras_model(model, path_to_save)
 
-
 def _test():
     state.init()
-    out = convert_and_save_model('../notebooks/saved_mlp_model_with_w.h5')
+    out = _convert_and_save_model('../notebooks/saved_mlp_model_with_w.h5')
     print(out)
 
 

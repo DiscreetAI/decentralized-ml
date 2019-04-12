@@ -2,7 +2,7 @@ import uuid
 import logging
 
 import state
-from model import convert_and_save_b64model
+from model import convert_and_save_b64model, convert_and_save_model, swap_weights
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -52,15 +52,17 @@ def start_next_round(message, clients_list):
 
     state.state["num_nodes_averaged"] = 0
 
-    # // 3. According to the 'Selection Criteria', choose clients to forward
-    # //    training messages to.
+    # According to the 'Selection Criteria', choose clients to forward
+    # training messages to.
     chosen_clients = _choose_clients(message.selection_criteria, clients_list)
     state.state["num_nodes_chosen"] = len(chosen_clients)
 
-    # // 4. Convert .h5 model into TFJS model
-    _ = convert_and_save_b64model(message.h5_model)
+    # Swap weights and convert (NEW) .h5 model into TFJS model
+    swap_weights()
+    assert state.state["current_round"] > 0
+    _ = convert_and_save_model(state.state["current_round"] - 1)
 
-    # // 5. Kickstart a DML Session with the TFJS model and round # 1
+    # Kickstart a DML Session with the TFJS model and round # 1
     return {
         "error": False,
         "action": "BROADCAST",

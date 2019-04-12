@@ -14,6 +14,7 @@ def init():
             "num_nodes_chosen": 0,
             "current_weights" : None,
             "sigma_omega": None,
+            "weights_shape": None,
             "logging_credentials": {
                 "host": "",
                 "port": "",

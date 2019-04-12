@@ -77,10 +77,14 @@ def kickstart_new_round(clients_list):
     Selects new nodes to run federated averaging with, and pass them the new
     averaged model.
     """
+    # Change global state
     state.state["busy"] = False
+
+    # Make the new message with new round (weights are swapped in the coordinator)
     new_message = state.state["initial_message"]
     new_message.round = state.state["current_round"]
-    new_message.h5_model = new_message.h5_model # Need to swap this!
+
+    # Start a new round
     return start_next_round(new_message, clients_list)
 
 
