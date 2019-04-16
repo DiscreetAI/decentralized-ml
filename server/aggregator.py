@@ -37,12 +37,12 @@ def handle_new_weights(message, clients_dict):
     state.state["num_nodes_averaged"] += 1
 
     # 5. Log this update.
-    log_update("UPDATE_RECEIVED", message)
+    store_update("UPDATE_RECEIVED", message)
 
     # 6. If 'Continuation Criteria' is met...
     if check_continuation_criteria(state.state["initial_message"].continuation_criteria):
         # 6.a. Log the resulting weights for the user (for this round)
-        log_update("ROUND_COMPLETED", message)
+        store_update("ROUND_COMPLETED", message)
 
         # 6.b. Update round number (+1)
         state.state["current_round"] += 1
@@ -58,7 +58,7 @@ def handle_new_weights(message, clients_dict):
     # (NOTE: can't and won't happen with step 6.c.)
     if check_termination_criteria(state.state["initial_message"].termination_criteria):
         # 7.a. Log the resulting weights for the user (for this session)
-        log_update("TRAINING_COMPLETED", message)
+        store_update("TRAINING_COMPLETED", message)
 
         # 7.b. Reset all state in the service and mark BUSY as false
         state.reset_state()
@@ -69,9 +69,9 @@ def handle_new_weights(message, clients_dict):
     return results
 
 
-def log_update(type, message):
+def store_update(type, message):
     """
-    Connect using `state.state["logging_credentials"]`.
+    Connect using `state.state["store_credentials"]`.
     """
     print("[{0}]: {1}".format(type, message))
 
