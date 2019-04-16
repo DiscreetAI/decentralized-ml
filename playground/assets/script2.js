@@ -1,6 +1,6 @@
 import {MnistData} from './data.js';
 
-async function getData() {
+export async function getData() {
   const data = new MnistData();
   await data.load();
   console.log("Data loaded!", data);
@@ -14,8 +14,17 @@ async function getModel() {
   return model;
 }
 
-function getOptimizationData() {
+export async function getModelFromCloud() {
+  const MODEL_URL = 'http://localhost:8999/model/model.json';
+  const model = await tf.loadLayersModel(MODEL_URL);
+  console.log("Model loaded!", model);
+  return model;
+}
+
+export function getOptimizationData() {
   // TODO: Check that the optimizer is valid.
+  // TODO2: Get the json from
+  //        server.com/model.model.json["modelTopology"]["optimizer_config"].
   return {
     'optimizer_config': {
       'class_name': 'SGD',
@@ -33,7 +42,7 @@ function getOptimizationData() {
  }
 }
 
-function compileModel(model, optimization_data) {
+export function compileModel(model, optimization_data) {
 
   let optimizer;
   if (optimization_data['optimizer_config']['class_name'] == 'SGD') {
@@ -54,18 +63,17 @@ function compileModel(model, optimization_data) {
   return model;
 }
 
-async function getValidationAccuracy(model, data) {
+export async function getValidationAccuracy(model, data) {
   const [labels, preds] = await _evaluateModel(model, data);
   const accuracy = await tf.equal(preds, labels).sum().dataSync()[0] / tf.equal(preds, labels).size;
   console.log("Accuracy calculated! ", accuracy)
   return accuracy;
 }
 
-async function retrainModel(model, data) {
+export async function retrainModel(model, data, epochs, batch_size) {
   const metrics = ['loss', 'acc'];
 
-  const BATCH_SIZE = 128;
-  const TRAIN_DATA_SIZE = 8000;
+  const TRAIN_DATA_SIZE = 10000;
   //const TEST_DATA_SIZE = 1000;
 
   const [trainXs, trainYs] = tf.tidy(() => {
@@ -85,9 +93,9 @@ async function retrainModel(model, data) {
   // });
 
   return model.fit(trainXs, trainYs, {
-    batchSize: BATCH_SIZE,
+    batchSize: batch_size,
     // validationData: [testXs, testYs],
-    epochs: 5,
+    epochs: epochs,
     shuffle: true,
   });
 }
@@ -139,6 +147,19 @@ export async function makeMockUpdateForCloudNode(session_id, round) {
     "results": {
       "weights": weights,
       "omega": 1000
+    }
+  };
+}
+
+export async function makeUpdateObject(session_id, round, model, omega) {
+  return {
+    "type": "NEW_WEIGHTS",
+    "session_id": session_id,
+    "round": round,
+    "action": "TRAIN",
+    "results": {
+      "weights": await getWeights(model),
+      "omega": omega
     }
   };
 }
@@ -240,18 +261,18 @@ function _lowerCaseToCamelCase(str) {
 
 async function run() {
   // Check that the model is correct by evaluating it on test data.
-  const data = await getData();
-  let model = await getModel();
-  await saveModel(model, 'not-trained');
-  const accuracy = await getValidationAccuracy(model, data);
-
-  const optimization_data = getOptimizationData();
-  model = compileModel(model, optimization_data);
-
-  await retrainModel(model, data);
-  const new_accuracy = await getValidationAccuracy(model, data);
-
-  await saveModel(model, 'trained');
+  // const data = await getData();
+  // let model = await getModel();
+  // await saveModel(model, 'not-trained');
+  // const accuracy = await getValidationAccuracy(model, data);
+  //
+  // const optimization_data = getOptimizationData();
+  // model = compileModel(model, optimization_data);
+  //
+  // await retrainModel(model, data);
+  // const new_accuracy = await getValidationAccuracy(model, data);
+  //
+  // await saveModel(model, 'trained');
 }
 
 document.addEventListener('DOMContentLoaded', run);
