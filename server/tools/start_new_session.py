@@ -28,9 +28,16 @@ NEW_MESSAGE = {
     }
 }
 
+NEW_CONNECTION_MESSAGE = {
+    "type": "REGISTER",
+    "node_type": "dashboard",
+}
+
 class NewSessionTestProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
+      json_data = json.dumps(NEW_CONNECTION_MESSAGE)
+      self.sendMessage(json_data.encode())
       json_data = json.dumps(NEW_MESSAGE)
       self.sendMessage(json_data.encode())
 

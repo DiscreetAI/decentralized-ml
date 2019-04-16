@@ -9,7 +9,7 @@ from coordinator import start_next_round
 
 logging.basicConfig(level=logging.DEBUG)
 
-def handle_new_weights(message, clients_list):
+def handle_new_weights(message, clients_dict):
     results = {"error": False, "message": "Success."}
 
     # 1. Check things match.
@@ -52,7 +52,7 @@ def handle_new_weights(message, clients_list):
         # in node............
         if not check_termination_criteria(state.state["initial_message"].termination_criteria):
             print("Going to the next round...")
-            results = kickstart_new_round(clients_list)
+            results = kickstart_new_round(clients_dict["LIBRARY"])
 
     # 7. If 'Termination Criteria' is met...
     # (NOTE: can't and won't happen with step 6.c.)

@@ -5,6 +5,7 @@ from enum import Enum
 import numpy as np
 
 class MessageType(Enum):
+    REGISTER = "REGISTER"
     NEW_SESSION = "NEW_SESSION"
     NEW_WEIGHTS = "NEW_WEIGHTS"
 
@@ -18,6 +19,26 @@ class Message:
             if cls.type == type:
                 return cls(data)
         raise ValueError("Message type is invalid!")
+
+
+class RegistrationMessage(Message):
+    """
+    Registration Message
+
+    The type of message sent by a node with information of what type of node
+    they are
+
+    """
+
+    type = MessageType.REGISTER.value
+
+    def __init__(self, serialized_message):
+        self.node_type = serialized_message["node_type"].upper()
+
+    def __repr__(self):
+        return json.dumps({
+            "node_type": self.node_type
+        })
 
 
 class NewSessionMessage(Message):

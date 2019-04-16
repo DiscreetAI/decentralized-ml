@@ -27,7 +27,6 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
     def onOpen(self):
         print("WebSocket connection open.")
-        self.factory.register(self)
 
     def onClose(self, wasClean, code, reason):
         print("WebSocket connection closed: {}".format(reason))
@@ -48,6 +47,7 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         # Deserialize message
         try:
             message = Message.make(serialized_message)
+            print("Message ({0}) contents: {1}".format(message.type, message))
         except Exception as e:
             print("Error deserializing message!", e)
             error_json = json.dumps({"error": True, "message": "Error deserializing message: {}".format(e)})
@@ -55,10 +55,13 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             return
 
         # Process message
-        if message.type == MessageType.NEW_SESSION.value:
-            print("New 'new session' message!")
-            print("Message contents: {}".format(message))
-
+        if message.type == MessageType.REGISTER.value:
+            if message.node_type in ["DASHBOARD", "LIBRARY"]:
+                self.factory.register(self, message.node_type)
+                print("Registered node as type: {}".format(message.node_type))
+            else:
+                print("WARNING: Incorrect node type ({}) -- ignoring!".format(message.node_type))
+        elif message.type == MessageType.NEW_SESSION.value:
             # Start new DML Session
             results = start_new_session(message, self.factory.clients)
 
@@ -69,14 +72,13 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
             # Handle results
             if results["action"] == "BROADCAST":
-                for c in results["client_list"]:
-                    results_json = json.dumps(results["message"])
-                    c.sendMessage(results_json.encode(), isBinary)
+                self._broadcastMessage(
+                    payload=results["message"],
+                    client_list=results["client_list"],
+                    isBinary=isBinary,
+                )
 
         elif message.type == MessageType.NEW_WEIGHTS.value:
-            print("New 'new weights' message!")
-            print("Message contents: {}".format(message))
-
             # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
 
@@ -88,9 +90,11 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             # Handle message
             if "action" in results:
                 if results["action"] == "BROADCAST":
-                    for c in results["client_list"]:
-                        results_json = json.dumps(results["message"])
-                        c.sendMessage(results_json.encode(), isBinary)
+                    self._broadcastMessage(
+                        payload=results["message"],
+                        client_list=results["client_list"],
+                        isBinary=isBinary,
+                    )
             else:
                 # Acknowledge message (temporarily! -- node doesn't need to know)
                 self.sendMessage(json.dumps({"error": False, "message": "ack"}).encode(), isBinary)
@@ -101,21 +105,31 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         print("[[DEBUG] State: {}".format(state.state))
 
+    def _broadcastMessage(self, payload, client_list, isBinary):
+        for c in client_list:
+            results_json = json.dumps(payload)
+            c.sendMessage(results_json.encode(), isBinary)
+
 class CloudNodeFactory(WebSocketServerFactory):
 
     def __init__(self):
         WebSocketServerFactory.__init__(self)
-        self.clients = []
+        self.clients = {"DASHBOARD": [], "LIBRARY": []}
 
-    def register(self, client):
-        if client not in self.clients:
-            print("registered client {}".format(client.peer))
-            self.clients.append(client)
+    def register(self, client, type):
+        client_already_exists = False
+        for _, clients in self.clients.items():
+            if client in clients:
+                client_already_exists = True
+        if not client_already_exists:
+            print("Registered client {}".format(client.peer))
+            self.clients[type].append(client)
 
     def unregister(self, client):
-        if client in self.clients:
-            print("unregistered client {}".format(client.peer))
-            self.clients.remove(client)
+        for node_type, clients in self.clients.items():
+            if client in clients:
+                print("Unregistered client {}".format(client.peer))
+                self.clients[node_type].remove(client)
 
 # // NOTE: We need to implement some ping-pong/ways to deal with disconnections.
 

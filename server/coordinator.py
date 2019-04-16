@@ -7,7 +7,7 @@ from model import convert_and_save_b64model, convert_and_save_model, swap_weight
 
 logging.basicConfig(level=logging.DEBUG)
 
-def start_new_session(message, clients_list):
+def start_new_session(message, clients_dict):
     print("Starting new session...")
 
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
@@ -27,7 +27,10 @@ def start_new_session(message, clients_list):
 
     # // 3. According to the 'Selection Criteria', choose clients to forward
     # //    training messages to.
-    chosen_clients = _choose_clients(message.selection_criteria, clients_list)
+    chosen_clients = _choose_clients(
+        message.selection_criteria,
+        clients_dict["LIBRARY"]
+    )
     state.state["num_nodes_chosen"] = len(chosen_clients)
 
     # // 4. Convert .h5 model into TFJS model

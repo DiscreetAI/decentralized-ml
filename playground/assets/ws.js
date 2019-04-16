@@ -15,6 +15,9 @@ let socket = new WebSocket(SOCKET_URL);
 socket.onopen = (e) => {
   //socket.send("Just saying hi!");
   console.log("Connected to cloud node!");
+  socket.send(
+    JSON.stringify({"type": "REGISTER", "node_type": "library"})
+  );
 }
 
 socket.onmessage = async function onmessage(e) {
