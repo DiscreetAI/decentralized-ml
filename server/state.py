@@ -17,6 +17,7 @@ def init():
             "weights_shape": None,
             "initial_message": None,
             "last_message_time": None,
+            "last_message_sent_to_library": None,
             "logging_credentials": {
                 "host": "",
                 "port": "",

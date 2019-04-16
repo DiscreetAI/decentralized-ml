@@ -59,6 +59,14 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             if message.node_type in ["DASHBOARD", "LIBRARY"]:
                 self.factory.register(self, message.node_type)
                 print("Registered node as type: {}".format(message.node_type))
+
+                if message.node_type == "LIBRARY" and state.state["busy"] is True:
+                    # There's a session active, we should incorporate the just
+                    # added node!
+                    print("Joining the new library node to this round!")
+                    last_message = state.state["last_message_sent_to_library"]
+                    message_json = json.dumps(last_message)
+                    self.sendMessage(message_json.encode(), isBinary)
             else:
                 print("WARNING: Incorrect node type ({}) -- ignoring!".format(message.node_type))
         elif message.type == MessageType.NEW_SESSION.value:

@@ -37,16 +37,18 @@ def start_new_session(message, clients_dict):
     _ = convert_and_save_b64model(message.h5_model)
 
     # // 5. Kickstart a DML Session with the TFJS model and round # 1
+    new_message = {
+        "session_id": state.state["session_id"],
+        "round": 1,
+        "action": "TRAIN",
+        "hyperparams": message.hyperparams,
+    }
+    state.state["last_message_sent_to_library"] = new_message
     return {
         "error": False,
         "action": "BROADCAST",
         "client_list": chosen_clients,
-        "message": {
-            "session_id": state.state["session_id"],
-            "round": 1,
-            "action": "TRAIN",
-            "hyperparams": message.hyperparams,
-        }
+        "message": new_message,
     }
 
 
@@ -65,16 +67,18 @@ def start_next_round(message, clients_list):
     _ = convert_and_save_model(state.state["current_round"] - 1)
 
     # Kickstart a DML Session with the TFJS model
+    new_message = {
+        "session_id": state.state["session_id"],
+        "round": state.state["current_round"],
+        "action": "TRAIN",
+        "hyperparams": message.hyperparams,
+    }
+    state.state["last_message_sent_to_library"] = new_message
     return {
         "error": False,
         "action": "BROADCAST",
         "client_list": chosen_clients,
-        "message": {
-            "session_id": state.state["session_id"],
-            "round": state.state["current_round"],
-            "action": "TRAIN",
-            "hyperparams": message.hyperparams,
-        }
+        "message": new_message,
     }
 
 
