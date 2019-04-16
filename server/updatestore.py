@@ -6,8 +6,6 @@ import boto3
 import state
 from model import TEMP_FOLDER
 
-state.init()
-
 
 def store_update(type, message, with_weights=True):
     print("[{0}]: {1}".format(type, message))
