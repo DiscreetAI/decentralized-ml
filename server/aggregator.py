@@ -1,5 +1,7 @@
-import numpy as np
+import time
 import logging
+
+import numpy as np
 
 import state
 from coordinator import start_next_round
@@ -25,6 +27,8 @@ def handle_new_weights(message, clients_list):
 
     # 2 Lock section/variables that will be changed...
     state.state_lock.acquire()
+
+    state.state["last_message_time"] = time.time()
 
     # 3. Do running weighted average on the new weights.
     do_running_weighted_average(message)

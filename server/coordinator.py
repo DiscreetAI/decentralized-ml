@@ -49,7 +49,6 @@ def start_new_session(message, clients_list):
 
 def start_next_round(message, clients_list):
     print("Starting next round...")
-
     state.state["num_nodes_averaged"] = 0
 
     # According to the 'Selection Criteria', choose clients to forward
@@ -62,7 +61,7 @@ def start_next_round(message, clients_list):
     assert state.state["current_round"] > 0
     _ = convert_and_save_model(state.state["current_round"] - 1)
 
-    # Kickstart a DML Session with the TFJS model and round # 1
+    # Kickstart a DML Session with the TFJS model
     return {
         "error": False,
         "action": "BROADCAST",

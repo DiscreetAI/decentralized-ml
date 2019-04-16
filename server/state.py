@@ -15,13 +15,14 @@ def init():
             "current_weights" : None,
             "sigma_omega": None,
             "weights_shape": None,
+            "initial_message": None,
+            "last_message_time": None,
             "logging_credentials": {
                 "host": "",
                 "port": "",
                 "username": "",
                 "password": "",
             },
-            "initial_message": None,
         }
 
     reset_state()

@@ -4,9 +4,10 @@ import json
 
 from flask_cors import CORS
 from twisted.python import log
+
 from twisted.web.server import Site
-from twisted.internet import reactor
 from twisted.web.wsgi import WSGIResource
+from twisted.internet import task, reactor
 from flask import Flask, send_from_directory
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
@@ -136,6 +137,17 @@ def serve_model(filename):
         app.root_path + '/temp/' + session_id + "/" + str(round),
         filename,
     )
+
+def check_timeout_condition():
+    """
+    TO BE IMPLEMENTED.
+    """
+    TIMEOUT_DELTA_IN_MINS = 10
+    time_now = time.time()
+    if time_now > TIMEOUT_DELTA_IN_MINS * 60:
+        # Need to trigger the event of broadcasting to all nodes.
+        # The nodes to drop everything they were doing.
+        pass
 
 
 if __name__ == '__main__':
