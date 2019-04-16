@@ -64,7 +64,7 @@ var DMLDB = /** @class */ (function () {
         var objStore = transaction.objectStore('dataMapping');
         var request = objStore.get(dml_request.repo);
         request.onsuccess = function (e) {
-            callback(request.result, dml_request);
+            callback(request.result.data, dml_request);
         };
         request.onerror = function (e) {
             console.log(e);

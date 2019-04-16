@@ -82,7 +82,7 @@ export class DMLDB {
         var request = objStore.get(dml_request.repo);
       
         request.onsuccess = function(e:any) {
-          callback(request.result, dml_request);
+          callback(request.result.data, dml_request);
         }
       
         request.onerror = function(e:any) {
