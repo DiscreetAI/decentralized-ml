@@ -3,7 +3,7 @@ import base64
 
 from autobahn.twisted.websocket import WebSocketClientProtocol
 
-with open('assets/saved_mlp_model_with_w.h5', mode='rb') as file:
+with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:
     file_content = file.read()
     encoded_content = base64.encodebytes(file_content)
     h5_model = encoded_content.decode('ascii')
@@ -20,11 +20,11 @@ NEW_MESSAGE = {
     },
     "continuation_criteria": {
         "type": "PERCENTAGE_AVERAGED",
-        "value": 0.5
+        "value": 0.75
     },
     "termination_criteria": {
         "type": "MAX_ROUND",
-        "value": 5
+        "value": 10
     }
 }
 
