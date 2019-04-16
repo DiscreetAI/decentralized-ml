@@ -19,10 +19,7 @@ def init():
             "last_message_time": None,
             "last_message_sent_to_library": None,
             "updatestore_credentials": {
-                "host": "",
-                "port": "",
-                "username": "",
-                "password": "",
+                "table_name": "updatestore_test"
             },
         }
 

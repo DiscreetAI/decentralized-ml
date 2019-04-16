@@ -4,6 +4,7 @@ import logging
 import numpy as np
 
 import state
+from updatestore import store_update
 from coordinator import start_next_round
 
 
@@ -37,43 +38,34 @@ def handle_new_weights(message, clients_dict):
     state.state["num_nodes_averaged"] += 1
 
     # 5. Log this update.
-    store_update("UPDATE_RECEIVED", message)
+    # NOTE: Disabled until we actually need it. Could be useful for a progress bar.
+    # store_update("UPDATE_RECEIVED", message, with_weights=False)
 
     # 6. If 'Continuation Criteria' is met...
     if check_continuation_criteria(state.state["initial_message"].continuation_criteria):
-        # 6.a. Log the resulting weights for the user (for this round)
-        store_update("ROUND_COMPLETED", message)
-
-        # 6.b. Update round number (+1)
+        # 6.a. Update round number (+1)
         state.state["current_round"] += 1
 
-        # 6.c. If 'Termination Criteria' isn't met, then kickstart a new FL round
+        # 6.b. If 'Termination Criteria' isn't met, then kickstart a new FL round
         # NOTE: We need a way to swap the weights from the initial message
         # in node............
         if not check_termination_criteria(state.state["initial_message"].termination_criteria):
             print("Going to the next round...")
             results = kickstart_new_round(clients_dict["LIBRARY"])
 
+            # 6.c. Log the resulting weights for the user (for this round)
+            store_update("ROUND_COMPLETED", message)
+
     # 7. If 'Termination Criteria' is met...
     # (NOTE: can't and won't happen with step 6.c.)
     if check_termination_criteria(state.state["initial_message"].termination_criteria):
-        # 7.a. Log the resulting weights for the user (for this session)
-        store_update("TRAINING_COMPLETED", message)
-
-        # 7.b. Reset all state in the service and mark BUSY as false
+        # 7.a. Reset all state in the service and mark BUSY as false
         state.reset_state()
 
     # 8. Release section/variables that were changed...
     state.state_lock.release()
 
     return results
-
-
-def store_update(type, message):
-    """
-    Connect using `state.state["store_credentials"]`.
-    """
-    print("[{0}]: {1}".format(type, message))
 
 
 def kickstart_new_round(clients_list):
@@ -112,7 +104,6 @@ def do_running_weighted_average(message):
     new_weighted_avg = np.divide(temp, float(new_sigma_omega))
 
     # Update state
-    print(new_weighted_avg, new_sigma_omega)
     state.state["current_weights"] = new_weighted_avg
     state.state["sigma_omega"] = new_sigma_omega
 

@@ -86,8 +86,6 @@ class NewWeightsMessage(Message):
             serialized_message["results"]["weights"],
             dtype=np.dtype(float),
         )
-        print("[DEBUG] size of weights {0}".format(self.weights.shape))
-        print("[DEBUG] inspect {}".format(self.weights[:10]))
         self.omega = serialized_message["results"]["omega"]
 
     def __repr__(self):
