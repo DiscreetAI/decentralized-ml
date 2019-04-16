@@ -10,6 +10,7 @@ with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:
 
 NEW_MESSAGE = {
     "type": "NEW_SESSION",
+    "repo_id": "test",
     "h5_model": h5_model,
     "hyperparams": {
         "batch_size": 128,

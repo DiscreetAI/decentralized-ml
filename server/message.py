@@ -52,6 +52,7 @@ class NewSessionMessage(Message):
     type = MessageType.NEW_SESSION.value
 
     def __init__(self, serialized_message):
+        self.repo_id = serialized_message["repo_id"]
         self.h5_model = serialized_message["h5_model"]
         self.hyperparams = serialized_message["hyperparams"]
         self.selection_criteria = serialized_message["selection_criteria"]
@@ -60,6 +61,7 @@ class NewSessionMessage(Message):
 
     def __repr__(self):
         return json.dumps({
+            "repo_id": self.repo_id,
             "h5_model": self.h5_model[:20],
             "hyperparams": self.hyperparams,
             "selection_criteria": self.selection_criteria,

@@ -9,6 +9,7 @@ def init():
         state = {
             "busy": False,
             "session_id": None,
+            "repo_id": None,
             "current_round": 0,
             "num_nodes_averaged": 0,
             "num_nodes_chosen": 0,
@@ -18,9 +19,6 @@ def init():
             "initial_message": None,
             "last_message_time": None,
             "last_message_sent_to_library": None,
-            "updatestore_credentials": {
-                "table_name": "updatestore_test"
-            },
         }
 
     reset_state()

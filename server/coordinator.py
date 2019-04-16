@@ -23,6 +23,7 @@ def start_new_session(message, clients_dict):
     state.state["current_round"] = 1
     state.state["num_nodes_averaged"] = 0
     state.state["initial_message"] = message
+    state.state["repo_id"] = message.repo_id
     state.state["session_id"] = str(uuid.uuid4())
 
     # // 3. According to the 'Selection Criteria', choose clients to forward

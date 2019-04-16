@@ -26,10 +26,10 @@ def store_update(type, message, with_weights=True):
 
     try:
         dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table(state.state['updatestore_credentials']['table_name'])
+        table = dynamodb.Table("updatestore_" + state.state["repo_id"])
         item = {
             'Id': str(uuid.uuid4()),
-            'RepoId': 'testing_id',
+            'RepoId': state.state["repo_id"],
             'Timestamp': int(time.time()),
             'ContentType': type,
             'SessionId': state.state["session_id"],
