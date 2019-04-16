@@ -7,6 +7,7 @@ from functools import reduce
 import keras
 import numpy as np
 import tensorflowjs as tfjs
+from keras import backend as K
 
 import state
 
@@ -79,6 +80,7 @@ def swap_weights():
     round = state.state["current_round"]
     new_h5_model_path = model_path + '/model{0}.h5'.format(round)
     model.save(new_h5_model_path)
+    K.clear_session()
 
 def _keras_2_tfjs(h5_model_path, path_to_save):
     """
@@ -86,6 +88,7 @@ def _keras_2_tfjs(h5_model_path, path_to_save):
     """
     model = keras.models.load_model(h5_model_path)
     tfjs.converters.save_keras_model(model, path_to_save)
+    K.clear_session()
 
 def _test():
     state.init()
