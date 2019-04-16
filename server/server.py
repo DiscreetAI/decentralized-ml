@@ -2,6 +2,7 @@ import sys
 import uuid
 import json
 
+from flask_cors import CORS
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.internet import reactor
@@ -119,6 +120,7 @@ class CloudNodeFactory(WebSocketServerFactory):
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
+CORS(app)
 
 @app.route('/model/<path:filename>')
 def serve_model(filename):
