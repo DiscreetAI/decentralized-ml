@@ -41,7 +41,7 @@ export class DMLDB {
         //request.onerror = this.onerror;
       };
 
-      create(repo:number, data:Tensor2D, callback:Function, node:string, db_object:DMLDB) {
+      create(repo:number, data:Tensor2D) {
         // Get a reference to the db.
         var db = DMLDB.datastore;
       
@@ -67,7 +67,7 @@ export class DMLDB {
         // Handle a successful datastore put.
         request.onsuccess = function(e:any) {
           // Execute the callback function.
-          callback(node, db_object);
+          
         };
       
         // Handle errors.

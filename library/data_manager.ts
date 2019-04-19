@@ -5,15 +5,9 @@ import { Runner } from './runner.js';
 
 class DataManager {
     static store (repo:number, data:Tensor2D, node:string, db:DMLDB) {
-        db.create(repo, data, DataManager._listen, node, db);
-    }
-
-    static _listen (node:string, db:DMLDB) {
-        // Create WebSocket connection.
-        const socket = new WebSocket(node);
-
-        // Listen for messages
-        socket.addEventListener('message', function (event) {
+        db.create(repo, data);
+        var webSocket:WebSocket = new WebSocket(node);
+        webSocket.addEventListener('message', function (event) {
             var receivedMessage:string = event.data;
             var request:DMLRequest = DMLRequest.deserialize(receivedMessage);
             Runner.handleMessage(request, db, node)
