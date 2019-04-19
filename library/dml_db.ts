@@ -1,4 +1,4 @@
-import { Tensor, Tensor2D } from "@tensorflow/tfjs";
+import { Tensor, Tensor2D, LayersModel } from "@tensorflow/tfjs";
 import { DMLRequest } from "./message";
 
 export class DMLDB {
@@ -41,7 +41,7 @@ export class DMLDB {
         //request.onerror = this.onerror;
       };
 
-      create(repo:number, data:Tensor2D, callback:Function) {
+      create(repo:number, data:Tensor2D, callback:Function, node:string, db_object:DMLDB) {
         // Get a reference to the db.
         var db = DMLDB.datastore;
       
@@ -67,14 +67,14 @@ export class DMLDB {
         // Handle a successful datastore put.
         request.onsuccess = function(e:any) {
           // Execute the callback function.
-          callback(dataMapping);
+          callback(node, db_object);
         };
       
         // Handle errors.
         //request.onerror = tDB.onerror;
       };
 
-      get(dml_request:DMLRequest, callback:Function) {
+      get(dml_request:DMLRequest, callback:Function, model:LayersModel, node:string) {
         var db = DMLDB.datastore;
         var transaction = db.transaction(['dataMapping'], 'readwrite');
         var objStore = transaction.objectStore('dataMapping');
@@ -82,7 +82,7 @@ export class DMLDB {
         var request = objStore.get(dml_request.repo);
       
         request.onsuccess = function(e:any) {
-          callback(request.result.data, dml_request);
+          callback(request.result.data, dml_request, model, node);
         }
       
         request.onerror = function(e:any) {

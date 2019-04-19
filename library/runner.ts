@@ -1,6 +1,6 @@
-import { DMLRequest, DMLResult } from './message.js';
+import { DMLRequest } from './message.js';
 import { DMLDB } from './dml_db.js';
-import { LayersModel, Tensor, Tensor2D } from "@tensorflow/tfjs/dist";
+import { LayersModel, Tensor, Tensor2D, train } from "@tensorflow/tfjs/dist";
 import { loadLayersModel, tensor} from '@tensorflow/tfjs';
 import * as tf from '@tensorflow/tfjs';
 
@@ -59,35 +59,36 @@ export class Runner {
         return [tensor(trainXs), tensor(trainYs)]
     }
 
-    static train(data:Tensor2D, request:DMLRequest) {
+    static async train(data:Tensor2D, request:DMLRequest, model:LayersModel, node:string) {
         var [data_x, data_y] = Runner.labelData(data.arraySync(), request.label_index);
-        request.model.fit(data_x, data_y, {
+        model.fit(data_x, data_y, {
             batchSize: request.params["batch_size"],
             epochs: request.params["epochs"],
             shuffle: request.params["shuffle"]
           });
-          Runner.saveModel(request.model, request.id);
-          Runner.sendMessage(new DMLResult(request.id, request.repo, request.type,
-            Runner.getWeights(request.id)));
+          Runner.saveModel(model, request.id);
+          var weights = Runner.getWeights(request.id)
+          Runner.sendMessage(request, JSON.stringify(weights), node);
+          
     }
 
-    static evaluate(data:Tensor2D, request:DMLRequest) {
+    static async evaluate(data:Tensor2D, request:DMLRequest, model:LayersModel, node:string) {
         var [data_x, data_y] = Runner.labelData(data.arraySync(), request.label_index);
-        Runner.sendMessage(
-            new DMLResult(request.id, request.repo, request.type,
-                request.model.evaluate(data_x, data_y))
-        );
+        var result:string = model.evaluate(data_x, data_y).toString();
+        Runner.sendMessage(request, result, node);
     }
 
-    static sendMessage(result:DMLResult) {
+    static async sendMessage(request:DMLRequest, message:string, node:string) {
+        var result:string = DMLRequest.serialize(request, message);
+        var serverSocket:WebSocket = new WebSocket(node);
+        serverSocket.send(result);
         //TODO: Send weights to node
     }
 
-    static async handleMessage(request:DMLRequest, db:DMLDB) {
+    static async handleMessage(request:DMLRequest, db:DMLDB, node:string) {
         var model:LayersModel = await Runner.getModel();
         Runner.saveModel(model, request.id);
-        var result:DMLResult;
-        var callback:Function = (request.type == 'train') ? Runner.train : Runner.evaluate;
-        db.get(request, callback);
+        var callback:Function = (request.action == 'train') ? Runner.train : Runner.evaluate;
+        db.get(request, callback, model, node);
     }
 }
