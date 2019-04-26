@@ -160,16 +160,33 @@ def serve_model(filename):
         filename,
     )
 
-def check_timeout_condition():
+@app.route('/secret/reset_state')
+def reset_state():
     """
-    TO BE IMPLEMENTED.
+    Resets the state of the cloud node.
     """
-    TIMEOUT_DELTA_IN_MINS = 10
-    time_now = time.time()
-    if time_now > TIMEOUT_DELTA_IN_MINS * 60:
-        # Need to trigger the event of broadcasting to all nodes.
-        # The nodes to drop everything they were doing.
-        pass
+    state.state_lock.acquire()
+    state.reset_state()
+    state.state_lock.release()
+    return "State was reset!"
+
+@app.route('/secret/get_state')
+def get_state():
+    """
+    Get the state of the cloud node.
+    """
+    return repr(state.state)
+
+# def check_timeout_condition():
+#     """
+#     TO BE IMPLEMENTED.
+#     """
+#     TIMEOUT_DELTA_IN_MINS = 10
+#     time_now = time.time()
+#     if time_now > TIMEOUT_DELTA_IN_MINS * 60:
+#         # Need to trigger the event of broadcasting to all nodes.
+#         # The nodes to drop everything they were doing.
+#         pass
 
 
 if __name__ == '__main__':

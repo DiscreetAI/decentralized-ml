@@ -12,6 +12,7 @@ def start_new_session(message, clients_dict):
 
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
     if state.state["busy"]:
+        print("Aborting because the server is busy.")
         return {
             "error": True,
             "message": "Server is already busy working."
