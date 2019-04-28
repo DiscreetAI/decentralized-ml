@@ -1,6 +1,6 @@
 import {MnistData} from './data.js';
 
-export const SOCKET_HOST = "cloud-node-env3.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+export const SOCKET_HOST = "cloud-node-env9.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 
 export async function getData() {
   const data = new MnistData();
