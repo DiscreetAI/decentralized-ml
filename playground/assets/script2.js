@@ -1,5 +1,7 @@
 import {MnistData} from './data.js';
 
+export const SOCKET_HOST = "cloud-node-env3.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+
 export async function getData() {
   const data = new MnistData();
   await data.load();
@@ -8,14 +10,14 @@ export async function getData() {
 }
 
 async function getModel() {
-  const MODEL_URL = 'http://localhost:5000/server/model.json';
+  const MODEL_URL = 'http://' + SOCKET_HOST + '/server/model.json';
   const model = await tf.loadLayersModel(MODEL_URL);
   console.log("Model loaded!", model);
   return model;
 }
 
 export async function getModelFromCloud() {
-  const MODEL_URL = 'http://localhost:8999/model/model.json';
+  const MODEL_URL = 'http://' + SOCKET_HOST + '/model/model.json';
   const model = await tf.loadLayersModel(MODEL_URL);
   console.log("Model loaded!", model);
   return model;
@@ -73,7 +75,7 @@ export async function getValidationAccuracy(model, data) {
 export async function retrainModel(model, data, epochs, batch_size) {
   const metrics = ['loss', 'acc'];
 
-  const TRAIN_DATA_SIZE = 10000;
+  const TRAIN_DATA_SIZE = 100;
   //const TEST_DATA_SIZE = 1000;
 
   const [trainXs, trainYs] = tf.tidy(() => {
