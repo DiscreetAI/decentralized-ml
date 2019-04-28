@@ -23,7 +23,7 @@ def store_update(type, message, with_weights=True):
             print("S3 Error: {0}".format(e))
 
     try:
-        dynamodb = boto3.resource('dynamodb')
+        dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
         table = dynamodb.Table("updatestore_" + state.state["repo_id"])
         item = {
             'Id': str(uuid.uuid4()),
