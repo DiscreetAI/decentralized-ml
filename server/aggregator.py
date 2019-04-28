@@ -73,9 +73,6 @@ def kickstart_new_round(clients_list):
     Selects new nodes to run federated averaging with, and pass them the new
     averaged model.
     """
-    # Change global state
-    state.state["busy"] = False
-
     # Make the new message with new round (weights are swapped in the coordinator)
     new_message = state.state["initial_message"]
     new_message.round = state.state["current_round"]
@@ -111,11 +108,24 @@ def do_running_weighted_average(message):
 def check_continuation_criteria(continuation_criteria):
     """
     Right now only implements percentage of nodes averaged.
+
+    TODO: Implement an absolute number of nodes to average (NUM_NODES_AVERAGED).
     """
     if "type" not in continuation_criteria:
         raise Exception("Continuation criteria is not well defined.")
 
     if continuation_criteria["type"] == "PERCENTAGE_AVERAGED":
+        if state.state["num_nodes_chosen"] == 0:
+            # TODO: Implement a lower bound of how many nodes are needed to
+            # continue to the next round.
+
+            # TODO: Count the nodes at the time of averaging instead of at the
+            # time of session creation.
+
+            # In the meantime, if 0 nodes were active at the beginning of the
+            # session, then the update of the first node to finish training will
+            # trigger the continuation criteria.
+            return True
         percentage = state.state["num_nodes_averaged"] / state.state["num_nodes_chosen"]
         return continuation_criteria["value"] <= percentage
     else:

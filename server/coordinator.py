@@ -17,6 +17,7 @@ def start_new_session(message, clients_dict):
             "error": True,
             "message": "Server is already busy working."
         }
+    state.state_lock.acquire()
     state.state["busy"] = True
 
     # // 2. Set the internal round variable to 1, reset the number of nodes
@@ -46,6 +47,7 @@ def start_new_session(message, clients_dict):
         "hyperparams": message.hyperparams,
     }
     state.state["last_message_sent_to_library"] = new_message
+    state.state_lock.release()
     return {
         "error": False,
         "action": "BROADCAST",

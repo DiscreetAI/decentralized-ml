@@ -70,6 +70,9 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             else:
                 print("WARNING: Incorrect node type ({}) -- ignoring!".format(message.node_type))
         elif message.type == MessageType.NEW_SESSION.value:
+            # Verify this node has been registered
+            if not self._nodeHasBeenRegistered(client_type="DASHBOARD"): return
+
             # Start new DML Session
             results = start_new_session(message, self.factory.clients)
 
@@ -87,6 +90,9 @@ class CloudNodeProtocol(WebSocketServerProtocol):
                 )
 
         elif message.type == MessageType.NEW_WEIGHTS.value:
+            # Verify this node has been registered
+            if not self._nodeHasBeenRegistered(client_type="LIBRARY"): return
+
             # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
 
@@ -118,6 +124,9 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             results_json = json.dumps(payload)
             c.sendMessage(results_json.encode(), isBinary)
 
+    def _nodeHasBeenRegistered(self, client_type):
+        return self.factory.is_registered(self, client_type)
+
 class CloudNodeFactory(WebSocketServerFactory):
 
     def __init__(self):
@@ -138,6 +147,10 @@ class CloudNodeFactory(WebSocketServerFactory):
             if client in clients:
                 print("Unregistered client {}".format(client.peer))
                 self.clients[node_type].remove(client)
+
+    def is_registered(self, client, client_type):
+        """Returns whether client is in the list of clients."""
+        return client in self.clients[client_type]
 
 # // NOTE: We need to implement some ping-pong/ways to deal with disconnections.
 
