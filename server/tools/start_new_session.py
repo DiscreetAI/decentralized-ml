@@ -3,6 +3,14 @@ import base64
 
 from autobahn.twisted.websocket import WebSocketClientProtocol
 
+# This ID is used to log things into DynamoDB.
+# If you want your results to be saved somewhere you can easily access, then
+# change this to something you can remember.
+REPO_ID = "test"
+
+CLOUD_NODE_HOST = "cloud-node-env3.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+CLOUD_NODE_PORT = 80
+
 with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:
     file_content = file.read()
     encoded_content = base64.encodebytes(file_content)
@@ -10,7 +18,7 @@ with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:
 
 NEW_MESSAGE = {
     "type": "NEW_SESSION",
-    "repo_id": "test",
+    "repo_id": REPO_ID,
     "h5_model": h5_model,
     "hyperparams": {
         "batch_size": 128,
@@ -60,5 +68,5 @@ if __name__ == '__main__':
    factory = WebSocketClientFactory()
    factory.protocol = NewSessionTestProtocol
 
-   reactor.connectTCP("127.0.0.1", 8999, factory)
+   reactor.connectTCP(CLOUD_NODE_HOST, CLOUD_NODE_PORT, factory)
    reactor.run()
