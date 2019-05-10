@@ -24,7 +24,7 @@ def store_update(type, message, with_weights=True):
 
     try:
         dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
-        table = dynamodb.Table("updatestore_" + state.state["repo_id"])
+        table = dynamodb.Table("UpdateStore")
         item = {
             'Id': str(uuid.uuid4()),
             'RepoId': state.state["repo_id"],
