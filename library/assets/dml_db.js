@@ -1,23 +1,22 @@
 "use strict";
-exports.__esModule = true;
-var DMLDB = /** @class */ (function () {
+export var DMLDB = /** @class */ (function () {
     function DMLDB() {
     }
-    DMLDB.prototype.open = function (callback) {
+    DMLDB.open = function (callback) {
         // Database version.
         var version = 1;
         // Open a connection to the datastore.
-        var request = indexedDB.open('data_mappings', version);
+        var request = indexedDB.open('datamappings', version);
         // Handle datastore upgrades.
         request.onupgradeneeded = function (e) {
             var db = e.target.result;
             //e.target.transaction.onerror = tDB.onerror;
             // Delete the old datastore.
-            if (db.objectStoreNames.contains('dataMapping')) {
-                db.deleteObjectStore('dataMapping');
+            if (db.objectStoreNames.contains('datamapping')) {
+                db.deleteObjectStore('datamapping');
             }
             // Create a new datastore.
-            var store = db.createObjectStore('dataMapping', {
+            var store = db.createObjectStore('datamapping', {
                 keyPath: 'repo'
             });
         };
@@ -32,39 +31,46 @@ var DMLDB = /** @class */ (function () {
         //request.onerror = this.onerror;
     };
     ;
-    DMLDB.prototype.create = function (repo, data, callback) {
+    DMLDB.create = function (repo, data, callback, ws, node) {
+        console.log("Start");
         // Get a reference to the db.
         var db = DMLDB.datastore;
         // Initiate a new transaction.
-        var transaction = db.transaction(['dataMapping'], 'readwrite');
+        var transaction = db.transaction(['datamapping'], 'readwrite');
         // Get the datastore.
-        var objStore = transaction.objectStore('dataMapping');
-        // Create a timestamp for the dataMapping item.
+        var objStore = transaction.objectStore('datamapping');
+        // Create a timestamp for the datamapping item.
         var timestamp = new Date().getTime();
-        // Create an object for the dataMapping item.
-        var dataMapping = {
+        // Create an object for the datamapping item.
+        var datamapping = {
             'data': data,
+            'rows': data.length,
+            'cols': data[0].length,
             'repo': repo,
             'timestamp': timestamp
         };
         // Create the datastore request.
-        var request = objStore.put(dataMapping);
+        var request = objStore.put(datamapping);
+        console.log(request);
         // Handle a successful datastore put.
         request.onsuccess = function (e) {
             // Execute the callback function.
-            callback(dataMapping);
+            console.log("SUCCESS CREATE");
+            callback(ws, node);
         };
         // Handle errors.
         //request.onerror = tDB.onerror;
     };
     ;
-    DMLDB.prototype.get = function (dml_request, callback) {
+    DMLDB.get = function (dml_request, callback, model, ws) {
         var db = DMLDB.datastore;
-        var transaction = db.transaction(['dataMapping'], 'readwrite');
-        var objStore = transaction.objectStore('dataMapping');
+        var transaction = db.transaction(['datamapping'], 'readwrite');
+        var objStore = transaction.objectStore('datamapping');
         var request = objStore.get(dml_request.repo);
         request.onsuccess = function (e) {
-            callback(request.result.data, dml_request);
+            var data = tf.tensor(request.result.data).as2D(request.result.rows, request.result.cols);
+            console.log("GET SUCCESS");
+            callback(data, dml_request, model, ws);
         };
         request.onerror = function (e) {
             console.log(e);
@@ -73,8 +79,8 @@ var DMLDB = /** @class */ (function () {
     ;
     DMLDB.prototype["delete"] = function (repo, callback) {
         var db = DMLDB.datastore;
-        var transaction = db.transaction(['dataMapping'], 'readwrite');
-        var objStore = transaction.objectStore('dataMapping');
+        var transaction = db.transaction(['datamapping'], 'readwrite');
+        var objStore = transaction.objectStore('datamapping');
         var request = objStore["delete"](repo);
         request.onsuccess = function (e) {
             callback();
@@ -86,4 +92,3 @@ var DMLDB = /** @class */ (function () {
     ;
     return DMLDB;
 }());
-exports.DMLDB = DMLDB;
