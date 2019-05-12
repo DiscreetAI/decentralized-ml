@@ -8,7 +8,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 # change this to something you can remember.
 REPO_ID = "test"
 
-CLOUD_NODE_HOST = "cloud-node-env9.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+CLOUD_NODE_HOST = "cloud-node-env99.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 CLOUD_NODE_PORT = 80
 
 with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:

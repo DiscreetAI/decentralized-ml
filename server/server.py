@@ -8,7 +8,7 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
 from twisted.internet import task, reactor
-from flask import Flask, send_from_directory
+from flask import Flask, jsonify, send_from_directory
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
@@ -157,6 +157,10 @@ class CloudNodeFactory(WebSocketServerFactory):
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
 CORS(app)
+
+@app.route("/status")
+def get_status():
+    return jsonify({"Busy": state.state["busy"]})
 
 @app.route('/model/<path:filename>')
 def serve_model(filename):
