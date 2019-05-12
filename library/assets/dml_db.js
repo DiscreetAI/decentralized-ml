@@ -32,7 +32,6 @@ export var DMLDB = /** @class */ (function () {
     };
     ;
     DMLDB.create = function (repo, data, callback, ws, node) {
-        console.log("Start");
         // Get a reference to the db.
         var db = DMLDB.datastore;
         // Initiate a new transaction.
@@ -55,7 +54,6 @@ export var DMLDB = /** @class */ (function () {
         // Handle a successful datastore put.
         request.onsuccess = function (e) {
             // Execute the callback function.
-            console.log("SUCCESS CREATE");
             callback(ws, node);
         };
         // Handle errors.
@@ -69,7 +67,6 @@ export var DMLDB = /** @class */ (function () {
         var request = objStore.get(dml_request.repo);
         request.onsuccess = function (e) {
             var data = tf.tensor(request.result.data).as2D(request.result.rows, request.result.cols);
-            console.log("GET SUCCESS");
             callback(data, dml_request, model, ws);
         };
         request.onerror = function (e) {

@@ -6,14 +6,12 @@ http.createServer(function (req, res) {
 }).listen(8080);
 
 var WebSocketServer = require('ws').Server,
-ws = new WebSocketServer({port: 8001})
+ws = new WebSocketServer({port: 8001});
 
 connections = []
 ws.on('connection', function(w){
+    var index = connections.length - 1;
     connections.push(w)
-    // var id = w.upgradeReq.headers['sec-websocket-key'];
-    // console.log('New Connection id :: ', id);
-    // w.send(id);
     w.send("Hi Client!");
     console.log("Connected with client!");
     w.on('message', function(msg){
@@ -22,7 +20,8 @@ ws.on('connection', function(w){
     });
     var timer = setTimeout(sendMessage, 10000);
     w.on('close', function() {
-        //var id = w.upgradeReq.headers['sec-websocket-key'];
+        console.log("Closing client...");
+        connections.splice(index, 1);
     });
 
     //sockets[id] = w;

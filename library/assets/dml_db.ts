@@ -43,7 +43,6 @@ export class DMLDB {
       };
 
       static create(repo:string, data:number[][], callback:Function, ws:WebSocket, node:string) {
-        console.log("Start");
         // Get a reference to the db.
         var db = DMLDB.datastore;
       
@@ -71,7 +70,6 @@ export class DMLDB {
         // Handle a successful datastore put.
         request.onsuccess = function(e:any) {
           // Execute the callback function.
-          console.log("SUCCESS CREATE");
           callback(ws, node);
         };
       
