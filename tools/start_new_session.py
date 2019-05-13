@@ -43,18 +43,13 @@ NEW_CONNECTION_MESSAGE = {
 }
 
 class NewSessionTestProtocol(WebSocketClientProtocol):
-
+    
    def onOpen(self):
       json_data = json.dumps(NEW_CONNECTION_MESSAGE)
       self.sendMessage(json_data.encode())
       json_data = json.dumps(NEW_MESSAGE)
       self.sendMessage(json_data.encode())
 
-   def onMessage(self, payload, isBinary):
-      if isBinary:
-         print("Binary message received: {0} bytes".format(len(payload)))
-      else:
-         print("Text message received: {0}".format(payload.decode('utf8')))
 
 if __name__ == '__main__':
 
