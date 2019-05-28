@@ -42,6 +42,7 @@ def start_new_session(message, clients_dict):
     # // 5. Kickstart a DML Session with the TFJS model and round # 1
     new_message = {
         "session_id": state.state["session_id"],
+        "repo_id": state.state["repo_id"],
         "round": 1,
         "action": "TRAIN",
         "hyperparams": message.hyperparams,
@@ -73,6 +74,7 @@ def start_next_round(message, clients_list):
     # Kickstart a DML Session with the TFJS model
     new_message = {
         "session_id": state.state["session_id"],
+        "repo_id": state.state["repo_id"],
         "round": state.state["current_round"],
         "action": "TRAIN",
         "hyperparams": message.hyperparams,
