@@ -105,3 +105,8 @@ venv.bak/
 
 # custom
 **/temp
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
