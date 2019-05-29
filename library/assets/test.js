@@ -8,7 +8,7 @@ const SOCKET_URL = "ws://localhost:8001/";
 
 
 var node = 'http://localhost:8002/assets/server'
-export const HOST = "cloud-node-env99.au4c4pd2ch.us-west-1.elasticbeanstalk.com";
+export const HOST = "99885f00eefcd4107572eb62a5cb429a.au4c4pd2ch.us-west-1.elasticbeanstalk.com";
 export const SOCKET_HOST = "ws://" + HOST;
 export const FULL_HOST = "http://" + HOST;
 var ws = new WebSocket(SOCKET_HOST);
