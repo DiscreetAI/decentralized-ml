@@ -1,29 +1,29 @@
 "use strict";
 export var DMLRequest = /** @class */ (function () {
-    function DMLRequest(id, repo, action, params, label_index) {
+    function DMLRequest(id, repo, action, params) {
         this.id = id;
         this.repo = repo;
         this.action = action;
         this.params = params;
-        this.label_index = label_index;
         this.round = -1;
     }
     DMLRequest.serialize = function (request, message) {
         var socketMessage = {
-            "id": request.id,
+            "session_id": request.id,
             "repo": request.repo,
             "action": request.action,
-            "message": message
+            "results": message,
+            "type": "NEW_WEIGHTS"
         };
-        if (request.action == "train")
+        if (request.action == "TRAIN")
             socketMessage["round"] = request.round;
         return JSON.stringify(socketMessage);
     };
     /* TODO: This feels more complicated than necessary */
     DMLRequest.deserialize = function (message) {
         var request_json = JSON.parse(message);
-        var request = new DMLRequest(request_json["id"], request_json["repo"], request_json["action"], request_json["params"], request_json["label_index"]);
-        if (request.action == "train")
+        var request = new DMLRequest(request_json["session_id"], "mnist", request_json["action"], request_json["hyperparams"]);
+        if (request.action == "TRAIN")
             request.round = request_json["round"];
         return request;
     };

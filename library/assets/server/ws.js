@@ -18,7 +18,7 @@ ws.on('connection', function(w){
         //var id = w.upgradeReq.headers['sec-websocket-key'];
         console.log("Client sent us weights!");
     });
-    var timer = setTimeout(sendMessage, 10000);
+    var timer = setTimeout(sendMessage, 15000);
     w.on('close', function() {
         console.log("Closing client...");
         connections.splice(index, 1);
@@ -33,14 +33,15 @@ function sendMessage() {
         var params = {
             "batch_size": 8000,
             "epochs": 5,
-            "shuffle": true
+            "shuffle": true, 
+            "label_index": 0
           }
         var message = {
-            "id": "test",
+            "session_id": "test",
             "repo": "mnist",
-            "action": "train",
-            "params": params,
-            "label_index": 0
+            "action": "TRAIN",
+            "hyperparams": params,
+            "current_round": 1
         }
         connections[i].send(JSON.stringify(message));
     }

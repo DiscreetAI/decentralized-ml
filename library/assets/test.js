@@ -6,8 +6,20 @@ import {DMLDB} from "./dml_db.js";
 
 const SOCKET_URL = "ws://localhost:8001/";
 
-var ws = new WebSocket(SOCKET_URL);
+
 var node = 'http://localhost:8002/assets/server'
+export const HOST = "cloud-node-env99.au4c4pd2ch.us-west-1.elasticbeanstalk.com";
+export const SOCKET_HOST = "ws://" + HOST;
+export const FULL_HOST = "http://" + HOST;
+var ws = new WebSocket(SOCKET_HOST);
+ws.addEventListener("open", function (event) {
+  var registrationMessage = {
+    "type": "REGISTER",
+    "node_type": "LIBRARY"
+  }
+  ws.send(JSON.stringify(registrationMessage));
+});
+//const MODEL_URL = node + "/test/model.json";
 
 async function run() {
   console.log("Starting store...")
@@ -17,7 +29,7 @@ async function run() {
 async function after_open() {
   const data = await getData();
   console.log("Data retrieved!")
-  DataManager.store("mnist", data, ws, node);
+  DataManager.store("mnist", data, ws, HOST);
   console.log("Data stored!");
 }
 

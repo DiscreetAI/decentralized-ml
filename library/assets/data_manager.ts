@@ -11,11 +11,15 @@ class DataManager {
         DMLDB.create(repo, data.arraySync(), DataManager.listen, ws, node);
     }
 
-    static listen (ws:WebSocket, node:string) {
+    static listen (ws:WebSocket, node:string, db:DMLDB) {
         ws.addEventListener('message', function (event) {
             var receivedMessage:string = event.data;
-            var request:DMLRequest = DMLRequest.deserialize(receivedMessage);
-            Runner.handleMessage(request, node, ws);
+            console.log("Received message:");
+            console.log(receivedMessage);
+            if ("action" in JSON.parse(receivedMessage)) {
+                var request:DMLRequest = DMLRequest.deserialize(receivedMessage);
+                Runner.handleMessage(request, node, ws);
+            } 
         });
     }
 }
