@@ -2,7 +2,7 @@
 export var DMLDB = /** @class */ (function () {
     function DMLDB() {
     }
-    DMLDB.open = function (callback) {
+    DMLDB._open = function (callback) {
         // Database version.
         var version = 1;
         // Open a connection to the datastore.
@@ -31,7 +31,7 @@ export var DMLDB = /** @class */ (function () {
         //request.onerror = this.onerror;
     };
     ;
-    DMLDB.create = function (repo, data, callback, ws, node) {
+    DMLDB._create = function (repo, data, callback, ws, node) {
         // Get a reference to the db.
         var db = DMLDB.datastore;
         // Initiate a new transaction.
@@ -60,7 +60,7 @@ export var DMLDB = /** @class */ (function () {
         //request.onerror = tDB.onerror;
     };
     ;
-    DMLDB.create_session = function (data, dml_request, callback, model, ws, datamapping) {
+    DMLDB._create_session = function (data, dml_request, callback, model, ws, datamapping) {
         // Get a reference to the db.
         var db = DMLDB.datastore;
         // Initiate a new transaction.
@@ -83,7 +83,7 @@ export var DMLDB = /** @class */ (function () {
         //request.onerror = tDB.onerror;
     };
     ;
-    DMLDB.get = function (dml_request, callback, model, ws) {
+    DMLDB._get = function (dml_request, callback, model, ws) {
         var db = DMLDB.datastore;
         var transaction = db.transaction(['datamapping'], 'readwrite');
         var objStore = transaction.objectStore('datamapping');
@@ -93,7 +93,7 @@ export var DMLDB = /** @class */ (function () {
             if (dml_request.action == 'TRAIN') {
                 var sessions = request.result.sessions;
                 if (!(dml_request.id in sessions)) {
-                    DMLDB.create_session(data, dml_request, callback, model, ws, request.result);
+                    DMLDB._create_session(data, dml_request, callback, model, ws, request.result);
                     return;
                 }
                 var session_entry = sessions[dml_request.id];
@@ -110,7 +110,7 @@ export var DMLDB = /** @class */ (function () {
         };
     };
     ;
-    DMLDB.put = function (dml_request, callback, result, ws) {
+    DMLDB._put = function (dml_request, callback, result, ws) {
         var db = DMLDB.datastore;
         var transaction = db.transaction(['datamapping'], 'readwrite');
         var objStore = transaction.objectStore('datamapping');
@@ -118,19 +118,6 @@ export var DMLDB = /** @class */ (function () {
         request.onsuccess = function (e) {
             request.result.sessions[dml_request.id].round = dml_request.round;
             callback(dml_request, result, ws);
-        };
-        request.onerror = function (e) {
-            console.log(e);
-        };
-    };
-    ;
-    DMLDB.prototype["delete"] = function (repo, callback) {
-        var db = DMLDB.datastore;
-        var transaction = db.transaction(['datamapping'], 'readwrite');
-        var objStore = transaction.objectStore('datamapping');
-        var request = objStore["delete"](repo);
-        request.onsuccess = function (e) {
-            callback();
         };
         request.onerror = function (e) {
             console.log(e);

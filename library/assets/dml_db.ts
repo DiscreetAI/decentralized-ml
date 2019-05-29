@@ -5,7 +5,7 @@ import { getRowsCols } from "@tensorflow/tfjs-core/dist/kernels/webgl/webgl_util
 export class DMLDB {
   static datastore: any;
 
-  static open(callback:Function) {
+  static _open(callback:Function) {
     // Database version.
     var version = 1;
   
@@ -42,7 +42,7 @@ export class DMLDB {
     //request.onerror = this.onerror;
   };
 
-  static create(repo:string, data:number[][], callback:Function, ws:WebSocket, node:string) {
+  static _create(repo:string, data:number[][], callback:Function, ws:WebSocket, node:string) {
     // Get a reference to the db.
     var db = DMLDB.datastore;
   
@@ -77,7 +77,7 @@ export class DMLDB {
     //request.onerror = tDB.onerror;
   };
 
-  static create_session(data:Tensor2D, dml_request:DMLRequest, callback:Function, 
+  static _create_session(data:Tensor2D, dml_request:DMLRequest, callback:Function, 
     model:LayersModel, ws:WebSocket, datamapping:any) {
     // Get a reference to the db.
     var db = DMLDB.datastore;
@@ -106,7 +106,7 @@ export class DMLDB {
     //request.onerror = tDB.onerror;
   };
 
-  static get(dml_request:DMLRequest, callback:Function, model:LayersModel, ws:WebSocket) {
+  static _get(dml_request:DMLRequest, callback:Function, model:LayersModel, ws:WebSocket) {
     var db = DMLDB.datastore;
     var transaction = db.transaction(['datamapping'], 'readwrite');
     var objStore = transaction.objectStore('datamapping');
@@ -118,7 +118,7 @@ export class DMLDB {
       if (dml_request.action == 'TRAIN') {
         var sessions = request.result.sessions;
         if (!(dml_request.id in sessions)) {
-          DMLDB.create_session(data, dml_request, callback, model, ws, request.result);
+          DMLDB._create_session(data, dml_request, callback, model, ws, request.result);
           return;
         }
         var session_entry = sessions[dml_request.id];
@@ -136,7 +136,7 @@ export class DMLDB {
     }
   };
 
-  static put(dml_request:DMLRequest, callback:Function, result:any, ws:WebSocket) {
+  static _put(dml_request:DMLRequest, callback:Function, result:any, ws:WebSocket) {
     var db = DMLDB.datastore;
     var transaction = db.transaction(['datamapping'], 'readwrite');
     var objStore = transaction.objectStore('datamapping');
@@ -146,22 +146,6 @@ export class DMLDB {
     request.onsuccess = function(e:any) {
       request.result.sessions[dml_request.id].round = dml_request.round;
       callback(dml_request, result, ws);
-    }
-  
-    request.onerror = function(e:any) {
-      console.log(e);
-    }
-  };
-
-  delete(repo:string, callback:Function) {
-    var db = DMLDB.datastore;
-    var transaction = db.transaction(['datamapping'], 'readwrite');
-    var objStore = transaction.objectStore('datamapping');
-  
-    var request = objStore.delete(repo);
-  
-    request.onsuccess = function(e:any) {
-      callback();
     }
   
     request.onerror = function(e:any) {

@@ -7,7 +7,7 @@ export class DMLRequest {
         this.round = -1;
     }
 
-    static serialize(request:DMLRequest, message:any) {
+    static _serialize(request:DMLRequest, message:any) {
         var socketMessage:any = {
             "session_id": request.id,
             "repo": request.repo,
@@ -21,7 +21,7 @@ export class DMLRequest {
     }
 
     /* TODO: This feels more complicated than necessary */
-    static deserialize(message:string) {
+    static _deserialize(message:string) {
         var request_json = JSON.parse(message);
         var request:DMLRequest =  new DMLRequest(
             request_json["session_id"],

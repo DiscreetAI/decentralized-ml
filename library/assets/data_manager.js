@@ -6,16 +6,16 @@ export var DataManager = /** @class */ (function () {
     function DataManager() {
     }
     DataManager.store = function (repo, data, ws, node) {
-        DMLDB.create(repo, data.arraySync(), DataManager.listen, ws, node);
+        DMLDB._create(repo, data.arraySync(), DataManager._listen, ws, node);
     };
-    DataManager.listen = function (ws, node, db) {
+    DataManager._listen = function (ws, node, db) {
         ws.addEventListener('message', function (event) {
             console.log("Received message:")
             var receivedMessage = event.data;
             console.log(receivedMessage);
             if ("action" in JSON.parse(receivedMessage)) {
-                var request = DMLRequest.deserialize(receivedMessage);
-                Runner.handleMessage(request, node, ws);
+                var request = DMLRequest._deserialize(receivedMessage);
+                Runner._handleMessage(request, node, ws);
             } 
         });
     };

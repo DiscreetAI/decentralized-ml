@@ -42,7 +42,7 @@ export var Runner = /** @class */ (function () {
     Runner._lowerCaseToCamelCase = function (str) {
         return str.replace(/_([a-z])/g, function (g) { return g[1].toUpperCase(); });
     };
-    Runner.compileModel = function (model, optimization_data) {
+    Runner._compileModel = function (model, optimization_data) {
         var optimizer;
         if (optimization_data['optimizer_config']['class_name'] == 'SGD') {
             // SGD
@@ -60,7 +60,7 @@ export var Runner = /** @class */ (function () {
         console.log("Model compiled!", model);
         return model;
     };
-    Runner.getModel = function (node, request, callback, ws) {
+    Runner._getModel = function (node, request, callback, ws) {
         return __awaiter(this, void 0, void 0, function () {
             var model_url, model;
             return __generator(this, function (_a) {
@@ -73,16 +73,16 @@ export var Runner = /** @class */ (function () {
                         fetch(model_url)
                             .then(function (res) { return res.json(); })
                             .then(function (out) {
-                            model = Runner.compileModel(model, out["modelTopology"]["training_config"]);
+                            model = Runner._compileModel(model, out["modelTopology"]["training_config"]);
                             model.save('indexeddb://' + request.id);
-                            DMLDB.get(request, callback, model, ws);
+                            DMLDB._get(request, callback, model, ws);
                         })["catch"](function (err) { return console.error(err); });
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Runner.saveModel = function (model, path) {
+    Runner._saveModel = function (model, path) {
         return __awaiter(this, void 0, void 0, function () {
             var results;
             return __generator(this, function (_a) {
@@ -96,7 +96,7 @@ export var Runner = /** @class */ (function () {
             });
         });
     };
-    Runner.getWeights = function (model) {
+    Runner._getWeights = function (model) {
         return __awaiter(this, void 0, void 0, function () {
             var all_weights, i, weights, weightsData, weightsList, j;
             return __generator(this, function (_a) {
@@ -113,7 +113,7 @@ export var Runner = /** @class */ (function () {
             });
         });
     };
-    Runner.labelData = function (data, label_index) {
+    Runner._labelData = function (data, label_index) {
         if (label_index < 0) {
             label_index = data[0].length - 1;
         }
@@ -122,23 +122,23 @@ export var Runner = /** @class */ (function () {
         trainXs.forEach(function (x) { x.splice(label_index, 1); });
         return [tf.tensor(trainXs), tf.tensor(trainYs)];
     };
-    Runner.train = function (data, request, model, ws) {
+    Runner._train = function (data, request, model, ws) {
         return __awaiter(this, void 0, void 0, function () {
             var _a, data_x, data_y, weights, results;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = Runner.labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
+                        _a = Runner._labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
                         model.fit(data_x, data_y, {
                             batchSize: request.params["batch_size"],
                             epochs: request.params["epochs"],
                             shuffle: request.params["shuffle"]
                         });
                         console.log("Finished training!");
-                        return [4 /*yield*/, Runner.saveModel(model, request.id)];
+                        return [4 /*yield*/, Runner._saveModel(model, request.id)];
                     case 1:
                         _b.sent();
-                        return [4 /*yield*/, Runner.getWeights(model)];
+                        return [4 /*yield*/, Runner._getWeights(model)];
                     case 2:
                         weights = _b.sent();
                         results = {
@@ -147,41 +147,41 @@ export var Runner = /** @class */ (function () {
                         };
                         console.log("Training results:")
                         console.log(results);
-                        DMLDB.put(request, Runner.sendMessage, results, ws);
+                        DMLDB._put(request, Runner._sendMessage, results, ws);
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Runner.evaluate = function (data, request, model, ws) {
+    Runner._evaluate = function (data, request, model, ws) {
         return __awaiter(this, void 0, void 0, function () {
             var _a, data_x, data_y, result;
             return __generator(this, function (_b) {
-                _a = Runner.labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
+                _a = Runner._labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
                 result = model.evaluate(data_x, data_y).toString();
-                DMLDB.put(request, Runner.sendMessage, result, ws);
+                DMLDB._put(request, Runner._sendMessage, result, ws);
                 return [2 /*return*/];
             });
         });
     };
-    Runner.sendMessage = function (request, message, ws) {
+    Runner._sendMessage = function (request, message, ws) {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
-                result = DMLRequest.serialize(request, message);
+                result = DMLRequest._serialize(request, message);
                 ws.send(result);
                 return [2 /*return*/];
             });
         });
     };
-    Runner.handleMessage = function (request, node, ws) {
+    Runner._handleMessage = function (request, node, ws) {
         return __awaiter(this, void 0, void 0, function () {
             var callback;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        callback = (request.action == 'TRAIN') ? Runner.train : Runner.evaluate;
-                        return [4 /*yield*/, Runner.getModel(node, request, callback, ws)];
+                        callback = (request.action == 'TRAIN') ? Runner._train : Runner._evaluate;
+                        return [4 /*yield*/, Runner._getModel(node, request, callback, ws)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];

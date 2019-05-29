@@ -7,7 +7,7 @@ export var DMLRequest = /** @class */ (function () {
         this.params = params;
         this.round = -1;
     }
-    DMLRequest.serialize = function (request, message) {
+    DMLRequest._serialize = function (request, message) {
         var socketMessage = {
             "session_id": request.id,
             "repo": request.repo,
@@ -20,7 +20,7 @@ export var DMLRequest = /** @class */ (function () {
         return JSON.stringify(socketMessage);
     };
     /* TODO: This feels more complicated than necessary */
-    DMLRequest.deserialize = function (message) {
+    DMLRequest._deserialize = function (message) {
         var request_json = JSON.parse(message);
         var request = new DMLRequest(request_json["session_id"], "mnist", request_json["action"], request_json["hyperparams"]);
         if (request.action == "TRAIN")

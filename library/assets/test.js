@@ -23,7 +23,7 @@ ws.addEventListener("open", function (event) {
 
 async function run() {
   console.log("Starting store...")
-  DMLDB.open(after_open);
+  DMLDB._open(after_open);
 }
 
 async function after_open() {
