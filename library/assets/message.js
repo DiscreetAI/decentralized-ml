@@ -23,7 +23,7 @@ export var DMLRequest = /** @class */ (function () {
     /* TODO: This feels more complicated than necessary */
     DMLRequest._deserialize = function (message) {
         var request_json = JSON.parse(message);
-        var request = new DMLRequest(request_json["session_id"], DataManager.repo_id, request_json["action"], request_json["hyperparams"]);
+        var request = new DMLRequest(request_json["session_id"], request_json["repo_id"], request_json["action"], request_json["hyperparams"]);
         if (request.action == "TRAIN")
             request.round = request_json["round"];
         return request;

@@ -11,7 +11,7 @@ async function run() {
   console.log("Bootstrapped library!");
   const data = await getData();
   console.log("Data retrieved!")
-  DataManager.store(data);
+  DataManager.store("mnist", data);
   console.log("Data stored!");
 }
 

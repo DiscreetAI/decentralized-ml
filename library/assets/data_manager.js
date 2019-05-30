@@ -20,10 +20,10 @@ export var DataManager = /** @class */ (function () {
         DMLDB._open();
         DataManager.bootstrapped = true;
     };
-    DataManager.store = function (data) {
+    DataManager.store = function (repo_name, data) {
         if (!DataManager.bootstrapped)
             throw new Error("Library not bootstrapped!");
-        DMLDB._create(DataManager.repo_id, data.arraySync(), DataManager._listen);
+        DMLDB._create(repo_name, data.arraySync(), DataManager._listen);
     };
     DataManager._listen = function () {
         DataManager.ws.addEventListener('message', function (event) {

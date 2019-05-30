@@ -25,7 +25,7 @@ export class DMLRequest {
         var request_json = JSON.parse(message);
         var request:DMLRequest =  new DMLRequest(
             request_json["session_id"],
-            DataManager.repo_id,
+            request_json["repo_id"],
             request_json["action"],
             request_json["hyperparams"]
         )

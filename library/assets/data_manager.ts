@@ -26,10 +26,10 @@ export class DataManager {
         DMLDB._open();
         DataManager.bootstrapped = true;
     }
-    static store (data:Tensor2D) {
+    static store (repo_name:string, data:Tensor2D) {
         if (!DataManager.bootstrapped)
             throw new Error("Library not bootstrapped!");
-        DMLDB._create(DataManager.repo_id, data.arraySync(), DataManager._listen);
+        DMLDB._create(repo_name, data.arraySync(), DataManager._listen);
     }
 
     static _listen () {
