@@ -1,4 +1,5 @@
 import { LayersModel } from "@tensorflow/tfjs/dist";
+import { DataManager } from './data_manager.js';
 
 export class DMLRequest {
     round:number;
@@ -10,7 +11,6 @@ export class DMLRequest {
     static _serialize(request:DMLRequest, message:any) {
         var socketMessage:any = {
             "session_id": request.id,
-            "repo": request.repo,
             "action": request.action,
             "results": message,
             "type": "NEW_WEIGHTS"
@@ -25,7 +25,7 @@ export class DMLRequest {
         var request_json = JSON.parse(message);
         var request:DMLRequest =  new DMLRequest(
             request_json["session_id"],
-            request_json["repo"],
+            DataManager.repo_id,
             request_json["action"],
             request_json["hyperparams"]
         )

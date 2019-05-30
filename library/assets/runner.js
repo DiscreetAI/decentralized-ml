@@ -36,6 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { DMLRequest } from './message.js';
 import { DMLDB } from './dml_db.js';
+import { DataManager } from './data_manager.js';
 export var Runner = /** @class */ (function () {
     function Runner() {
     }
@@ -60,22 +61,23 @@ export var Runner = /** @class */ (function () {
         console.log("Model compiled!", model);
         return model;
     };
-    Runner._getModel = function (node, request, callback, ws) {
+    Runner._getModel = function (request, callback) {
         return __awaiter(this, void 0, void 0, function () {
             var model_url, model;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        model_url = "http://" + node + "/model/model.json";
+                        model_url = DataManager.cloud_url + "/model/model.json";
                         return [4 /*yield*/, tf.loadLayersModel(model_url)];
                     case 1:
                         model = _a.sent();
                         fetch(model_url)
                             .then(function (res) { return res.json(); })
                             .then(function (out) {
+                            console.log('Output: ', out);
                             model = Runner._compileModel(model, out["modelTopology"]["training_config"]);
-                            model.save('indexeddb://' + request.id);
-                            DMLDB._get(request, callback, model, ws);
+                            Runner._saveModel(model, request.id);
+                            DMLDB._get(request, callback, model);
                         })["catch"](function (err) { return console.error(err); });
                         return [2 /*return*/];
                 }
@@ -122,7 +124,7 @@ export var Runner = /** @class */ (function () {
         trainXs.forEach(function (x) { x.splice(label_index, 1); });
         return [tf.tensor(trainXs), tf.tensor(trainYs)];
     };
-    Runner._train = function (data, request, model, ws) {
+    Runner._train = function (data, request, model) {
         return __awaiter(this, void 0, void 0, function () {
             var _a, data_x, data_y, weights, results;
             return __generator(this, function (_b) {
@@ -145,43 +147,43 @@ export var Runner = /** @class */ (function () {
                             "weights": weights,
                             "omega": data.arraySync().length
                         };
-                        console.log("Training results:")
+                        console.log("Training results:");
                         console.log(results);
-                        DMLDB._put(request, Runner._sendMessage, results, ws);
+                        DMLDB._put(request, Runner._sendMessage, results);
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Runner._evaluate = function (data, request, model, ws) {
+    Runner._evaluate = function (data, request, model) {
         return __awaiter(this, void 0, void 0, function () {
             var _a, data_x, data_y, result;
             return __generator(this, function (_b) {
                 _a = Runner._labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
                 result = model.evaluate(data_x, data_y).toString();
-                DMLDB._put(request, Runner._sendMessage, result, ws);
+                DMLDB._put(request, Runner._sendMessage, result);
                 return [2 /*return*/];
             });
         });
     };
-    Runner._sendMessage = function (request, message, ws) {
+    Runner._sendMessage = function (request, message) {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
                 result = DMLRequest._serialize(request, message);
-                ws.send(result);
+                DataManager.ws.send(result);
                 return [2 /*return*/];
             });
         });
     };
-    Runner._handleMessage = function (request, node, ws) {
+    Runner._handleMessage = function (request) {
         return __awaiter(this, void 0, void 0, function () {
             var callback;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         callback = (request.action == 'TRAIN') ? Runner._train : Runner._evaluate;
-                        return [4 /*yield*/, Runner._getModel(node, request, callback, ws)];
+                        return [4 /*yield*/, Runner._getModel(request, callback)];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];

@@ -1,4 +1,6 @@
 "use strict";
+
+import { DataManager } from './data_manager.js';
 export var DMLRequest = /** @class */ (function () {
     function DMLRequest(id, repo, action, params) {
         this.id = id;
@@ -10,7 +12,6 @@ export var DMLRequest = /** @class */ (function () {
     DMLRequest._serialize = function (request, message) {
         var socketMessage = {
             "session_id": request.id,
-            "repo": request.repo,
             "action": request.action,
             "results": message,
             "type": "NEW_WEIGHTS"
@@ -22,7 +23,7 @@ export var DMLRequest = /** @class */ (function () {
     /* TODO: This feels more complicated than necessary */
     DMLRequest._deserialize = function (message) {
         var request_json = JSON.parse(message);
-        var request = new DMLRequest(request_json["session_id"], "mnist", request_json["action"], request_json["hyperparams"]);
+        var request = new DMLRequest(request_json["session_id"], DataManager.repo_id, request_json["action"], request_json["hyperparams"]);
         if (request.action == "TRAIN")
             request.round = request_json["round"];
         return request;

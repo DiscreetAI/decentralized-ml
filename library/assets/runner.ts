@@ -1,5 +1,6 @@
 import { DMLRequest } from './message.js';
 import { DMLDB } from './dml_db.js';
+import { DataManager } from './data_manager.js';
 import { LayersModel, Tensor, Tensor2D} from "@tensorflow/tfjs/dist";
 import { loadLayersModel, tensor, train} from '@tensorflow/tfjs';
 import { TypedArray } from '@tensorflow/tfjs-core/dist/types';
@@ -30,8 +31,8 @@ export class Runner {
     return model;
   }
 
-  static async _getModel(node:string,  request:DMLRequest, callback:Function, ws:WebSocket) {
-    const model_url:string = "http://" + node + "/model/model.json";
+  static async _getModel(request:DMLRequest, callback:Function) {
+    const model_url:string = DataManager.cloud_url + "/model/model.json";
     var model = await loadLayersModel(model_url);
     fetch(model_url)
       .then(res => res.json())
@@ -39,7 +40,7 @@ export class Runner {
         console.log('Output: ', out);
         model = Runner._compileModel(model, out["modelTopology"]["training_config"]);
         Runner._saveModel(model, request.id);
-        DMLDB._get(request, callback, model, ws);
+        DMLDB._get(request, callback, model);
     }).catch(err => console.error(err));
   }
 
@@ -74,7 +75,7 @@ export class Runner {
     return [tensor(trainXs), tensor(trainYs)]
   }
 
-  static async _train(data:Tensor2D, request:DMLRequest, model:LayersModel, ws:WebSocket) {
+  static async _train(data:Tensor2D, request:DMLRequest, model:LayersModel) {
     var [data_x, data_y] = Runner._labelData(data.arraySync(), request.params.label_index);
     model.fit(data_x, data_y, {
       batchSize: request.params["batch_size"],
@@ -90,22 +91,22 @@ export class Runner {
     }
     console.log("Training results:")
     console.log(results);
-    DMLDB._put(request, Runner._sendMessage, results, ws);     
+    DMLDB._put(request, Runner._sendMessage, results);     
   }
 
-  static async _evaluate(data:Tensor2D, request:DMLRequest, model:LayersModel, ws:WebSocket) {
+  static async _evaluate(data:Tensor2D, request:DMLRequest, model:LayersModel) {
     var [data_x, data_y] = Runner._labelData(data.arraySync(), request.params.label_index);
     var result:string = model.evaluate(data_x, data_y).toString();
-    DMLDB._put(request, Runner._sendMessage, result, ws);
+    DMLDB._put(request, Runner._sendMessage, result);
   }
 
-  static async _sendMessage(request:DMLRequest, message:string, ws:WebSocket) {
+  static async _sendMessage(request:DMLRequest, message:string) {
     var result:string = DMLRequest._serialize(request, message);
-    ws.send(result);
+    DataManager.ws.send(result);
   }
 
-  static async _handleMessage(request:DMLRequest, node:string, ws:WebSocket) {
+  static async _handleMessage(request:DMLRequest) {
     var callback:Function = (request.action == 'TRAIN') ? Runner._train : Runner._evaluate;
-    await Runner._getModel(node, request, callback, ws); 
+    await Runner._getModel(request, callback); 
   }
 }
