@@ -16,11 +16,11 @@ def store_update(type, message, with_weights=True):
 
     if with_weights:
         try:
+            repo_id = state.state['repo_id']
             session_id = state.state['session_id']
             round = state.state['current_round']
             s3 = boto3.resource('s3')
-            # TODO: Need to change with repo_id.
-            weights_s3_key = 'test/{0}/{1}/model.h5'.format(session_id, round)
+            weights_s3_key = '{0}/{1}/{2}/model.h5'.format(repo_id, session_id, round)
             object = s3.Object('updatestore', weights_s3_key)
             h5_filepath = TEMP_FOLDER + "/{0}/model{1}.h5".format(session_id, round)
             object.put(Body=open(h5_filepath, 'rb'))
