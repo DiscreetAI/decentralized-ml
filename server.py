@@ -202,6 +202,8 @@ CORS(app)
 def get_status():
     """
     Returns the status of the Cloud Node.
+
+    The dashboard-api is the only hitting this endpoint, so it should be secured.
     """
     return jsonify({"Busy": state.state["busy"]})
 
@@ -224,6 +226,8 @@ def serve_model(filename):
 def reset_state():
     """
     Resets the state of the cloud node.
+
+    TODO: This is only for debugging. Should be deleted.
     """
     state.state_lock.acquire()
     state.reset_state()
@@ -234,6 +238,8 @@ def reset_state():
 def get_state():
     """
     Get the state of the cloud node.
+
+    TODO: This is only for debugging. Should be deleted.
     """
     return repr(state.state)
 
