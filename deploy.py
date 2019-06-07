@@ -2,18 +2,18 @@ from __future__ import print_function
 import os
 import sys
 # import git
-import shutil
+# import shutil
 from time import strftime, sleep
 import boto3
-import zipfile
 from botocore.exceptions import ClientError
 
-REPO_URL = "https://github.com/georgymh/decentralized-ml-js"
-REPO_PATH = "/tmp/decentralized-ml-js"
-ZIP_PATH = '/tmp/cloud-node.zip'
+# REPO_URL = "https://github.com/georgymh/decentralized-ml-js"
+# REPO_PATH = "/tmp/decentralized-ml-js"
+# ZIP_PATH = '/tmp/cloud-node.zip'
 
 APPLICATION_NAME = "cloud-node"
 S3_BUCKET = "cloud-node-deployment"
+AWS_REGION = 'us-west-1'
 
 VERSION_LABEL = strftime("%Y%m%d%H%M%S")
 BUCKET_KEY = APPLICATION_NAME + '/' + 'cloudnode_build.zip'
@@ -48,6 +48,9 @@ PIPELINE_NAME = 'cloud-node-deploy'
 
 
 # def pre_steps():
+#     """
+#     Removes temporary folders.
+#     """
 #     try:
 #         shutil.rmtree(REPO_PATH)
 #         shutil.rmtree(ZIP_PATH)
@@ -55,17 +58,24 @@ PIPELINE_NAME = 'cloud-node-deploy'
 #         pass
 
 # def clone_repo():
+#     """
+#     Clones the repo locally.
+#     """
 #     git.exec_command('clone', REPO_URL)
 #     return REPO_PATH
 
 # def zip_server_directory():
+#     """
+#     Zips the cloned repo so it can be uploaded to S3.
+#     """
 #     shutil.make_archive(ZIP_PATH.split('.zip')[0], 'zip', REPO_PATH + "/server")
 #     return ZIP_PATH
 
 
 def create_new_version():
     """
-    Creates a new application version in AWS Elastic Beanstalk
+    Helper function that creates a new application version of an environment in
+    AWS Elastic Beanstalk.
     """
     try:
         client = boto3.client('elasticbeanstalk')
@@ -100,7 +110,10 @@ def create_new_version():
 
 def deploy_new_version(env_name):
     """
-    Deploy a new version to AWS Elastic Beanstalk
+    Helper function to deploy a created version of the environment to AWS
+    Elastic Beanstalk.
+
+    This needs to run after `create_new_version()`.
     """
     try:
         client = boto3.client('elasticbeanstalk')
@@ -143,6 +156,10 @@ def deploy_new_version(env_name):
     return True
 
 def deploy_cloud_node(env_name):
+    """
+    Creates and then deploys a new version of the Cloud Node to AWS Elastic
+    Beanstalk.
+    """
     # if not upload_to_s3(ZIP_PATH):
     #     sys.exit(1)
     if not create_new_version():
@@ -155,6 +172,9 @@ def deploy_cloud_node(env_name):
 
 
 def make_codepipeline_elb_deploy_action(env_name):
+    """
+    Crafts a Deployment Action for AWS CodePipeline in JSON format.
+    """
     return {
       'name':'deploy-elb-' + env_name,
       'actionTypeId':{
@@ -165,8 +185,8 @@ def make_codepipeline_elb_deploy_action(env_name):
       },
       'runOrder':1,
       'configuration':{
-         'ApplicationName':'cloud-node',
-         'EnvironmentName':env_name
+         'ApplicationName': APPLICATION_NAME,
+         'EnvironmentName': env_name
       },
       'outputArtifacts':[
 
@@ -176,10 +196,14 @@ def make_codepipeline_elb_deploy_action(env_name):
             'name':'SourceArtifact'
          }
       ],
-      'region':'us-west-1'
+      'region': AWS_REGION
    }
 
 def add_codepipeline_deploy_step(env_name):
+    """
+    Makes a Cloud Node self-updateable by updating the AWS CodePipeline
+    pipeline.
+    """
     try:
         client = boto3.client('codepipeline')
         pipeline_response = client.get_pipeline(
@@ -200,10 +224,15 @@ def add_codepipeline_deploy_step(env_name):
         # TODO: Log an error and alert developers because this could break things.
         print("Error: " + str(e))
 
+    return True
+
 
 def run_deploy_routine(repo_id):
+    """
+    Runs the Deploy routine
+    """
     # pre_steps()
     # _ = clone_repo()
     # _ = zip_server_directory()
     _ = deploy_cloud_node(repo_id)
-    add_codepipeline_deploy_step(repo_id)
+    _ = add_codepipeline_deploy_step(repo_id)

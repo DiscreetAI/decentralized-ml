@@ -22,6 +22,9 @@ CORS(app)
 
 @app.route("/userdata", methods=["GET"])
 def get_user_data():
+    """
+    Returns the authenticated user's data.
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -37,6 +40,9 @@ def get_user_data():
 
 @app.route("/repo/<repo_id>", methods=["GET"])
 def get_repo(repo_id):
+    """
+    Returns a Repo's information (if the user has access to it).
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -51,6 +57,15 @@ def get_repo(repo_id):
 
 @app.route("/repo", methods=["POST"])
 def create_new_repo():
+    """
+    Creates a new repo under the authenticated user.
+
+    Example HTTP POST Request body (JSON format):
+        {
+        	"RepoName": "repo_name",
+        	"RepoDescription": "Some description here."
+        }
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -89,6 +104,9 @@ def create_new_repo():
 
 @app.route("/repos", methods=["GET"])
 def get_all_repos():
+    """
+    Returns all repos the user has access to.
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -103,6 +121,9 @@ def get_all_repos():
 
 @app.route("/logs/<repo_id>", methods=["GET"])
 def get_logs(repo_id):
+    """
+    Returns all logs for a Repo the user has access to.
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -118,6 +139,10 @@ def get_logs(repo_id):
 
 @app.route("/coordinator/status/<repo_id>", methods=["GET"])
 def get_coordinator_status(repo_id):
+    """
+    Returns the status of the Cloud Node associated to a Repo the user has
+    access to.
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -137,6 +162,16 @@ def get_coordinator_status(repo_id):
 
 @app.route("/model", methods=["POST"])
 def download_model():
+    """
+    Returns the download url of a model.
+
+    Example HTTP POST Request body (JSON format):
+        {
+          "RepoId": "test",
+          "SessionId": "c257efa4-791d-4130-bdc6-b0d3cee5fa25",
+          "Round": 5
+        }
+    """
     # Check authorization
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
@@ -168,6 +203,7 @@ def download_model():
 
 
 # NOTE: This function was added in the auth-enterprise app instead.
+# Feel free to remove if you'd like.
 # @app.route("/userdata", methods=["POST"])
 # def create_user_data():
 #     # Check authorization
@@ -200,10 +236,16 @@ def download_model():
 #         raise Exception("Error while creating the user data.")
 
 def _assert_user_has_repos_left(user_id):
+    """
+    Asserts that the user has any repos available to create.
+    """
     user_data = _get_user_data(user_id)
     assert int(user_data['ReposRemaining']) > 0, "You don't have any repos left."
 
 def _assert_user_can_read_repo(user_id, repo_id):
+    """
+    Asserts the user can read a particular repo.
+    """
     try:
         user_data = _get_user_data(user_id)
         repos_managed = user_data['ReposManaged']
@@ -212,6 +254,9 @@ def _assert_user_can_read_repo(user_id, repo_id):
     assert repo_id in repos_managed, "You don't have permissions for this repo."
 
 def _get_logs(repo_id):
+    """
+    Returns the logs for a repo.
+    """
     logs_table = _get_dynamodb_table("UpdateStore")
     try:
         response = logs_table.query(
@@ -223,6 +268,9 @@ def _get_logs(repo_id):
     return logs
 
 def _get_user_data(user_id):
+    """
+    Returns the user's data.
+    """
     table = _get_dynamodb_table("UsersDashboardData")
     try:
         response = table.get_item(
@@ -236,6 +284,9 @@ def _get_user_data(user_id):
     return data
 
 def _get_repo_details(user_id, repo_id):
+    """
+    Returns a repo's details.
+    """
     repos_table = _get_dynamodb_table("Repos")
     try:
         response = repos_table.get_item(
@@ -250,6 +301,9 @@ def _get_repo_details(user_id, repo_id):
     return repo_details
 
 def _update_user_data_with_new_repo(user_id, repo_id, api_key):
+    """
+    Updates a user with a new repo and its metadata.
+    """
     table = _get_dynamodb_table("UsersDashboardData")
     try:
         response = table.update_item(
@@ -269,6 +323,9 @@ def _update_user_data_with_new_repo(user_id, repo_id, api_key):
         raise Exception("Error while updating user data with new repo data.")
 
 def _create_new_repo_document(user_id, repo_name, repo_description):
+    """
+    Creates a new repo document in the DB.
+    """
     table = _get_dynamodb_table("Repos")
     repo_id = secrets.token_hex(16)
     try:
@@ -288,6 +345,9 @@ def _create_new_repo_document(user_id, repo_name, repo_description):
     return repo_id
 
 def _create_new_api_key(user_id, repo_id):
+    """
+    Creates a new API Key for an user and repo.
+    """
     table = _get_dynamodb_table("ApiKeys")
     true_api_key = secrets.token_urlsafe(32)
     h = hashlib.sha256()
@@ -306,6 +366,9 @@ def _create_new_api_key(user_id, repo_id):
     return api_key, true_api_key
 
 def _get_all_repos(user_id):
+    """
+    Returns all repos for a user.
+    """
     try:
         user_data = _get_user_data(user_id)
         repos_managed = user_data['ReposManaged']
@@ -328,6 +391,9 @@ def _get_all_repos(user_id):
     return all_repos
 
 def _create_new_cloud_node(repo_id, api_key):
+    """
+    Creates a new cloud node.
+    """
     try:
         run_deploy_routine(repo_id)
     except Exception as e:
@@ -360,16 +426,25 @@ def _create_presigned_url(bucket_name, object_name, expiration=3600):
     return response
 
 def _get_dynamodb_table(table_name):
+    """
+    Helper function that returns an AWS DynamoDB table object.
+    """
     dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
     table = dynamodb.Table(table_name)
     return table
 
 def _construct_cloud_node_url(repo_id):
+    """
+    Helper function that constructs a Cloud Node url given a Repo ID.
+    """
     CLOUD_NODE_ADDRESS_TEMPLATE = "{0}.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
     return CLOUD_NODE_ADDRESS_TEMPLATE.format(repo_id)
 
-
 def authorize_user(request):
+    """
+    Helper function that authorizes a request/user based on the JWT Token
+    provided. Return the claims if successful, `None` otherwise.
+    """
     try:
         jwt_string = request.headers.get("Authorization").split('Bearer ')[1]
         claims = jwt.decode(jwt_string, JWT_SECRET, algorithms=[JWT_ALGO])
@@ -378,9 +453,15 @@ def authorize_user(request):
     return claims
 
 def make_unauthorized_error():
+    """
+    Helper function that returns an unauthorization error.
+    """
     return make_error('Authorization failed.')
 
 def make_error(msg):
+    """
+    Helper function to create an error message to return on failed requests.
+    """
     return {'Error': True, 'Message': msg}
 
 
