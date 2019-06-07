@@ -20,19 +20,43 @@ from aggregator import handle_new_weights
 
 
 class CloudNodeProtocol(WebSocketServerProtocol):
+    """
+    Cloud Node Protocol
+
+    Class that implements part of the Cloud Node networking logic (what happens
+    when a new node connects, sends a message, disconnects). The networking here
+    happens through Websockets using the autobahn library.
+
+    """
 
     def onConnect(self, request):
+        """
+        Logs that a node has successfully connected.
+        """
         print("Client connecting: {}".format(request.peer))
         print(state.state)
 
     def onOpen(self):
+        """
+        Logs that a connection was opened.
+        """
         print("WebSocket connection open.")
 
     def onClose(self, wasClean, code, reason):
+        """
+        Deregisters a node upon websocket closure and logs it.
+        """
         print("WebSocket connection closed: {}".format(reason))
         self.factory.unregister(self)
 
     def onMessage(self, payload, isBinary):
+        """
+        Processes the payload received by a connected node.
+
+        Messages are ignored unless the message is of type "REGISTER" or the
+        node has already been registered (by sending a "REGISTER" type message).
+
+        """
         if isBinary:
             print("Binary message not supported.")
             return
@@ -41,7 +65,7 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         try:
             serialized_message = json.loads(payload)
         except Exception:
-            print("Error converting JSON.")
+            print("Error while converting JSON.")
             return
 
         # Deserialize message
@@ -56,14 +80,15 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         # Process message
         if message.type == MessageType.REGISTER.value:
+            # Register the node
             if message.node_type in ["DASHBOARD", "LIBRARY"]:
                 self.factory.register(self, message.node_type)
                 print("Registered node as type: {}".format(message.node_type))
 
                 if message.node_type == "LIBRARY" and state.state["busy"] is True:
                     # There's a session active, we should incorporate the just
-                    # added node!
-                    print("Joining the new library node to this round!")
+                    # added node into the session!
+                    print("Adding the new library node to this round!")
                     last_message = state.state["last_message_sent_to_library"]
                     message_json = json.dumps(last_message)
                     self.sendMessage(message_json.encode(), isBinary)
@@ -120,14 +145,29 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         print("[[DEBUG] State: {}".format(state.state))
 
     def _broadcastMessage(self, payload, client_list, isBinary):
+        """
+        Broadcast message (`payload`) to a `client_list`.
+        """
         for c in client_list:
             results_json = json.dumps(payload)
             c.sendMessage(results_json.encode(), isBinary)
 
     def _nodeHasBeenRegistered(self, client_type):
+        """
+        Returns whether the node in scope has been registered into one of the
+        `client_type`'s.
+        """
         return self.factory.is_registered(self, client_type)
 
 class CloudNodeFactory(WebSocketServerFactory):
+
+    """
+    Cloud Node Factory
+
+    Class that implements part of the Cloud Node networking logic. It keeps
+    track of the nodes that have been registered.
+
+    """
 
     def __init__(self):
         WebSocketServerFactory.__init__(self)
@@ -152,7 +192,7 @@ class CloudNodeFactory(WebSocketServerFactory):
         """Returns whether client is in the list of clients."""
         return client in self.clients[client_type]
 
-# // NOTE: We need to implement some ping-pong/ways to deal with disconnections.
+# NOTE: We need to implement some ping-pong/ways to deal with disconnections.
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
@@ -160,6 +200,9 @@ CORS(app)
 
 @app.route("/status")
 def get_status():
+    """
+    Returns the status of the Cloud Node.
+    """
     return jsonify({"Busy": state.state["busy"]})
 
 @app.route('/model/<path:filename>')

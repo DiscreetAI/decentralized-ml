@@ -8,6 +8,9 @@ from model import convert_and_save_b64model, convert_and_save_model, swap_weight
 logging.basicConfig(level=logging.DEBUG)
 
 def start_new_session(message, clients_dict):
+    """
+    Starts a new DML session.
+    """
     print("Starting new session...")
 
     # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
@@ -58,6 +61,9 @@ def start_new_session(message, clients_dict):
 
 
 def start_next_round(message, clients_list):
+    """
+    Starts a new round in the current DML Session.
+    """
     print("Starting next round...")
     state.state["num_nodes_averaged"] = 0
 
@@ -90,7 +96,7 @@ def start_next_round(message, clients_list):
 
 def _choose_clients(selection_criteria, client_list):
     """
-    TO BE IMPLEMENTED.
+    TO BE FINISHED.
 
     Need to define a selection criteria object first.
 

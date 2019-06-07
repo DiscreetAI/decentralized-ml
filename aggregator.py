@@ -11,6 +11,9 @@ from coordinator import start_next_round
 logging.basicConfig(level=logging.DEBUG)
 
 def handle_new_weights(message, clients_dict):
+    """
+    Handle new weights from a Library.
+    """
     results = {"error": False, "message": "Success."}
 
     # 1. Check things match.
@@ -70,7 +73,7 @@ def handle_new_weights(message, clients_dict):
 
 def kickstart_new_round(clients_list):
     """
-    Selects new nodes to run federated averaging with, and pass them the new
+    Selects new nodes to run federated averaging with, and passes them the new
     averaged model.
     """
     # Make the new message with new round (weights are swapped in the coordinator)
@@ -82,6 +85,10 @@ def kickstart_new_round(clients_list):
 
 
 def do_running_weighted_average(message):
+    """
+    Runs running weighted average with the new weights and the current weights
+    and changes the global state with the result.
+    """
     # If this is the first weights we're averaging, just update them and return
     if state.state["current_weights"] is None or state.state["sigma_omega"] is None:
         state.state["current_weights"] = message.weights

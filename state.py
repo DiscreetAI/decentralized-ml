@@ -1,3 +1,5 @@
+"""Global state for the service."""
+
 def init():
     import threading
     global state_lock

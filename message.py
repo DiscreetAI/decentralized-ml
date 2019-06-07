@@ -5,12 +5,25 @@ from enum import Enum
 import numpy as np
 
 class MessageType(Enum):
+    """
+    Message Type
+
+    Message Types that the service can work with.
+
+    """
+
     REGISTER = "REGISTER"
     NEW_SESSION = "NEW_SESSION"
     NEW_WEIGHTS = "NEW_WEIGHTS"
 
 
 class Message:
+    """
+    Message
+
+    Base class for messages received by the service.
+
+    """
 
     @staticmethod
     def make(serialized_message):
@@ -25,8 +38,10 @@ class RegistrationMessage(Message):
     """
     Registration Message
 
-    The type of message sent by a node with information of what type of node
-    they are
+    The type of message initially sent by a node with information of what type
+    of node they are.
+
+    `node_type` should be one of DASHBOARD or LIBRARY.
 
     """
 
@@ -45,7 +60,7 @@ class NewSessionMessage(Message):
     """
     New Session Message
 
-    The type of message sent by explora.
+    The type of message sent by Explora to start a new session.
 
     """
 
@@ -74,7 +89,7 @@ class NewWeightsMessage(Message):
     """
     New Weights Message
 
-    The type of message sent by the library.
+    The type of message sent by the Library. This is an update.
 
     """
 
