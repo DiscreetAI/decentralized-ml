@@ -29,6 +29,6 @@ However, if you would like to deploy manually, you'd have to follow the [instruc
 
 ## Tests
 
-There aren't any tests available for this repo yet. Please write them if you'd like!
+There aren't any tests available for this repo yet. Please help us write them!
 
 
