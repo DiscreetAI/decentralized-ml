@@ -34,10 +34,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DMLRequest } from './message.js';
-import { DMLDB } from './dml_db.js';
-import { DataManager } from './data_manager.js';
-export var Runner = /** @class */ (function () {
+exports.__esModule = true;
+var message_js_1 = require("./message.js");
+var dml_db_js_1 = require("./dml_db.js");
+var data_manager_js_1 = require("./data_manager.js");
+var tfjs_1 = require("@tensorflow/tfjs");
+var Runner = /** @class */ (function () {
     function Runner() {
     }
     Runner._lowerCaseToCamelCase = function (str) {
@@ -47,7 +49,7 @@ export var Runner = /** @class */ (function () {
         var optimizer;
         if (optimization_data['optimizer_config']['class_name'] == 'SGD') {
             // SGD
-            optimizer = tf.train.sgd(optimization_data['optimizer_config']['config']['lr']);
+            optimizer = tfjs_1.train.sgd(optimization_data['optimizer_config']['config']['lr']);
         }
         else {
             // Not supported!
@@ -67,8 +69,8 @@ export var Runner = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        model_url = DataManager.cloud_url + "/model/model.json";
-                        return [4 /*yield*/, tf.loadLayersModel(model_url)];
+                        model_url = data_manager_js_1.DataManager.cloud_url + "/model/model.json";
+                        return [4 /*yield*/, tfjs_1.loadLayersModel(model_url)];
                     case 1:
                         model = _a.sent();
                         fetch(model_url)
@@ -77,7 +79,7 @@ export var Runner = /** @class */ (function () {
                             console.log('Output: ', out);
                             model = Runner._compileModel(model, out["modelTopology"]["training_config"]);
                             Runner._saveModel(model, request.id);
-                            DMLDB._get(request, callback, model);
+                            dml_db_js_1.DMLDB._get(request, callback, model);
                         })["catch"](function (err) { return console.error(err); });
                         return [2 /*return*/];
                 }
@@ -122,7 +124,7 @@ export var Runner = /** @class */ (function () {
         var trainXs = data;
         var trainYs = trainXs.map(function (row) { return row[label_index]; });
         trainXs.forEach(function (x) { x.splice(label_index, 1); });
-        return [tf.tensor(trainXs), tf.tensor(trainYs)];
+        return [tfjs_1.tensor(trainXs), tfjs_1.tensor(trainYs)];
     };
     Runner._train = function (data, request, model) {
         return __awaiter(this, void 0, void 0, function () {
@@ -149,7 +151,7 @@ export var Runner = /** @class */ (function () {
                         };
                         console.log("Training results:");
                         console.log(results);
-                        DMLDB._put(request, Runner._sendMessage, results);
+                        dml_db_js_1.DMLDB._put(request, Runner._sendMessage, results);
                         return [2 /*return*/];
                 }
             });
@@ -161,7 +163,7 @@ export var Runner = /** @class */ (function () {
             return __generator(this, function (_b) {
                 _a = Runner._labelData(data.arraySync(), request.params.label_index), data_x = _a[0], data_y = _a[1];
                 result = model.evaluate(data_x, data_y).toString();
-                DMLDB._put(request, Runner._sendMessage, result);
+                dml_db_js_1.DMLDB._put(request, Runner._sendMessage, result);
                 return [2 /*return*/];
             });
         });
@@ -170,8 +172,8 @@ export var Runner = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
-                result = DMLRequest._serialize(request, message);
-                DataManager.ws.send(result);
+                result = message_js_1.DMLRequest._serialize(request, message);
+                data_manager_js_1.DataManager.ws.send(result);
                 return [2 /*return*/];
             });
         });
@@ -193,3 +195,4 @@ export var Runner = /** @class */ (function () {
     };
     return Runner;
 }());
+exports.Runner = Runner;

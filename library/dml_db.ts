@@ -1,6 +1,5 @@
 import { Tensor, Tensor2D, LayersModel, tensor } from "@tensorflow/tfjs";
 import { DMLRequest } from "./message.js";
-import { getRowsCols } from "@tensorflow/tfjs-core/dist/kernels/webgl/webgl_util";
 
 export class DMLDB {
   static datastore: any;

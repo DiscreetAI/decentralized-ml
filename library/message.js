@@ -1,7 +1,6 @@
 "use strict";
-
-import { DataManager } from './data_manager.js';
-export var DMLRequest = /** @class */ (function () {
+exports.__esModule = true;
+var DMLRequest = /** @class */ (function () {
     function DMLRequest(id, repo, action, params) {
         this.id = id;
         this.repo = repo;
@@ -30,3 +29,4 @@ export var DMLRequest = /** @class */ (function () {
     };
     return DMLRequest;
 }());
+exports.DMLRequest = DMLRequest;
