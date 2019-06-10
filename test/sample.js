@@ -25,5 +25,5 @@ function getData() {
 // Bootstrap the library with the repo_id.
 dataagora.bootstrap(repo_id);
 
-// Store the data, and wait for incoming messages to train on the data.
+// Store the data with a given repo name, and wait for incoming messages to train on the data.
 dataagora.store("mnist", getData());

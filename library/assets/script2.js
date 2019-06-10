@@ -1,6 +1,8 @@
 import {MnistData} from './data.js';
 
-async function getData() {
+export const SOCKET_HOST = "cloud-node-env999.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+
+export async function getData() {
   const data = new MnistData();
   await data.load();
   console.log("Data loaded!", data);
@@ -8,14 +10,23 @@ async function getData() {
 }
 
 async function getModel() {
-  const MODEL_URL = 'http://localhost:5000/server/model.json';
+  const MODEL_URL = 'http://' + SOCKET_HOST + '/server/model.json';
   const model = await tf.loadLayersModel(MODEL_URL);
   console.log("Model loaded!", model);
   return model;
 }
 
-function getOptimizationData() {
+export async function getModelFromCloud() {
+  const MODEL_URL = 'http://' + SOCKET_HOST + '/model/model.json';
+  const model = await tf.loadLayersModel(MODEL_URL);
+  console.log("Model loaded!", model);
+  return model;
+}
+
+export function getOptimizationData() {
   // TODO: Check that the optimizer is valid.
+  // TODO2: Get the json from
+  //        server.com/model.model.json["modelTopology"]["optimizer_config"].
   return {
     'optimizer_config': {
       'class_name': 'SGD',
@@ -33,7 +44,7 @@ function getOptimizationData() {
  }
 }
 
-function compileModel(model, optimization_data) {
+export function compileModel(model, optimization_data) {
 
   let optimizer;
   if (optimization_data['optimizer_config']['class_name'] == 'SGD') {
@@ -54,18 +65,17 @@ function compileModel(model, optimization_data) {
   return model;
 }
 
-async function getValidationAccuracy(model, data) {
+export async function getValidationAccuracy(model, data) {
   const [labels, preds] = await _evaluateModel(model, data);
   const accuracy = await tf.equal(preds, labels).sum().dataSync()[0] / tf.equal(preds, labels).size;
   console.log("Accuracy calculated! ", accuracy)
   return accuracy;
 }
 
-async function retrainModel(model, data) {
+export async function retrainModel(model, data, epochs, batch_size) {
   const metrics = ['loss', 'acc'];
 
-  const BATCH_SIZE = 128;
-  const TRAIN_DATA_SIZE = 8000;
+  const TRAIN_DATA_SIZE = 100;
   //const TEST_DATA_SIZE = 1000;
 
   const [trainXs, trainYs] = tf.tidy(() => {
@@ -85,9 +95,9 @@ async function retrainModel(model, data) {
   // });
 
   return model.fit(trainXs, trainYs, {
-    batchSize: BATCH_SIZE,
+    batchSize: batch_size,
     // validationData: [testXs, testYs],
-    epochs: 5,
+    epochs: epochs,
     shuffle: true,
   });
 }
@@ -107,6 +117,84 @@ async function _evaluateModel(model, data) {
   console.log("Model evaluated!");
   return [labels, preds];
 }
+
+async function saveModel(model, path) {
+  var results = await model.save('indexeddb://' + path);
+  console.log("Model saved into IndexedDB! Metadata: ", results);
+  return results;
+}
+
+async function getWeights(model) {
+  var all_weights = [];
+  for (var i = 0; i < model.layers.length * 2; i++) {
+    // Time 2 so we can get the bias too.
+    let weights = model.getWeights()[i];
+    let weightsData = weights.dataSync();
+    let weightsList = Array.from(weightsData);
+    for (var j = 0; j < weightsList.length; j++) {
+      all_weights.push(weightsList[j]);
+    }
+  }
+  return all_weights;
+}
+
+export async function makeMockUpdateForCloudNode(session_id, round) {
+  let model = await getModel();
+  let weights = await getWeights(model);
+  return {
+    "type": "NEW_WEIGHTS",
+    "session_id": session_id,
+    "round": round,
+    "action": "TRAIN",
+    "results": {
+      "weights": weights,
+      "omega": 1000
+    }
+  };
+}
+
+export async function makeUpdateObject(session_id, round, model, omega) {
+  return {
+    "type": "NEW_WEIGHTS",
+    "session_id": session_id,
+    "round": round,
+    "action": "TRAIN",
+    "results": {
+      "weights": await getWeights(model),
+      "omega": omega
+    }
+  };
+}
+
+// function _getModelFromStore(path) {
+//   return new Promise(function (resolve, reject) {
+//     var openRequest = indexedDB.open("tensorflowjs",1);
+//     openRequest.onsuccess = function() {
+//         var db = openRequest.result;
+//         var tx = db.transaction('models_store', 'readonly');
+//         var store = tx.objectStore('models_store');
+//         var request = store.get(path);
+//         request.onsuccess = function() {
+//           resolve(request.result);
+//         }
+//
+//         request.onerror = function(e) { reject(e) }
+//
+//         tx.oncomplete = function() { db.close(); }
+//     };
+//     openRequest.onerror = function(e) { reject(e) }
+//   });
+// }
+
+// function _arrayBufferToBase64( buffer ) {
+//     var binary = '';
+//     var bytes = new Uint8Array( buffer );
+//     var len = bytes.byteLength;
+//     for (var i = 0; i < len; i++) {
+//         binary += String.fromCharCode( bytes[ i ] );
+//     }
+//     return window.btoa( binary );
+// }
 
 // function makeModel() {
 //   const model = tf.sequential();
@@ -175,15 +263,18 @@ function _lowerCaseToCamelCase(str) {
 
 async function run() {
   // Check that the model is correct by evaluating it on test data.
-  const data = await getData();
-  let model = await getModel();
-  const accuracy = await getValidationAccuracy(model, data);
-
-  const optimization_data = getOptimizationData();
-  model = compileModel(model, optimization_data);
-
-  await retrainModel(model, data);
-  const new_accuracy = await getValidationAccuracy(model, data);
+  // const data = await getData();
+  // let model = await getModel();
+  // await saveModel(model, 'not-trained');
+  // const accuracy = await getValidationAccuracy(model, data);
+  //
+  // const optimization_data = getOptimizationData();
+  // model = compileModel(model, optimization_data);
+  //
+  // await retrainModel(model, data);
+  // const new_accuracy = await getValidationAccuracy(model, data);
+  //
+  // await saveModel(model, 'trained');
 }
 
 document.addEventListener('DOMContentLoaded', run);
