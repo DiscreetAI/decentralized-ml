@@ -1,12 +1,20 @@
+
+
+
+
+
+
+console.log("Importing dataagora-dml.")
 // Importing the DML package
 var dataagora = require('dataagora-dml');
-
+console.log("importing tfjs and mnist")
 // Importing other needed packages
 var tf = require("@tensorflow/tfjs-node");
 var mnist = require('mnist');
 
+
 // Repo ID after creating a repo. See https://beta.dataagora.com
-repo_id = "sample_repo_id"
+repo_id = "ae362cb3fa81fce380dcbf4c788f96fa"
 
 // Get data. Must be of type Tensor2D.
 function getData() {
@@ -22,8 +30,11 @@ function getData() {
     return tf.tensor(data).as2D(8000, 785);
 }
 
+console.log("bootstrapping")
 // Bootstrap the library with the repo_id.
 dataagora.bootstrap(repo_id);
 
+console.log("store")
 // Store the data with a given repo name, and wait for incoming messages to train on the data.
-dataagora.store("mnist", getData());
+dataagora.store(repo_id, getData());
+console.log("store completed!")

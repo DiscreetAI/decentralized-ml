@@ -39,6 +39,7 @@ var message_js_1 = require("./message.js");
 var dml_db_js_1 = require("./dml_db.js");
 var data_manager_js_1 = require("./data_manager.js");
 var tfjs_1 = require("@tensorflow/tfjs");
+var fetch = require('node-fetch');
 var Runner = /** @class */ (function () {
     function Runner() {
     }
@@ -87,18 +88,7 @@ var Runner = /** @class */ (function () {
         });
     };
     Runner._saveModel = function (model, path) {
-        return __awaiter(this, void 0, void 0, function () {
-            var results;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, model.save('indexeddb://' + path)];
-                    case 1:
-                        results = _a.sent();
-                        console.log("Model saved into IndexedDB! Metadata: ", results);
-                        return [2 /*return*/, results];
-                }
-            });
-        });
+        console.log("Would save here...");
     };
     Runner._getWeights = function (model) {
         return __awaiter(this, void 0, void 0, function () {
@@ -172,6 +162,7 @@ var Runner = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var result;
             return __generator(this, function (_a) {
+                console.log("Sending message!");
                 result = message_js_1.DMLRequest._serialize(request, message);
                 data_manager_js_1.DataManager.ws.send(result);
                 return [2 /*return*/];

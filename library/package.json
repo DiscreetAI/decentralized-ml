@@ -1,17 +1,16 @@
 {
   "name": "dataagora-dml",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Interoperable and decentralized machine learning in JavaScript.",
   "main": "index.js",
   "dependencies": {
-    "pouchdb": "^7.0.0",
     "@tensorflow/tfjs-node": "^1.1.2",
-    "ws": "^6.2.1"	
+    "node-fetch": "^2.6.0",
+    "pouchdb": "^7.0.0",
+    "ws": "^6.2.1"
   },
   "devDependencies": {
-    "@types/express": "^4.16.1",
-    "@types/ws": "^6.0.1",
-    "typescript": "^3.4.1"
+    "@types/ws": "^6.0.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +19,14 @@
     "dataagora",
     "dml"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataAgora/dml-library-js.git"
+  },
   "author": "Neelesh Dodda <neelesh.dodda@dataagora.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DataAgora/dml-library-js/issues"
+  },
+  "homepage": "https://github.com/DataAgora/dml-library-js/blob/master/README.md"
 }

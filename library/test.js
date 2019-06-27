@@ -9,7 +9,7 @@ async function run() {
   console.log("Bootstrapped library!");
   const data = await getData();
   console.log("Data retrieved!");
-  DataManager.store("mnist", data);
+  DataManager.store(repo_id, data);
   console.log("Data stored!");
 }
 
