@@ -15,11 +15,37 @@ import RepoLogsActions from './../actions/RepoLogsActions';
 
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 
+import Endpoints from './../constants/endpoints.js';
+
 
 class Repo extends Reflux.Component {
   constructor(props) {
     super(props);
     this.stores = [RepoDataStore, RepoLogsStore];
+
+    const { match: { params } } = this.props;
+    this.repoId = params.repoId;
+    this.url = null;
+    console.log(this.repoId)
+    fetch(
+      Endpoints["dashboardGetExploraURL"], {
+        method: 'POST',
+        dataType:'json',
+        headers: {
+          'Content-Type':'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          'repo_name': this.repoId
+        })
+      }
+    )
+    .then(r => r.json())
+    .then(r => {
+      console.log(r)
+      this.url = r;
+      console.log(this.url);
+    });
   }
 
   componentDidMount() {
@@ -28,6 +54,8 @@ class Repo extends Reflux.Component {
 
     RepoDataActions.fetchRepoData(repoId);
     RepoLogsActions.fetchRepoLogs(repoId);
+
+    
   }
 
   render() {
@@ -50,7 +78,7 @@ class Repo extends Reflux.Component {
     if (!this.state.repoWasFound) {
       return <NotFoundPage />
     }
-
+    console.log("HI");
     let createdLessThan10MinutesAgo = Math.floor(Date.now()/1000) < (this.state.repoData.CreatedAt + 60*10);
     return (
       <div className="pb-5">
@@ -62,7 +90,7 @@ class Repo extends Reflux.Component {
           </div>
           <div className="col-2 text-right">
             <RepoStatus repoId={this.state.repoData.Id} isDeploying={createdLessThan10MinutesAgo} />
-            <p className="mt-3"><Link to={"/explora/"+this.state.repoData.Id} className="btn btn-xs btn-dark"><b>Open Explora</b></Link></p>
+            <p className="mt-3"><a href={this.url} className="btn btn-xs btn-dark"><b>Open Explora</b></a></p>
           </div>
         </div>
 

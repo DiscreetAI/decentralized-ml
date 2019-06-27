@@ -11,6 +11,7 @@ var Endpoints = {
   'dashboardFetchRepoLogs': 'https://mf1cxij8x6.execute-api.us-west-1.amazonaws.com/dev/logs/',
   'dashboardFetchCoordinatorStatus': 'https://mf1cxij8x6.execute-api.us-west-1.amazonaws.com/dev/coordinator/status/',
   'dashboardGetDownloadModelURL': 'https://mf1cxij8x6.execute-api.us-west-1.amazonaws.com/dev/model',
+  'dashboardGetExploraURL': 'https://8kylhh6j1b.execute-api.us-west-1.amazonaws.com/explora/get'
 };
 
 export default Endpoints;
