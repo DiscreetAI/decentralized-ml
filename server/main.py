@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import os
 import json
 import shutil
@@ -9,8 +9,12 @@ import stat
 import pwd
 import grp
 import sys
+import requests
+
+from flask_cors import CORS, cross_origin
 
 application = Flask(__name__)
+CORS(application)
 
 COMMAND = "jupyter notebook --no-browser --port {port} &"
 COMMAND2 = "npx kill-port {port}"
@@ -25,7 +29,7 @@ def landing():
 @application.route('/notebook', methods = ["POST", "GET"])
 def notebook():
     print("Received /notebook request!")
-    repo_name = request.get_json().get("repo_name")
+    repo_name = request.get_json(force=True).get("repo_name")
     if not os.path.isdir('notebooks'):
         os.system("mkdir notebooks")
         print("Made notebooks folder!")
@@ -53,7 +57,8 @@ def notebook():
         with open('mappings.json', 'w') as f:
             json.dump(mappings, f)
     print("Sending url!")
-    return CLOUD_URL.format(port=mappings[repo_name]) + "\n"
+    print(CLOUD_URL.format(port=mappings[repo_name]))
+    return jsonify(CLOUD_URL.format(port=mappings[repo_name]))
 
 @application.route('/delete', methods = ["POST", "GET"])
 def delete():
@@ -74,6 +79,23 @@ def delete():
     print("Deletion successful!")
     return "Deletion successful!\n"
 
+@application.route('/get', methods = ['POST', 'GET'])
+def get():
+    data = request.get_json()
+    r = requests.post(
+        url = "http://ec2-13-57-39-123.us-west-1.compute.amazonaws.com:5000/notebook",
+        json = data
+    )
+    return r.text
+
+@application.route('/remove', methods = ['POST', 'GET'])
+def remove():
+    data = request.get_json()
+    r = requests.post(
+        url = "http://ec2-13-57-39-123.us-west-1.compute.amazonaws.com:5000/delete",
+        json = data
+    )
+    return r.text
 
 if __name__ == '__main__':
     from twisted.python import log
