@@ -1,5 +1,6 @@
 import time
 import uuid
+import os
 
 import boto3
 
@@ -14,12 +15,14 @@ def store_update(type, message, with_weights=True):
 
     print("[{0}]: {1}".format(type, message))
 
+    access_key = os.environ["AWS_SERVER_PUBLIC_KEY"]
+    secret_key = os.environ["AWS_SERVER_SECRET_KEY"]
     if with_weights:
         try:
             repo_id = state.state['repo_id']
             session_id = state.state['session_id']
             round = state.state['current_round']
-            s3 = boto3.resource('s3')
+            s3 = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
             weights_s3_key = '{0}/{1}/{2}/model.h5'.format(repo_id, session_id, round)
             object = s3.Object('updatestore', weights_s3_key)
             h5_filepath = TEMP_FOLDER + "/{0}/model{1}.h5".format(session_id, round)
@@ -28,7 +31,7 @@ def store_update(type, message, with_weights=True):
             print("S3 Error: {0}".format(e))
 
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
+        dynamodb = boto3.resource('dynamodb', region_name='us-west-1', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
         table = dynamodb.Table("UpdateStore")
         item = {
             'Id': str(uuid.uuid4()),
