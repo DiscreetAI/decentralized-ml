@@ -87,6 +87,20 @@ var DMLDB = /** @class */ (function () {
         });
     };
     ;
+
+    DMLDB.update_data = function (repo, new_data, callback) {
+        DMLDB.db.get(repo, function(err, doc) {
+            if (err) { return console.log(err); }
+            console.log("Updating data");
+            doc.data = doc.data.append(new_data);
+            DMLDB.db.put(doc);
+            if (callback != null) {
+                callback()
+            }
+        });
+    };
+    ;
+
     return DMLDB;
 }());
 exports.DMLDB = DMLDB;

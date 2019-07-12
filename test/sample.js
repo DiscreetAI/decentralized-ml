@@ -1,9 +1,3 @@
-
-
-
-
-
-
 console.log("Importing dataagora-dml.")
 // Importing the DML package
 var dataagora = require('dataagora-dml');

@@ -8,24 +8,35 @@ const WebSocket = require('ws');
 var DataManager = /** @class */ (function () {
     function DataManager() {
     }
+
     DataManager.bootstrap = function (repo_id) {
         DataManager.repo_id = repo_id;
         DataManager.cloud_url = "http://" + repo_id + ".au4c4pd2ch.us-west-1.elasticbeanstalk.com";
         DataManager.ws = new WebSocket("ws://" + repo_id + ".au4c4pd2ch.us-west-1.elasticbeanstalk.com");
         DataManager.ws.addEventListener("open", function (event) {
+            console.log("opening...")
             var registrationMessage = {
                 "type": "REGISTER",
                 "node_type": "LIBRARY"
             };
             DataManager.ws.send(JSON.stringify(registrationMessage));
         });
-        dml_db_js_1.DMLDB._open();
-        DataManager.bootstrapped = true;
+        if (DataManager.bootstrapped) {
+            DataManager._listen();
+        } else {
+            dml_db_js_1.DMLDB._open();
+            DataManager.bootstrapped = true;
+        }
     };
-    DataManager.store = function (repo_name, data) {
+    DataManager.store = function (repo, data) {
         if (!DataManager.bootstrapped)
             throw new Error("Library not bootstrapped!");
-        dml_db_js_1.DMLDB._create(repo_name, data.arraySync(), DataManager._listen);
+        if (DataManager.has_data) {
+            dml_db_js_1.DMLDB.update_store(repo, data, null);
+        } else {
+            dml_db_js_1.DMLDB._create(repo, data.arraySync(), DataManager._listen);
+            DataManager.has_data = true;
+        }
     };
     DataManager._listen = function () {
         DataManager.ws.addEventListener('message', function (event) {
@@ -37,8 +48,17 @@ var DataManager = /** @class */ (function () {
                 runner_js_1.Runner._handleMessage(request);
             }
         });
+
+        DataManager.ws.addEventListener("close", function (event) {
+            console.log("closing...")
+            console.log(event);
+            if (event.code == 1006) {
+                DataManager.bootstrap(DataManager.repo_id);
+            }
+        });
     };
     DataManager.bootstrapped = false;
+    DataManager.has_data = false;
     return DataManager;
 }());
 exports.DataManager = DataManager;
