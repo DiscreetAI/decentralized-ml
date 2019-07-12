@@ -137,6 +137,16 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             else:
                 # Acknowledge message (temporarily! -- node doesn't need to know)
                 self.sendMessage(json.dumps({"error": False, "message": "ack"}).encode(), isBinary)
+                message = {
+                    "session_id": state.state["session_id"],
+                    "repo_id": state.state["repo_id"],
+                    "action": "NEW_MODEL"
+                }
+                self._broadcastMessage(
+                    payload=message,
+                    client_list = self.factory.clients["DASHBOARD"],
+                    isBinary=isBinary
+                )
         else:
             print("Unknown message type!")
             error_json = json.dumps({"error": True, "message": "Unknown message type!"})
