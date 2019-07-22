@@ -253,6 +253,31 @@ def get_state():
     """
     return repr(state.state)
 
+@app.route('/secret/get_encoder_json')
+def get_encoder_json():
+    """
+    Get the encoder.json.
+
+    TODO: This is only a shortcut for GPT-2, should be deleted.
+    """
+    text = None
+    with open('117M/encoder.json', 'r') as f:
+        text = f.read()
+    return text
+
+@app.route('/secret/get_vocab_bpe')
+def get_vocab_bpe():
+    """
+    Get the encoder.json.
+
+    TODO: This is only a shortcut for GPT-2, should be deleted.
+    """
+    text = None
+    with open('117M/vocab.bpe', 'r', encoding="utf-8") as f:
+        text = f.read()
+    return text
+    
+
 # def check_timeout_condition():
 #     """
 #     TO BE IMPLEMENTED.
