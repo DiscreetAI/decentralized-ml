@@ -242,7 +242,7 @@ def reset_state():
     state.state_lock.acquire()
     state.reset_state()
     state.state_lock.release()
-    return "State was reset!"
+    return "State reset successfully!"
 
 @app.route('/secret/get_state')
 def get_state():
@@ -276,6 +276,22 @@ def get_vocab_bpe():
     with open('117M/vocab.bpe', 'r', encoding="utf-8") as f:
         text = f.read()
     return text
+
+@app.route('/sanity')
+def sanity():
+    """
+    Get the encoder.json.
+
+    TODO: This is only a shortcut for GPT-2, should be deleted.
+    """
+    text = None
+    with open('117M/vocab.bpe', 'r', encoding="utf-8") as f:
+        text = f.read()
+    return text
+
+@app.route('/secret/upload')
+def upload():
+    print("Posted file: {}".format(request.files['file']))
     
 
 # def check_timeout_condition():
