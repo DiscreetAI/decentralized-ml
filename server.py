@@ -57,6 +57,8 @@ class CloudNodeProtocol(WebSocketServerProtocol):
         node has already been registered (by sending a "REGISTER" type message).
 
         """
+        print("Got payload!")
+        print(payload)
         if isBinary:
             print("Binary message not supported.")
             return
