@@ -131,9 +131,9 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             # Verify this node has been registered
             if not self._nodeHasBeenRegistered(client_type="LIBRARY"): return
 
-            assert weights, "Weights need to be set!"
-
-            message["weights"] = weights
+            if "weights" not in message:
+                assert weights, "Weights need to be set!"
+                message["weights"] = weights
             # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
 
