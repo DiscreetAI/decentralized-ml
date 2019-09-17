@@ -8,10 +8,10 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 # change this to something you can remember.
 REPO_ID = "test"
 
-CLOUD_NODE_HOST = "cloud-node-env99.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
+CLOUD_NODE_HOST = "3e55b6e37447aca26c807c2aa5961d89.au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 CLOUD_NODE_PORT = 80
 
-with open('assets/init_mlp_model_with_w.h5', mode='rb') as file:
+with open('assets/my_model.h5', mode='rb') as file:
     file_content = file.read()
     encoded_content = base64.encodebytes(file_content)
     h5_model = encoded_content.decode('ascii')
@@ -33,7 +33,7 @@ NEW_MESSAGE = {
     },
     "termination_criteria": {
         "type": "MAX_ROUND",
-        "value": 10
+        "value": 2
     }
 }
 

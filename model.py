@@ -130,7 +130,7 @@ def _keras_2_tfjs(h5_model_path, path_to_save):
     Converts a Keras h5 model into a tf.js model and saves it on disk.
     """
     model = keras.models.load_model(h5_model_path)
-    tfjs.converters.save_keras_model(model, path_to_save)
+    tfjs.converters.save_keras_model(model, path_to_save, np.uint16)
     K.clear_session()
 
 def _test():

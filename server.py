@@ -1,9 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import sys
 import uuid
 import json
 
-from flask_cors import CORS
+import io
+
+from flask_cors import CORS, cross_origin
 from twisted.python import log
+
+import werkzeug.formparser
 
 from twisted.web.server import Site
 from twisted.web.wsgi import WSGIResource
@@ -18,6 +26,10 @@ from message import MessageType, Message
 from coordinator import start_new_session
 from aggregator import handle_new_weights
 
+from tensorflow.keras import backend as K
+import tensorflow as tf
+
+weights = None
 
 class CloudNodeProtocol(WebSocketServerProtocol):
     """
@@ -58,7 +70,6 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         """
         print("Got payload!")
-        print(payload)
         if isBinary:
             print("Binary message not supported.")
             return
@@ -120,6 +131,9 @@ class CloudNodeProtocol(WebSocketServerProtocol):
             # Verify this node has been registered
             if not self._nodeHasBeenRegistered(client_type="LIBRARY"): return
 
+            assert weights, "Weights need to be set!"
+
+            message["weights"] = weights
             # Handle new weights (average, move to next round, terminate session)
             results = handle_new_weights(message, self.factory.clients)
 
@@ -291,9 +305,45 @@ def sanity():
         text = f.read()
     return text
 
-@app.route('/secret/upload')
-def upload():
-    print("Posted file: {}".format(request.files['file']))
+class ModelReceiver(object):
+
+  def __init__(self):
+    self._model = None
+    self._model_json_bytes = None
+    self._model_json_writer = None
+    self._weight_bytes = None
+    self._weight_writer = None
+
+  @property
+  def model(self):
+    self._model_json_writer.flush()
+    self._weight_writer.flush()
+    self._model_json_writer.seek(0)
+    self._weight_writer.seek(0)
+
+    json_content = self._model_json_bytes.read()
+    weights_content = self._weight_bytes.read()
+    return tfjs.converters.deserialize_keras_model(
+        json_content,
+        weight_data=[weights_content],
+        use_unique_name_scope=True)
+
+  def stream_factory(self,
+                     total_content_length,
+                     content_type,
+                     filename,
+                     content_length=None):
+    # Note: this example code isnot* thread-safe.
+    if filename == 'model.json':
+      self._model_json_bytes = io.BytesIO()
+      self._model_json_writer = io.BufferedWriter(self._model_json_bytes)
+      return self._model_json_writer
+    elif filename == 'model.weights.bin':
+      self._weight_bytes = io.BytesIO()
+      self._weight_writer = io.BufferedWriter(self._weight_bytes)
+      return self._weight_writer
+
+
     
 
 # def check_timeout_condition():
@@ -310,17 +360,40 @@ def upload():
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
+    log.startLogging(sys.stdout)
 
-   factory = CloudNodeFactory()
-   factory.protocol = CloudNodeProtocol
-   wsResource = WebSocketResource(factory)
+    factory = CloudNodeFactory()
+    factory.protocol = CloudNodeProtocol
+    wsResource = WebSocketResource(factory)
 
-   wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), app)
-   rootResource = WSGIRootResource(wsgiResource, {b'': wsResource})
-   site = Site(rootResource)
+    wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), app)
+    rootResource = WSGIRootResource(wsgiResource, {b'': wsResource})
+    site = Site(rootResource)
 
-   state.init()
+    state.init()
 
-   reactor.listenTCP(8999, site)
-   reactor.run()
+    reactor.listenTCP(8999, site)
+    reactor.run()
+
+    model_receiver = ModelReceiver()
+
+    @app.route('/upload', methods=['POST'])
+    @cross_origin()
+    def upload():
+        print('Handling request...')
+        werkzeug.formparser.parse_form_data(
+            request.environ, stream_factory=model_receiver.stream_factory)
+        print('Received model:')
+        
+        model_weights = []
+        with tf.Graph().as_default(), tf.Session():
+            model = model_receiver.model
+            model.summary()
+            for layer in model.layers:
+                model_weights.append(K.eval(layer.get_weights()))
+
+        weights = model_weights
+
+        # You can perform `model.predict()`, `model.fit()`,
+        # `model.evaluate()` etc. here.
+        return Response(status=200)
