@@ -20,7 +20,7 @@ COMMAND = "jupyter notebook --no-browser --port {port} &"
 COMMAND2 = "npx kill-port {port}"
 SRC = "base.ipynb"
 BASE_URL = "localhost:{port}"
-CLOUD_URL = "https://ec2-13-57-39-123.us-west-1.compute.amazonaws.com:{port}"
+CLOUD_URL = "http://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:{port}"
 
 @application.route('/')
 def landing():
@@ -83,7 +83,7 @@ def delete():
 def get():
     data = request.get_json()
     r = requests.post(
-        url = "http://ec2-13-57-39-123.us-west-1.compute.amazonaws.com:5000/notebook",
+        url = "http://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:5000/notebook",
         json = data
     )
     return r.text
@@ -92,7 +92,7 @@ def get():
 def remove():
     data = request.get_json()
     r = requests.post(
-        url = "http://ec2-13-57-39-123.us-west-1.compute.amazonaws.com:5000/delete",
+        url = "http://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:5000/delete",
         json = data
     )
     return r.text
