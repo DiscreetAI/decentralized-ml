@@ -24,7 +24,7 @@ CLOUD_URL = "http://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:{port}"
 
 @application.route('/')
 def landing():
-    return "This is the homepage of the Explora server!"
+    return "This is the homepage of the Explora server!!!!"
 
 @application.route('/notebook', methods = ["POST", "GET"])
 def notebook():
