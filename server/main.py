@@ -20,7 +20,7 @@ COMMAND = "jupyter notebook --no-browser --port {port} &"
 COMMAND2 = "npx kill-port {port}"
 SRC = "base.ipynb"
 BASE_URL = "localhost:{port}"
-CLOUD_URL = "http://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:{port}"
+CLOUD_URL = "https://ec2-54-193-70-197.us-west-1.compute.amazonaws.com:{port}"
 
 @application.route('/')
 def landing():
