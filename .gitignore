@@ -1,3 +1,6 @@
+library/tensorflow2
+library/new-env/
+library/DMLDB/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

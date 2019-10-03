@@ -3,19 +3,12 @@ exports.__esModule = true;
 var tfjs_1 = require("@tensorflow/tfjs-node");
 var PouchDB = require('pouchdb');
 
-var DMLDB = /** @class */ (function () {
-    function DMLDB() {
-    }
-    DMLDB._open = function () {
-        // Database version.
-        var version = 1;
-        // Open a connection to the datastore.
+class DMLDB {
+    static _open() {
         DMLDB.db = new PouchDB('DMLDB');
-    };
-    ;
-    DMLDB._create = function (repo, data, callback) {
-        // Get a reference to the db.
-        
+    }
+
+    static _create(repo, data, callback) {        
         var timestamp = new Date().getTime();
         console.log("Storing with repo id:");
         console.log(repo);
@@ -46,14 +39,9 @@ var DMLDB = /** @class */ (function () {
             
             // handle doc
           });
-        // Create an object for the data item.
-        
-        // Handle errors.
-        //request.onerror = tDB.onerror;
-    };
-    ;
-    
-    DMLDB._get = function (dml_request, callback, model) {
+    }
+
+    static _get(dml_request, callback, model) {
         console.log("Getting with repo id:");
         console.log(dml_request.repo);
         DMLDB.db.get(dml_request.repo, function(err, doc) {
@@ -73,10 +61,9 @@ var DMLDB = /** @class */ (function () {
             }
             callback(data, dml_request, model);
         });
-    };
-    ;
+    }
 
-    DMLDB._put = function (dml_request, callback, result) {
+    static _put(dml_request, callback, result) {
         DMLDB.db.get(dml_request.repo, function(err, doc) {
             if (err) { return console.log(err); }
             console.log("Updating round on session");
@@ -85,10 +72,9 @@ var DMLDB = /** @class */ (function () {
             DMLDB.db.put(doc);
             callback(dml_request, result);
         });
-    };
-    ;
+    }
 
-    DMLDB.update_data = function (repo, new_data, callback) {
+    static update_data(repo, new_data, callback) {
         DMLDB.db.get(repo, function(err, doc) {
             if (err) { return console.log(err); }
             console.log("Updating data");
@@ -98,9 +84,6 @@ var DMLDB = /** @class */ (function () {
                 callback()
             }
         });
-    };
-    ;
-
-    return DMLDB;
-}());
+    }
+}
 exports.DMLDB = DMLDB;

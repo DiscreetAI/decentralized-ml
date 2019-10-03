@@ -2,15 +2,13 @@
 
 var DataManager = require('./data_manager.js').DataManager;
 var tf = require("@tensorflow/tfjs-node");
-const repo_id = "99885f00eefcd4107572eb62a5cb429a";
+const repo_id = "99885f00eefcd4107572eb62a5cb429ap";
+console.log(DataManager)
 
 async function run() {
-  DataManager.bootstrap(repo_id);
-  console.log("Bootstrapped library!");
   const data = await getData();
   console.log("Data retrieved!");
-  DataManager.store(repo_id, data);
-  console.log("Data stored!");
+  DataManager.bootstrap_and_store(repo_id, data);  
 }
 
 async function getData() {

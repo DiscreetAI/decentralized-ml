@@ -1,14 +1,14 @@
 "use strict";
 exports.__esModule = true;
-var DMLRequest = /** @class */ (function () {
-    function DMLRequest(id, repo, action, params) {
+class DMLRequest {
+    constructor(id, repo, action, params) {
         this.id = id;
         this.repo = repo;
         this.action = action;
         this.params = params;
         this.round = -1;
     }
-    DMLRequest._serialize = function (request, message) {
+    static _serialize(request, message) {
         var socketMessage = {
             "session_id": request.id,
             "action": request.action,
@@ -20,13 +20,12 @@ var DMLRequest = /** @class */ (function () {
         return JSON.stringify(socketMessage);
     };
     /* TODO: This feels more complicated than necessary */
-    DMLRequest._deserialize = function (message) {
+    static _deserialize(message) {
         var request_json = JSON.parse(message);
         var request = new DMLRequest(request_json["session_id"], request_json["repo_id"], request_json["action"], request_json["hyperparams"]);
         if (request.action == "TRAIN")
             request.round = request_json["round"];
         return request;
-    };
-    return DMLRequest;
-}());
+    }
+}
 exports.DMLRequest = DMLRequest;
