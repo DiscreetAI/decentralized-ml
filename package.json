@@ -13,7 +13,7 @@
     "i": "^0.3.6",
     "jquery": "^3.4.1",
     "keymirror": "^0.1.1",
-    "npm": "^6.9.0",
+    "npm": "^6.11.3",
     "popper.js": "^1.14.0",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.4",
@@ -22,7 +22,7 @@
     "react-mixin-decorator": "^1.2.3",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
-    "react-scripts": "1.1.1",
+    "react-scripts": "^3.1.2",
     "reflux": "^6.4.1"
   },
   "scripts": {
@@ -32,5 +32,17 @@
     "eject": "react-scripts eject",
     "deploy": "date > build/v.txt && s3cmd sync build/* s3://beta.dataagora.com && echo '🚀  Deployed!'",
     "build-and-deploy": "npm run build && npm run deploy"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

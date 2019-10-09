@@ -16,6 +16,7 @@ import RepoLogsActions from './../actions/RepoLogsActions';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 
 import Endpoints from './../constants/endpoints.js';
+import AuthStore from './../stores/AuthStore';
 
 
 class Repo extends Reflux.Component {
@@ -25,32 +26,40 @@ class Repo extends Reflux.Component {
 
     const { match: { params } } = this.props;
     this.repoId = params.repoId;
-    this.url = null;
-    console.log(this.repoId)
-    fetch(
-      Endpoints["dashboardGetExploraURL"], {
-        method: 'POST',
-        dataType:'json',
-        headers: {
-          'Content-Type':'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          'repo_name': this.repoId
-        })
-      }
-    )
-    .then(r => r.json())
-    .then(r => {
-      console.log(r)
-      this.url = r;
-      console.log(this.url);
-    });
+    this.username = null;
+    
   }
 
   componentDidMount() {
     const { match: { params } } = this.props;
     const repoId = params.repoId;
+
+    console.log(this.repoId)
+    console.log("TEST");
+    if (AuthStore.state.isAuthenticated) {
+      let jwtString = AuthStore.state.jwt;
+      console.log(jwtString)
+      fetch(
+        Endpoints["dashboardGetExploraURL"] + this.repoId, {
+          method: 'POST',
+          dataType:'json',
+          headers: {
+            'Content-Type':'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            'token': jwtString
+          })
+        }
+      )
+      .then(r => r.json())
+      .then(r => {
+        console.log(r)
+        this.username = r["message"];
+        console.log(this.username);
+        document.getElementById("username").innerHTML = r["message"]
+      });
+    }
 
     RepoDataActions.fetchRepoData(repoId);
     RepoLogsActions.fetchRepoLogs(repoId);
@@ -90,10 +99,15 @@ class Repo extends Reflux.Component {
           </div>
           <div className="col-2 text-right">
             <RepoStatus repoId={this.state.repoData.Id} isDeploying={createdLessThan10MinutesAgo} />
-            <p className="mt-3"><a href={this.url} className="btn btn-xs btn-dark"><b>Open Explora</b></a></p>
           </div>
         </div>
-
+        <div className="row">
+        <div className="col-1"></div>
+          <div className="col-8">
+            <p>Click <a href={"explora.dataagora.com"}>here</a> to use Explora. Sign in with the username <b id="username"></b> and leave the password blank.</p>
+          </div>
+        </div>
+        
         <div className="row mt-4">
           <div className="col-1"></div>
           <div className="col-10">
