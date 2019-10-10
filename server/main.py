@@ -20,6 +20,9 @@ def landing():
 
 @application.route('/get_username/<repo_id>', methods=['POST', 'GET'])
 def get_username(repo_id):
+    '''
+    Authorize request, then retrieve username for given repo_id
+    '''
     claims = authorize_user(request)
     if claims is None: return jsonify(make_unauthorized_error()), 400
     user_id = claims["pk"]
