@@ -20,15 +20,9 @@ repo_id = sample_repo_id;
 data = getData();
 ```
 
-5. Bootstrap the library with your `repo_id`.
+5. Bootstrap the library with your `repo_id`. Store the data with a repo name and wait for incoming library requests to train on your data!
 ```
-dataagora.bootstrap(repo_id);
-```
-
-6. Store the data with a repo name and wait for incoming library requests to train on your data!
-```
-repo_name = "sample_repo_name";
-dataagora.store(repo_name, data);
+dataagora.bootstrap_and_store(repo_id, data);
 ```
 
 You can see an example in `test/sample.js`.

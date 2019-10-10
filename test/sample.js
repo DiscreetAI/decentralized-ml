@@ -8,7 +8,7 @@ var mnist = require('mnist');
 
 
 // Repo ID after creating a repo. See https://beta.dataagora.com
-repo_id = "ae362cb3fa81fce380dcbf4c788f96fa"
+repo_id = "99885f00eefcd4107572eb62a5cb429a"
 
 // Get data. Must be of type Tensor2D.
 function getData() {
@@ -24,11 +24,10 @@ function getData() {
     return tf.tensor(data).as2D(8000, 785);
 }
 
-console.log("bootstrapping")
 // Bootstrap the library with the repo_id.
-dataagora.bootstrap(repo_id);
+// dataagora.bootstrap(repo_id);
 
-console.log("store")
 // Store the data with a given repo name, and wait for incoming messages to train on the data.
-dataagora.store(repo_id, getData());
-console.log("store completed!")
+// dataagora.store(repo_id, getData());
+dataagora.bootstrap_and_store(repo_id, getData())
+

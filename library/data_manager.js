@@ -23,14 +23,16 @@ class DataManager {
                 "node_type": "LIBRARY"
             };
             DataManager.ws.send(JSON.stringify(registrationMessage));
-            console.log("Bootstrapped!")
-            callback(repo_id, data);
+            if (data == null) {
+                callback();
+            } else {
+                callback(repo_id, data);
+            }
+                
         });
 
         DataManager.ws.addEventListener("error", function (event) {
             throw new Error("Bootstrap failed due to a failure to connect. Please check the repo id to make sure it is valid!");
-            
-            //console.log(event);
         });
 
     }
@@ -41,6 +43,7 @@ class DataManager {
         } else {
             DMLDB._open();
             DataManager._connect(repo_id, data, callback);
+            console.log("Bootstrapped!");
         }
     }
 
@@ -75,7 +78,7 @@ class DataManager {
             console.log("Connection lost. Reconnecting...")
             console.log(event);
             if (event.code == 1006) {
-                DataManager.bootstrap(DataManager.repo_id);
+                DataManager._connect(DataManager.repo_id, null, DataManager._listen);
             }
         });
     }
