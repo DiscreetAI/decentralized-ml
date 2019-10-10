@@ -1,6 +1,0 @@
-requests == 2.20.1
-flask
-flask_cors
-zappa
-Twisted==18.9.0
-jupyter
