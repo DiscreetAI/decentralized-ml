@@ -9,7 +9,9 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 from autobahn.twisted.websocket import WebSocketClientFactory
 
 class Explora(object):
-
+    '''
+    Communicate with given cloud node and initiate DML session
+    '''
     def __init__(self):
         #log.startLogging(sys.stdout)
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
