@@ -2,9 +2,22 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      - python: 3.7
+      python: 3.7
     commands:
       - pip install -r requirements.txt
-  # build:
-  #   commands:
-  #   - python server.py
+  pre_build:
+    commands:
+      - echo pre_build steps...
+      - aws --version
+      - $(aws ecr get-login --region us-west-1 --no-include-email)
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $REPOSITORY_URI:latest
+  
