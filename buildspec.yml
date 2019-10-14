@@ -1,6 +1,8 @@
 version: 0.2
 phases:
-  pre_build:
-    - pip install -r requirements.txt
-  build:
-    - python server.py
+  install:
+    commands:
+      - pip install -r requirements.txt
+  # build:
+  #   commands:
+  #   - python server.py
