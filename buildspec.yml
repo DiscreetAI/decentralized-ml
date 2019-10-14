@@ -3,4 +3,4 @@ phases:
   install:
     - pip install -r requirements.txt
   build:
-    - python main.py
+    - python server.py
