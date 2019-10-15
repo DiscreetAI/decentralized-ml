@@ -280,7 +280,6 @@ def get_state():
 if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
-    print(os.environ)
 
     factory = CloudNodeFactory()
     factory.protocol = CloudNodeProtocol
@@ -294,3 +293,6 @@ if __name__ == '__main__':
 
     reactor.listenTCP(8999, site)
     reactor.run()
+
+    print("Starting cloud node...")
+    print(os.environ)
