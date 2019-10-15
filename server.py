@@ -68,6 +68,7 @@ class CloudNodeProtocol(WebSocketServerProtocol):
 
         """
         print("Got payload!")
+        print(os.environ)
         if isBinary:
             print("Binary message not supported.")
             return
