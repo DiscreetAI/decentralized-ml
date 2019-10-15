@@ -15,8 +15,8 @@ def store_update(type, message, with_weights=True):
 
     print("[{0}]: {1}".format(type, message))
 
-    access_key = os.environ["AWS_SERVER_PUBLIC_KEY"]
-    secret_key = os.environ["AWS_SERVER_SECRET_KEY"]
+    access_key = os.environ["ACCESS_KEY_ID"]
+    secret_key = os.environ["SECRET_ACCESS_KEY"]
     if with_weights:
         try:
             repo_id = state.state['repo_id']

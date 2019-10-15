@@ -25,11 +25,10 @@ import state
 from message import MessageType, Message
 from coordinator import start_new_session
 from aggregator import handle_new_weights
+import os
 
 from tensorflow.keras import backend as K
 import tensorflow as tf
-
-weights = None
 
 class CloudNodeProtocol(WebSocketServerProtocol):
     """
@@ -281,6 +280,7 @@ def get_state():
 if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
+    print(os.environ)
 
     factory = CloudNodeFactory()
     factory.protocol = CloudNodeProtocol
