@@ -18,7 +18,7 @@ class Explora(object):
         self.CLOUD_NODE_PORT = 80
         self.factory = WebSocketClientFactory()
 
-    def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds):
+    def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
         self.CLOUD_NODE_HOST = repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
@@ -32,6 +32,7 @@ class Explora(object):
             "repo_id": repo_id,
             "h5_model": h5_model,
             "hyperparams": hyperparams,
+            "checkpoint_frequency": checkpoint_frequency
             "selection_criteria": {
                 "type": "ALL_NODES",
             },
