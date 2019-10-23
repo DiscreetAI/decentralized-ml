@@ -92,7 +92,13 @@ def create_new_version():
                 'S3Bucket': S3_BUCKET,
                 'S3Key': BUCKET_KEY
             },
-            Process=True
+            Process=True,
+            Tags=[
+                {
+                    'Key': 'type',
+                    'Value': 'cloud'
+                },
+            ]
         )
     except ClientError as err:
         print("Failed to create application version.\n" + str(err))
@@ -236,3 +242,58 @@ def run_deploy_routine(repo_id):
     # _ = zip_server_directory()
     _ = deploy_cloud_node(repo_id)
     _ = add_codepipeline_deploy_step(repo_id)
+
+def _delete_cloud_node(repo_id):
+    """
+    Deletes cloud node
+    """
+    try:
+        client = boto3.client('elasticbeanstalk')
+    except ClientError as err:
+        print("Failed to create boto3 client.\n" + str(err))
+        return False
+
+    try:
+        response = client.terminate_environment(
+            EnvironmentName=repo_id,
+            TerminateResources=True,
+        )
+    except ClientError as err:
+        print("Failed to delete environment.\n" + str(err))
+        return False
+
+    print(response)
+
+def _remove_codepipeline_deploy_step(env_name):
+    """
+    Removes Cloud Node from the AWS CodePipeline pipeline.
+    """
+    try:
+        target_name = DEPLOYMENT_NAME.format(env_name)
+        client = boto3.client('codepipeline')
+        pipeline_response = client.get_pipeline(
+            name=PIPELINE_NAME,
+        )
+
+        pipeline_data = pipeline_response['pipeline']
+        for stage in pipeline_data['stages']:
+            if stage['name'] == 'Deploy':
+                stage['actions'] = [action for action in stage['actions'] \
+                                    if action['name'] != target_name]
+                _ = client.update_pipeline(
+                    pipeline=pipeline_data
+                )
+                print("Updated CodeDeploy pipeline.")
+    except Exception as e:
+        # Does not raise an exception since this is not crucial.
+        # TODO: Log an error and alert developers because this could break things.
+        print("Error: " + str(e))
+
+    return True
+
+def run_delete_routine(repo_id):
+    """
+    Runs delete cloud node routine
+    """
+    _ = _delete_cloud_node(repo_id)
+    _ = _remove_codepipeline_deploy_step(repo_id)

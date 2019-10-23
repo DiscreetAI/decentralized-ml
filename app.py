@@ -11,14 +11,19 @@ from flask_cors import CORS
 from boto3.dynamodb.conditions import Key
 from flask import Flask, request, jsonify
 
-from deploy import run_deploy_routine
+from deploy import run_deploy_routine, run_delete_routine
 
 
 JWT_SECRET = "datajbsnmd5h84rbewvzx6*cax^jgmqw@m3$ds_%z-4*qy0n44fjr5shark"
 JWT_ALGO = "HS256"
 
+APPLICATION_NAME = "cloud-node"
 app = Flask(__name__)
 CORS(app)
+
+@app.route("/")
+def home():
+    return "This is the dashboard api homepage!"
 
 @app.route("/userdata", methods=["GET"])
 def get_user_data():
@@ -90,6 +95,36 @@ def create_new_repo():
         api_key, true_api_key = _create_new_api_key(user_id, repo_id)
         _update_user_data_with_new_repo(user_id, repo_id, api_key)
         _create_new_cloud_node(repo_id, api_key)
+    except Exception as e:
+        # TODO: Revert things.
+        return jsonify(make_error(str(e))), 400
+
+    return jsonify({
+        "Error": False,
+        "Results": {
+            "RepoId": repo_id,
+            "TrueApiKey": true_api_key
+        }
+    })
+
+@app.route("/delete/<repo_id>", methods=["POST"])
+def delete_new_repo(repo_id):
+    """
+    Deletes a repo under the authenticated user.
+
+    Example HTTP POST Request body (JSON format):
+        {
+        	"RepoID": "repo_id",
+        }
+    """
+    # Check authorization
+    claims = authorize_user(request)
+    if claims is None: return jsonify(make_unauthorized_error()), 400
+
+    user_id = claims["pk"]
+    repo_name = re.sub('[^a-zA-Z0-9-]', '-', repo_name)
+    try:
+        run_delete_routine(repo_id)
     except Exception as e:
         # TODO: Revert things.
         return jsonify(make_error(str(e))), 400
@@ -398,6 +433,28 @@ def _create_new_cloud_node(repo_id, api_key):
         run_deploy_routine(repo_id)
     except Exception as e:
         raise Exception("Error while creating new cloud node.")
+
+def _delete_cloud_node(repo_id):
+    """
+    Deletes cloud node
+    """
+    try:
+        client = boto3.client('elasticbeanstalk')
+    except ClientError as err:
+        print("Failed to create boto3 client.\n" + str(err))
+        return False
+
+    try:
+        response = client.delete_environment_configuration(
+            ApplicationName=APPLICATION_NAME,
+            EnvironmentName=repo_id
+        )
+    except ClientError as err:
+        print("Failed to delete environment.\n" + str(err))
+        return False
+
+    print(response)
+
 
 def _create_presigned_url(bucket_name, object_name, expiration=3600):
     """Generate a presigned URL to share an S3 object
