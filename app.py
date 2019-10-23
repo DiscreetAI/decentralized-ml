@@ -122,9 +122,10 @@ def delete_new_repo(repo_id):
     if claims is None: return jsonify(make_unauthorized_error()), 400
 
     user_id = claims["pk"]
-    repo_name = re.sub('[^a-zA-Z0-9-]', '-', repo_name)
     try:
         run_delete_routine(repo_id)
+        _remove_logs(repo_id)
+        _remove_repo_from_user_details(user_id, repo_id)
     except Exception as e:
         # TODO: Revert things.
         return jsonify(make_error(str(e))), 400
@@ -302,6 +303,28 @@ def _get_logs(repo_id):
         raise Exception("Error while getting logs for repo. " + str(e))
     return logs
 
+def _remove_logs(repo_id):
+    """
+    Removes the logs for a repo.
+    """
+    logs_table = _get_dynamodb_table("UpdateStore")
+    try:
+        response = logs_table.query(
+            KeyConditionExpression=Key('RepoId').eq(repo_id)
+        )
+        with logs_table.batch_writer() as batch:
+            for item in response["Items"]:
+                batch.delete_item(
+                    Key={
+                        'RepoId': item['RepoId'],
+                        'Timestamp': item['Timestamp']
+                    }
+                )
+        print("Successfully deleted logs!")
+        return True
+    except Exception as e:
+        raise Exception("Error while getting logs for repo. " + str(e))
+
 def _get_user_data(user_id):
     """
     Returns the user's data.
@@ -317,6 +340,37 @@ def _get_user_data(user_id):
     except:
         raise Exception("Error while getting user dashboard data.")
     return data
+
+def _remove_repo_from_user_details(user_id, repo_id):
+    """
+    Upon removing a repo, remove the repo from the user's details.
+    """
+    table = _get_dynamodb_table("UsersDashboardData")
+    try:
+        response = table.get_item(
+            Key={
+                "UserId": user_id,
+            }
+        )
+        data = response["Item"]
+        repos_managed = data['ReposManaged']
+        if repo_id in repos_managed:
+            repos_managed.remove(repo_id)
+            table.update_item(
+                Key={
+                    "UserId": user_id,
+                },
+                UpdateExpression='SET ReposRemaining = :val1, ReposManaged = :val2',
+                ExpressionAttributeValues={
+                    ':val1': data['ReposRemaining'] + 1,
+                    ':val2': repos_managed,
+                }
+            )
+            print("Successfully removed repo_id from user details!")
+        return True
+    except:
+        raise Exception("Error while getting user dashboard data.")
+
 
 def _get_repo_details(user_id, repo_id):
     """
@@ -334,6 +388,23 @@ def _get_repo_details(user_id, repo_id):
     except:
         raise Exception("Error while getting repo details.")
     return repo_details
+
+def _remove_repo_details(user_id, repo_id):
+    """
+    Removes a repo's details.
+    """
+    repos_table = _get_dynamodb_table("Repos")
+    try:
+        response = repos_table.delete_item(
+            Key={
+                "Id": repo_id,
+                "OwnerId": user_id,
+            }
+        )
+        print("Removed repo details!")
+        return True
+    except:
+        raise Exception("Error while getting repo details.")
 
 def _update_user_data_with_new_repo(user_id, repo_id, api_key):
     """
@@ -433,28 +504,6 @@ def _create_new_cloud_node(repo_id, api_key):
         run_deploy_routine(repo_id)
     except Exception as e:
         raise Exception("Error while creating new cloud node.")
-
-def _delete_cloud_node(repo_id):
-    """
-    Deletes cloud node
-    """
-    try:
-        client = boto3.client('elasticbeanstalk')
-    except ClientError as err:
-        print("Failed to create boto3 client.\n" + str(err))
-        return False
-
-    try:
-        response = client.delete_environment_configuration(
-            ApplicationName=APPLICATION_NAME,
-            EnvironmentName=repo_id
-        )
-    except ClientError as err:
-        print("Failed to delete environment.\n" + str(err))
-        return False
-
-    print(response)
-
 
 def _create_presigned_url(bucket_name, object_name, expiration=3600):
     """Generate a presigned URL to share an S3 object
