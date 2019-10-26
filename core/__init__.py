@@ -47,6 +47,7 @@ class Explora(object):
             "node_type": "dashboard",
         }
 
+        loop = asyncio.get_event_loop()
         loop.run_until_complete(self._start_new_session(NEW_CONNECTION_MESSAGE, NEW_MESSAGE))
 
 
