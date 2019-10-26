@@ -51,7 +51,7 @@ class Explora(object):
         loop.run_until_complete(self._start_new_session(NEW_CONNECTION_MESSAGE, NEW_MESSAGE))
 
 
-    async def _start_new_session(new_connection_message, new_message):
+    async def _start_new_session(self, new_connection_message, new_message):
         async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
             await websocket.send(json.dumps(new_connection_message))
             await websocket.send(json.dumps(new_message))
