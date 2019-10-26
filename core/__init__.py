@@ -1,4 +1,5 @@
 import sys
+import asyncio
 
 import json
 import base64
@@ -12,9 +13,8 @@ class Explora(object):
     def __init__(self):
         #log.startLogging(sys.stdout)
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
-        self.websocket = None
 
-    async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
+    def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
         self.CLOUD_NODE_HOST = repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
@@ -47,14 +47,17 @@ class Explora(object):
             "node_type": "dashboard",
         }
 
+        loop.run_until_complete(self._start_new_session(NEW_CONNECTION_MESSAGE, NEW_MESSAGE))
+
+
+    async def _start_new_session(new_connection_message, new_message):
         async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
-            await websocket.send(json.dumps(NEW_CONNECTION_MESSAGE))
-            await websocket.send(json.dumps(NEW_MESSAGE))
+            await websocket.send(json.dumps(new_connection_message))
+            await websocket.send(json.dumps(new_message))
             response = await websocket.recv()
             json_response = json.loads(response)
             if json_response.get("action", None) == 'STOP':
                 print("Session complete! Check dashboard for final model!")
-                return
             else:
                 print("Unknown response received:")
                 print(json_response)
