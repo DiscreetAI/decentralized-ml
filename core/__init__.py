@@ -1,24 +1,20 @@
 import sys
 
-from twisted.python import log
-from twisted.internet import reactor
 import json
 import base64
 
-from autobahn.twisted.websocket import WebSocketClientProtocol
-from autobahn.twisted.websocket import WebSocketClientFactory
+import websockets
 
 class Explora(object):
-    '''
+    """
     Communicate with given cloud node and initiate DML session
-    '''
+    """
     def __init__(self):
         #log.startLogging(sys.stdout)
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
-        self.CLOUD_NODE_PORT = 80
-        self.factory = WebSocketClientFactory()
+        self.websocket = None
 
-    def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
+    async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
         self.CLOUD_NODE_HOST = repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
@@ -32,7 +28,7 @@ class Explora(object):
             "repo_id": repo_id,
             "h5_model": h5_model,
             "hyperparams": hyperparams,
-            "checkpoint_frequency": checkpoint_frequency
+            "checkpoint_frequency": checkpoint_frequency,
             "selection_criteria": {
                 "type": "ALL_NODES",
             },
@@ -51,19 +47,16 @@ class Explora(object):
             "node_type": "dashboard",
         }
 
-        class NewSessionTestProtocol(WebSocketClientProtocol):
-            def onOpen(self):
-                json_data = json.dumps(NEW_CONNECTION_MESSAGE)
-                self.sendMessage(json_data.encode())
-                json_data = json.dumps(NEW_MESSAGE)
-                self.sendMessage(json_data.encode())
+        async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
+            await websocket.send(json.dumps(NEW_CONNECTION_MESSAGE))
+            await websocket.send(json.dumps(NEW_MESSAGE))
+            response = await websocket.recv()
+            json_response = json.loads(response)
+            if json_response.get("action", None) == 'STOP':
+                print("Session complete! Check dashboard for final model!")
+                return
+            else:
+                print("Unknown response received:")
+                print(json_response)
+                print("Stopping...")
 
-            def onMessage(self, payload, isBinary):
-                if isBinary:
-                    print("Binary message received: {0} bytes".format(len(payload)))
-                else:
-                    print("Text message received: {0}".format(payload.decode('utf8')))
-
-        self.factory.protocol = NewSessionTestProtocol
-        reactor.connectTCP(self.CLOUD_NODE_HOST, self.CLOUD_NODE_PORT, self.factory)
-        reactor.run()
