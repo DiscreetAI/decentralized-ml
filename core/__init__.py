@@ -14,7 +14,7 @@ class Explora(object):
         #log.startLogging(sys.stdout)
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 
-    def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
+    async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
         self.CLOUD_NODE_HOST = repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
@@ -47,8 +47,7 @@ class Explora(object):
             "node_type": "dashboard",
         }
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self._start_new_session(NEW_CONNECTION_MESSAGE, NEW_MESSAGE))
+        await self._start_new_session(NEW_CONNECTION_MESSAGE, NEW_MESSAGE)
 
 
     async def _start_new_session(self, new_connection_message, new_message):
