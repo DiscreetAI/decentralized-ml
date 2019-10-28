@@ -2,7 +2,6 @@ absl-py==0.8.1
 appnope==0.1.0
 asn1crypto==1.0.1
 astor==0.8.0
-asyncio==3.4.3
 attrs==19.2.0
 Automat==0.7.0
 backcall==0.1.0
