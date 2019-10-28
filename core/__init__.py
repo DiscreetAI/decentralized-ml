@@ -70,6 +70,7 @@ class Explora(object):
                 num_reconnections -= 1
                 if not num_reconnections:
                     print("Failed to connect!")
+                    return
 
                     
 
