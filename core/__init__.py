@@ -51,15 +51,37 @@ class Explora(object):
 
 
     async def _start_new_session(self, new_connection_message, new_message):
-        async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
-            await websocket.send(json.dumps(new_connection_message))
-            await websocket.send(json.dumps(new_message))
-            response = await websocket.recv()
-            json_response = json.loads(response)
-            if json_response.get("action", None) == 'STOP':
-                print("Session complete! Check dashboard for final model!")
-            else:
-                print("Unknown response received:")
-                print(json_response)
-                print("Stopping...")
+        num_reconnections = 3
+        while True:
+            try:
+                async with websockets.connect(self._websocket_url, max_size=2**22) as websocket:
+                    await websocket.send(json.dumps(new_connection_message))
+                    await websocket.send(json.dumps(new_message))
+                    response = await websocket.recv()
+                    json_response = json.loads(response)
+                    if json_response.get("action", None) == 'STOP':
+                        print("Session complete! Check dashboard for final model!")
+                    else:
+                        print("Unknown response received:")
+                        print(json_response)
+                        print("Stopping...")
+                    return
+            except:
+                num_reconnections -= 1
+                if not num_reconnections:
+                    print("Failed to connect!")
+
+                    
+
+        # async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
+        #     await websocket.send(json.dumps(new_connection_message))
+        #     await websocket.send(json.dumps(new_message))
+        #     response = await websocket.recv()
+        #     json_response = json.loads(response)
+        #     if json_response.get("action", None) == 'STOP':
+        #         print("Session complete! Check dashboard for final model!")
+        #     else:
+        #         print("Unknown response received:")
+        #         print(json_response)
+        #         print("Stopping...")
 
