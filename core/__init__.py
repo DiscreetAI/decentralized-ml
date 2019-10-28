@@ -54,7 +54,7 @@ class Explora(object):
         num_reconnections = 3
         while True:
             try:
-                async with websockets.connect(self._websocket_url, max_size=2**22) as websocket:
+                async with websockets.connect(self.CLOUD_NODE_HOST, max_size=2**22) as websocket:
                     await websocket.send(json.dumps(new_connection_message))
                     await websocket.send(json.dumps(new_message))
                     response = await websocket.recv()
