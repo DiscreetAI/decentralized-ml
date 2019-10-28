@@ -15,7 +15,7 @@ class Explora(object):
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 
     async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
-        self.CLOUD_NODE_HOST = repo_id + self.CLOUD_BASE_URL
+        self.CLOUD_NODE_HOST = 'ws://' + repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
         with open("core/model/my_model.h5", mode='rb') as file:
