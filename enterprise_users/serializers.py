@@ -89,8 +89,6 @@ class CustomRegisterSerializer(RegisterSerializer):
             table = dynamodb.Table("UsersDashboardData")
             item = {
                 'UserId': user_id,
-                'ReposManaged': set([]),
-                'ApiKeys': set([]),
                 'ReposRemaining': 3,
             }
             table.put_item(
