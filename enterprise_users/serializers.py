@@ -74,8 +74,9 @@ class CustomRegisterSerializer(RegisterSerializer):
         if company != None:
             profile.company = company
         profile.save()
-        print("Creating user!")
+        print("Creating user!", user.id)
         self._createUserData(user.id)
+        print("Success!")
         return user
 
     def _createUserData(self, user_id):
