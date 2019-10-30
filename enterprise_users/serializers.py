@@ -3,6 +3,8 @@ import boto3
 from rest_framework import serializers
 from rest_auth.serializers import UserDetailsSerializer
 
+print("HEY 1")
+
 class UserSerializer(UserDetailsSerializer):
     occupation = serializers.CharField(min_length=3, max_length=100, source="enterpriseuserprofile.occupation")
     company = serializers.CharField(min_length=3, max_length=100, source="enterpriseuserprofile.company")
@@ -37,6 +39,7 @@ from allauth.account.adapter import get_adapter
 from allauth.account.utils import setup_user_email
 
 class CustomRegisterSerializer(RegisterSerializer):
+    print("HEY 2")
     first_name = serializers.CharField(required=True, write_only=True)
     last_name = serializers.CharField(required=True, write_only=True)
     company = serializers.CharField(source="enterpriseuserprofile.company", required=True, min_length=3, max_length=100, write_only=True)
@@ -54,6 +57,7 @@ class CustomRegisterSerializer(RegisterSerializer):
         }
 
     def save(self, request):
+        print("Save called!")
         adapter = get_adapter()
         user = adapter.new_user(request)
         self.cleaned_data = self.get_cleaned_data()
@@ -70,9 +74,8 @@ class CustomRegisterSerializer(RegisterSerializer):
         if company != None:
             profile.company = company
         profile.save()
-
+        print("Creating user!")
         self._createUserData(user.id)
-        self._createTestRepo(user.id)
         return user
 
     def _createUserData(self, user_id):
@@ -82,9 +85,9 @@ class CustomRegisterSerializer(RegisterSerializer):
         try:
             item = {
                 'UserId': user_id,
-                'ReposManaged': set(["test"]),
-                'ApiKeys': set(["null"]),
-                'ReposRemaining': 5,
+                'ReposManaged': set([]),
+                'ApiKeys': set([]),
+                'ReposRemaining': 3,
             }
             table.put_item(
                 Item=item,
@@ -92,20 +95,3 @@ class CustomRegisterSerializer(RegisterSerializer):
             )
         except:
             raise Exception("Error while creating the user dashboard data.")
-
-    def _createTestRepo(self, user_id):
-        dynamodb = boto3.resource('dynamodb', region_name='us-west-1')
-        table = dynamodb.Table("Repos")
-        try:
-            item = {
-                'Id': "test",
-                'Name': "hello-i-am-a-test-repo",
-                'Description': "This is just a test repo. There's nothing here and will never be. Well, maybe.",
-                'OwnerId': user_id,
-                'ContributorsId': [],
-                'CoordinatorAddress': "cloud-node-env99.au4c4pd2ch.us-west-1.elasticbeanstalk.com",
-                # 'ExploratoryData': None,
-            }
-            table.put_item(Item=item)
-        except:
-            raise Exception("Error while creating the new repo document.")
