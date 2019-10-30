@@ -82,11 +82,11 @@ class CustomRegisterSerializer(RegisterSerializer):
 
     def _createUserData(self, user_id):
         """Only creates it if doesn't exist already."""
-        access_key = os.environ["ACCESS_KEY_ID"]
-        secret_key = os.environ["SECRET_ACCESS_KEY"]
-        dynamodb = boto3.resource('dynamodb', region_name='us-west-1', access_key=access_key, secret_key=secret_key)
-        table = dynamodb.Table("UsersDashboardData")
         try:
+            access_key = os.environ["ACCESS_KEY_ID"]
+            secret_key = os.environ["SECRET_ACCESS_KEY"]
+            dynamodb = boto3.resource('dynamodb', region_name='us-west-1', access_key=access_key, secret_key=secret_key)
+            table = dynamodb.Table("UsersDashboardData")
             item = {
                 'UserId': user_id,
                 'ReposManaged': set([]),
@@ -97,5 +97,6 @@ class CustomRegisterSerializer(RegisterSerializer):
                 Item=item,
                 ConditionExpression="attribute_not_exists(UserId)"
             )
-        except:
+        except Exception as e:
+            print(str(e))
             raise Exception("Error while creating the user dashboard data.")
