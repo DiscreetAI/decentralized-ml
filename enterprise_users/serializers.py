@@ -85,7 +85,7 @@ class CustomRegisterSerializer(RegisterSerializer):
         try:
             access_key = os.environ["ACCESS_KEY_ID"]
             secret_key = os.environ["SECRET_ACCESS_KEY"]
-            dynamodb = boto3.resource('dynamodb', region_name='us-west-1', access_key=access_key, secret_key=secret_key)
+            dynamodb = boto3.resource('dynamodb', region_name='us-west-1', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
             table = dynamodb.Table("UsersDashboardData")
             item = {
                 'UserId': user_id,
