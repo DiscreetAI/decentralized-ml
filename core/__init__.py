@@ -14,7 +14,7 @@ class Explora(object):
         #log.startLogging(sys.stdout)
         self.CLOUD_BASE_URL = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
 
-    async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, checkpoint_frequency=1):
+    async def start_new_session(self, repo_id, model, hyperparams, percentage_averaged, max_rounds, library_type, checkpoint_frequency=1):
         self.CLOUD_NODE_HOST = 'ws://' + repo_id + self.CLOUD_BASE_URL
 
         model.save("core/model/my_model.h5")
@@ -39,7 +39,8 @@ class Explora(object):
             "termination_criteria": {
                 "type": "MAX_ROUND",
                 "value": max_rounds
-            }
+            },
+            "library_type": library_type
         }
 
         NEW_CONNECTION_MESSAGE = {
