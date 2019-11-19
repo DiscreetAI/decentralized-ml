@@ -1,0 +1,7 @@
+websocket\_utils module
+=======================
+
+.. automodule:: websocket_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:

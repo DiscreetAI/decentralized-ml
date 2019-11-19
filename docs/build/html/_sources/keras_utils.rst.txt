@@ -1,0 +1,7 @@
+keras\_utils module
+===================
+
+.. automodule:: keras_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
