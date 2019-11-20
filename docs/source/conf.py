@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'explora'
+project = 'explora-dataagora'
 copyright = '2019, Neelesh Dodda'
 author = 'Neelesh Dodda'
 
