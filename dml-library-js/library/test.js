@@ -2,7 +2,8 @@
 
 var DataManager = require('./data_manager.js').DataManager;
 var tf = require("@tensorflow/tfjs-node");
-const repo_id = "99885f00eefcd4107572eb62a5cb429a";
+const repo_id = "c0e533b747a0792b90d388597ea5c79b";
+DataManager.initialize();
 console.log(DataManager)
 
 async function run() {

@@ -2,19 +2,19 @@
 exports.__esModule = true;
 var DMLDB = require("./dml_db.js").DMLDB;
 var DMLRequest = require("./message.js").DMLRequest;
-var runner_js_1 = require("./runner.js");
+var Runner = require("./runner.js").Runner;
 const WebSocket = require('ws');
 
 class DataManager {
-    constructor() {
+    static initialize() {
         DataManager.bootstrapped = false;
         DataManager.has_data = false;
+        DataManager.base_url = ".au4c4pd2ch.us-west-1.elasticbeanstalk.com"
     }
 
     static _connect(repo_id, data, callback) {
-        DataManager.repo_id = repo_id;
-        DataManager.cloud_url = "http://" + repo_id + ".au4c4pd2ch.us-west-1.elasticbeanstalk.com";
-        DataManager.ws = new WebSocket("ws://" + repo_id + ".au4c4pd2ch.us-west-1.elasticbeanstalk.com");
+        console.log("Connecting to: " + DataManager.cloud_url);
+        DataManager.ws = new WebSocket(DataManager.ws_url);
         DataManager.ws.addEventListener("open", function (event) {
             console.log("Connection successful!");
             DataManager.bootstrapped = true;
@@ -59,24 +59,45 @@ class DataManager {
         console.log("Data stored!");
     }
 
-    static bootstrap_and_store(repo_id, data) {
+    static bootstrap_and_store(repo_id, data, test) {
+        if (test) {
+            DataManager.repo_id = repo_id;
+            DataManager.cloud_url = "http://localhost:8999";
+            DataManager.ws_url = "ws://localhost:8999";
+        } else {
+            DataManager.repo_id = repo_id;
+            DataManager.cloud_url = "http://" + repo_id + DataManager.base_url;
+            DataManager.ws_url = "ws://" + repo_id + DataManager.base_url
+        }
         DataManager.bootstrap(repo_id, data, DataManager.store);
     }
 
     static _listen() {
         DataManager.ws.addEventListener('message', function (event) {
             var receivedMessage = event.data;
-            console.log("Received message:");
-            console.log(receivedMessage);
-            if ("action" in JSON.parse(receivedMessage)) {
-                var request = DMLRequest._deserialize(receivedMessage);
-                runner_js_1.Runner._handleMessage(request);
+            //console.log("Received message:");
+            //console.log(receivedMessage);
+            var request_json = JSON.parse(receivedMessage)
+            if ("action" in request_json) {
+                if (request_json["action"] == "TRAIN") {
+                    console.log("\nReceived new TRAIN message!")
+                    var request = DMLRequest._deserialize(request_json);
+                    request.cloud_url = DataManager.cloud_url
+                    request.ws = DataManager.ws;
+                    Runner._handleMessage(request);
+                } else if (request_json["action"] == "STOP") {
+                    console.log("Received STOP message. Stopping...")
+                } else {
+                    console.log("Received unknown action. Stopping...")
+                }
+            } else {
+                console.log("No action in message. Stopping...")
             }
         });
 
         DataManager.ws.addEventListener("close", function (event) {
             console.log("Connection lost. Reconnecting...")
-            console.log(event);
+            //console.log(event);
             if (event.code == 1006) {
                 DataManager._connect(DataManager.repo_id, null, DataManager._listen);
             }

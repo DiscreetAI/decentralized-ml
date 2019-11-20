@@ -20,8 +20,7 @@ class DMLRequest {
         return JSON.stringify(socketMessage);
     };
     /* TODO: This feels more complicated than necessary */
-    static _deserialize(message) {
-        var request_json = JSON.parse(message);
+    static _deserialize(request_json) {
         var request = new DMLRequest(request_json["session_id"], request_json["repo_id"], request_json["action"], request_json["hyperparams"]);
         if (request.action == "TRAIN")
             request.round = request_json["round"];

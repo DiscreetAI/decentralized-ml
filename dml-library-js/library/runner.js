@@ -11,12 +11,12 @@ class Runner {
     };
     static _compileModel(model, optimization_data) {
         var optimizer;
-        
+        var optimizer_config = optimization_data['optimizer_config']
         if (optimizer_config['class_name'] == 'SGD') {
             // SGD
-            optimizer = tfjs_1.train.sgd(optimizer_config['config']['lr']);
-        } else if (optimization_data['optimizer_config']['class_name'] == 'Adam') {
-            optimizer = tfjs_1.train.adam(optimizer_config['config']['lr'], optimizer_config['config']['beta1'], optimizer_config['config']['beta2'])
+            optimizer = tfjs_1.train.sgd(optimizer_config['config']['learning_rate']);
+        } else if (optimizer_config['class_name'] == 'Adam') {
+            optimizer = tfjs_1.train.adam(optimizer_config['config']['learning_rate'], optimizer_config['config']['beta1'], optimizer_config['config']['beta2'])
         } else {
             // Not supported!
             throw "Optimizer not supported!";
@@ -26,19 +26,16 @@ class Runner {
             loss: Runner._lowerCaseToCamelCase(optimization_data['loss']),
             metrics: optimization_data['metrics']
         });
-        console.log("Model compiled!", model);
         return model;
     }
 
     static async _getModel(request, callback) {
-        const model_url = DataManager.cloud_url + "/model/model.json";
-        var model = await loadLayersModel(model_url);
+        const model_url = request.cloud_url + "/model/model.json";
+        var model = await tfjs_1.loadLayersModel(model_url);
         fetch(model_url)
         .then(res => res.json())
         .then((out) => {
-            console.log('Output: ', out);
             model = Runner._compileModel(model, out["modelTopology"]["training_config"]);
-            Runner._saveModel(model, request.id);
             DMLDB._get(request, callback, model);
         }).catch(err => console.error(err));
     }
@@ -68,21 +65,20 @@ class Runner {
     };
 
     static async _train(data, request, model) {
+        console.log("Starting round: " + request.round)
         var [data_x, data_y] = Runner._labelData(data.arraySync(), request.params.label_index);
         model.fit(data_x, data_y, {
             batchSize: request.params["batch_size"],
             epochs: request.params["epochs"],
-            shuffle: request.params["shuffle"]
+            shuffle: request.params["shuffle"],
+            verbose: 0
         });
         console.log("Finished training!");
-        await Runner._saveModel(model, request.id);
         var weights = await Runner._getWeights(model)
         var results = {
             "weights": weights,
             "omega": data.arraySync().length
         }
-        console.log("Training results:")
-        console.log(results);
         DMLDB._put(request, Runner._sendMessage, results); 
     }
 
@@ -94,7 +90,7 @@ class Runner {
 
     static async _sendMessage(request, message) {
         var result = DMLRequest._serialize(request, message);
-        DataManager.ws.send(result);
+        request.ws.send(result);
     }
 
     static async _handleMessage(request) {

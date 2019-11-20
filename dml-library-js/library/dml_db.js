@@ -10,8 +10,6 @@ class DMLDB {
 
     static _create(repo, data, callback) {        
         var timestamp = new Date().getTime();
-        console.log("Storing with repo id:");
-        console.log(repo);
 
         DMLDB.db.get(repo, function(err, doc) {
             if (err) {
@@ -42,8 +40,6 @@ class DMLDB {
     }
 
     static _get(dml_request, callback, model) {
-        console.log("Getting with repo id:");
-        console.log(dml_request.repo);
         DMLDB.db.get(dml_request.repo, function(err, doc) {
             if (err) { return console.log(err); }
             var data = tfjs_1.tensor(doc.data).as2D(doc.rows, doc.cols);
@@ -66,9 +62,9 @@ class DMLDB {
     static _put(dml_request, callback, result) {
         DMLDB.db.get(dml_request.repo, function(err, doc) {
             if (err) { return console.log(err); }
-            console.log("Updating round on session");
+            //console.log("Updating round on session");
             doc.sessions[dml_request.id] = dml_request.round
-            console.log(doc.sessions)
+            //console.log(doc.sessions)
             DMLDB.db.put(doc);
             callback(dml_request, result);
         });
