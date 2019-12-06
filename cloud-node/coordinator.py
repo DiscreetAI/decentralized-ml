@@ -3,44 +3,52 @@ import logging
 
 import state
 import copy
-from model import convert_and_save_b64model, convert_and_save_model, \
-    swap_weights, save_h5_model, get_encoded_h5_model, \
-    get_current_h5_model_path, clear_checkpoint
+from model import convert_keras_model, fetch_keras_model
 from message import LibraryType
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
-def start_new_session(message, clients_dict):
+def start_new_session(message, clients):
     """
     Starts a new DML session.
+
+    Args:
+        message (NEW_SESSION): The `NEW_SESSION` message sent to the server.
+        clients (list): List of `LIBRARY` clients to train with.
+
+    Returns:
+        dict: Returns a dictionary detailing whether an error occurred and
+            if there was no error, what the next action is.
     """
     print("Starting new session...")
 
-    # // 1. If server is BUSY, error. Otherwise, mark the service as BUSY.
+    # 1. If server is BUSY or library type is not recognized, error. 
+    #    Otherwise, mark the service as BUSY.
     if state.state["busy"]:
         print("Aborting because the server is busy.")
         return {
             "error": True,
             "message": "Server is already busy working."
         }
+
     state.state_lock.acquire()
     state.state["busy"] = True
 
-    # // 2. Set the internal round variable to 1, reset the number of nodes
-    # //    averaged to 0, update the initial message.
+    # 2. Set the internal round variable to 1, reset the number of nodes
+    #    averaged to 0, update the initial message.
     state.state["current_round"] = 1
     state.state["num_nodes_averaged"] = 0
     state.state["initial_message"] = message
     state.state["repo_id"] = message.repo_id
-    state.state["session_id"] = str(uuid.uuid4())
+    state.state["session_id"] = message.session_id
     state.state["checkpoint_frequency"] = message.checkpoint_frequency
 
-    # // 3. According to the 'Selection Criteria', choose clients to forward
-    # //    training messages to.
+    # 3. According to the 'Selection Criteria', choose clients to forward
+    #    training messages to.
     chosen_clients = _choose_clients(
         message.selection_criteria,
-        clients_dict["LIBRARY"]
+        clients,
     )
     state.state["num_nodes_chosen"] = len(chosen_clients)
 
@@ -51,21 +59,23 @@ def start_new_session(message, clients_dict):
         "action": "TRAIN",
         "hyperparams": message.hyperparams,
     }
-    state.state["last_message_sent_to_library"] = new_message
-    # // 4. Convert .h5 model into TFJS model
-    if message.library_type == LibraryType.PYTHON.value:
-        h5_model = message.h5_model
-        state.state["library_type"] = LibraryType.PYTHON.value
-        save_h5_model(h5_model)            
-        new_message = add_model_to_new_message(new_message)
-        state.state["use_gradients"] = message.use_gradients
-        new_message["use_gradients"] = message.use_gradients
-    else:
-        state.state["library_type"] = LibraryType.JS.value
-        state.state["use_gradients"] = False
-        _ = convert_and_save_b64model(message.h5_model)
 
-    # // 5. Kickstart a DML Session with the TFJS model and round # 1
+    # 4. Record the message to be sent and the library type we are training
+    #    with. By default, we use gradients for transmission.
+    state.state["last_message_sent_to_library"] = new_message
+    state.state["library_type"] = message.library_type
+    state.state["use_gradients"] = True
+
+    # 5. Retrieve the initial model we are training with.
+    fetch_keras_model()
+
+    # 6. If we are training with a JAVASCRIPT library, convert the model to 
+    #    TFJS and host it on the server.
+    if state.state["library_type"] == LibraryType.JS.value:
+        _ = convert_keras_model()    
+        state.state["use_gradients"] = False
+
+    # 7. Kickstart a DML Session with the model and round # 1
     state.state_lock.release()
     return {
         "error": False,
@@ -75,16 +85,26 @@ def start_new_session(message, clients_dict):
     }
 
 
-def start_next_round(message, clients_list):
+def start_next_round(clients):
     """
     Starts a new round in the current DML Session.
+
+    Args:
+        message (dict): The `NEW_SESSION` message sent to the server.
+        clients (list): List of `LIBRARY` clients to train with.
+
+    Returns:
+        dict: Returns a dictionary detailing whether an error occurred and
+            if there was no error, what the next action is.
     """
     print("Starting next round...")
     state.state["num_nodes_averaged"] = 0
 
+    message = state.state["initial_message"]
+
     # According to the 'Selection Criteria', choose clients to forward
     # training messages to.
-    chosen_clients = _choose_clients(message.selection_criteria, clients_list)
+    chosen_clients = _choose_clients(message.selection_criteria, clients)
     state.state["num_nodes_chosen"] = len(chosen_clients)
 
     new_message = {
@@ -99,11 +119,7 @@ def start_next_round(message, clients_list):
     assert state.state["current_round"] > 0
 
     if state.state['library_type'] == LibraryType.PYTHON.value:
-        if state.state["use_gradients"]:
-            new_message['gradients'] = [gradient.tolist() for gradient in state.state['current_gradients']]
-        else:
-            new_message = add_model_to_new_message(new_message)
-        new_message['use_gradients'] = state.state['use_gradients']
+        new_message['gradients'] = [gradient.tolist() for gradient in state.state['current_gradients']]
     else:
         _ = convert_and_save_model(state.state["current_round"] - 1)
 
@@ -116,6 +132,35 @@ def start_next_round(message, clients_list):
         "message": new_message,
     }
 
+def stop_session(clients_dict):
+    """
+    Stop the current session. Reset state and return broadcast `STOP` message
+    to all clients.
+
+    Args:
+        clients_dict (dict): Dictionary of clients, keyed by type of client
+            (either `LIBRARY` or `DASHBOARD`).
+
+    Returns:
+        dict: Returns the broadcast message with action `STOP`.
+    """
+    state.reset_state()
+
+    new_message = {
+        "action": "STOP",
+        "session_id": state.state["session_id"],
+        "repo_id": state.state["repo_id"]
+    }
+    
+    results = {
+        "error": False,
+        "action": "BROADCAST",
+        "client_list": clients_dict["LIBRARY"] + clients_dict["DASHBOARD"],
+        "message": new_message,
+    }
+
+    return results
+
 def _choose_clients(selection_criteria, client_list):
     """
     TO BE FINISHED.
@@ -125,19 +170,3 @@ def _choose_clients(selection_criteria, client_list):
     Right now it just chooses all clients.
     """
     return client_list
-
-def _get_current_model():
-    """
-    Get current model (encoded)
-    """
-    h5_model_path = state.state["h5_model_path"]
-    h5_model = get_encoded_h5_model(h5_model_path)
-    return h5_model
-
-def add_model_to_new_message(new_message):
-    """
-    Need to do a deep copy so that logs don't get flooded with h5_model.
-    """
-    copied_message = copy.deepcopy(new_message)
-    copied_message["h5_model"] = _get_current_model()
-    return copied_message

@@ -1,34 +1,29 @@
 import json
 import base64
+import numpy as np
 from enum import Enum
 
-import numpy as np
 
 class MessageType(Enum):
     """
-    Message Type
-
     Message Types that the service can work with.
-
     """
-
     REGISTER = "REGISTER"
     NEW_SESSION = "NEW_SESSION"
-    NEW_WEIGHTS = "NEW_WEIGHTS"
+    NEW_UPDATE = "NEW_UPDATE"
 
 class LibraryType(Enum):
-    PYTHON = "Python"
-    JS = "Javascript"
+    """
+    Library Types that the service can work with.
+    """
+    PYTHON = "PYTHON"
+    JS = "JAVASCRIPT"
 
 
 class Message:
     """
-    Message
-
     Base class for messages received by the service.
-
     """
-
     @staticmethod
     def make(serialized_message):
         type, data = serialized_message["type"], serialized_message
@@ -40,15 +35,15 @@ class Message:
 
 class RegistrationMessage(Message):
     """
-    Registration Message
-
     The type of message initially sent by a node with information of what type
     of node they are.
 
     `node_type` should be one of DASHBOARD or LIBRARY.
 
+    Args:
+        serialized_message (dict): The serialized message to register a new
+            node.
     """
-
     type = MessageType.REGISTER.value
 
     def __init__(self, serialized_message):
@@ -62,24 +57,25 @@ class RegistrationMessage(Message):
 
 class NewSessionMessage(Message):
     """
-    New Session Message
-
     The type of message sent by Explora to start a new session.
 
+    Args:
+        serialized_message (dict): The serialized message to start a new
+            session.
     """
 
     type = MessageType.NEW_SESSION.value
 
     def __init__(self, serialized_message):
         self.repo_id = serialized_message["repo_id"]
-        self.h5_model = serialized_message["h5_model"]
+        self.session_id = serialized_message["session_id"]
         self.hyperparams = serialized_message["hyperparams"]
         self.selection_criteria = serialized_message["selection_criteria"]
         self.continuation_criteria = serialized_message["continuation_criteria"]
         self.termination_criteria = serialized_message["termination_criteria"]
-        self.library_type = serialized_message.get("library_type", LibraryType.PYTHON.value)
-        self.use_gradients = serialized_message.get("use_gradients", False)
+        self.library_type = serialized_message["library_type"]
         self.checkpoint_frequency = serialized_message.get("checkpoint_frequency", 1)
+        self.node_type = "DASHBOARD"
 
     def __repr__(self):
         return json.dumps({
@@ -92,15 +88,15 @@ class NewSessionMessage(Message):
         })
 
 
-class NewWeightsMessage(Message):
+class NewUpdateMessage(Message):
     """
-    New Weights Message
-
     The type of message sent by the Library. This is an update.
 
+    Args:
+        serialized_message (dict): The serialized message to provide the new
+            update.
     """
-
-    type = MessageType.NEW_WEIGHTS.value
+    type = MessageType.NEW_UPDATE.value
 
     def __init__(self, serialized_message):
         self.session_id = serialized_message["session_id"]
@@ -115,16 +111,9 @@ class NewWeightsMessage(Message):
                 dtype=np.dtype(float),
             )
         else:
-            temp_path = "temp.h5"
-            h5_model = serialized_message["results"]["h5_model"]
-            base64_h5_model = h5_model.encode('ascii')
-            h5_model_bytes = base64.b64decode(base64_h5_model)
-            with open(temp_path, 'wb') as fp:
-                fp.write(h5_model_bytes)
-            from keras.models import load_model
-            model = load_model(temp_path)
-            self.weights = model.get_weights()
+            raise Exception(("No update received!"))
         self.omega = serialized_message["results"]["omega"]
+        self.node_type = "LIBRARY"
 
     def __repr__(self):
         return json.dumps({

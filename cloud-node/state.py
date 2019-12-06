@@ -1,9 +1,10 @@
 from model import TEMP_FOLDER
 import os
 import shutil
-"""Global state for the service."""
+
 
 def init():
+    """Global state for the service."""
     import threading
     global state_lock
     state_lock = threading.Lock()
@@ -25,6 +26,8 @@ def init():
             "initial_message": None,
             "last_message_time": None,
             "last_message_sent_to_library": None,
+            "test": False,
+            "h5_model_path": None,
         }
         if os.path.isdir(TEMP_FOLDER):
             shutil.rmtree(TEMP_FOLDER)
