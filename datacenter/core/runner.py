@@ -117,8 +117,7 @@ class DMLRunner(object):
                 model = load_model(h5_model_filepath)
                 gradients = job.gradients
                 learning_rate = model.optimizer.lr
-                weights = np.array(model.get_weights())
-                new_weights = np.subtract(weights, gradients)
+                new_weights = np.subtract(model.get_weights(), gradients)
                 model.set_weights(new_weights)
                 model.save(h5_model_filepath)
             else:
@@ -126,13 +125,6 @@ class DMLRunner(object):
                 h5_model_filepath = os.path.join(h5_model_folder, 'model.h5')
                 model = load_model(h5_model_filepath)
                 print("Loaded model!")
-                if not job.use_gradients:
-                    print("Clearing model folder...")
-                    os.remove(h5_model_filepath)
-                    os.rmdir(h5_model_folder)
-                    h5_model_folder = None
-        print(h5_model_folder)
-        print(h5_model_filepath)
         results = DMLResult(
             status='successful',
             job=job,
@@ -196,7 +188,6 @@ class DMLRunner(object):
                 data_count_mappings['train.csv'],
                 job.hyperparams,
                 self.config,
-                gradients=job.use_gradients,
             )
 
         # Get the right omega based on the averaging type.
@@ -219,11 +210,7 @@ class DMLRunner(object):
             'omega': omega,
         }
 
-        if job.use_gradients:
-            train_results['gradients'] = result_val
-        else:
-            train_results['h5_model'] = h5_model
-            train_results['train_stats'] = result_val
+        train_results['gradients'] = result_val
             
         # new_weights_path = [weights.tolist() for weights in new_weights_path]
         #print(new_weights_path)

@@ -8,9 +8,8 @@ import urllib.request
 import os
 
 from core.utils.enums import RawEventTypes, MessageEventTypes
+from websockets.client import WebSocketClientProtocol
 
-# logging.basicConfig(level=logging.DEBUG,
-# 					format='[WebSocketClient] %(asctime)s %(levelname)s %(message)s')
 from functools import singledispatch
 
 
@@ -20,6 +19,12 @@ def to_serializable(val):
     return str(val)
 
 busy = False
+
+class ClientWebSocketProtocol(WebSocketClientProtocol):
+    def onPing():
+        print("Ping received from {}".format(self.peer))
+        self.sendPong(payload)
+        print("Pong sent to {}".format(self.peer))
 
 class WebSocketClient(object):
     def __init__(self, optimizer, config_manager, repo_id, test):
@@ -32,6 +37,7 @@ class WebSocketClient(object):
         self.reconnections_remaining = 3
         self.logger = logging.getLogger("WebSocketClient")
         self.logger.info("WebSocketClient {} set up!".format(repo_id))
+        self.message_to_send = None
 
     async def prepare_dml(self):
         stop_received = False
@@ -40,7 +46,10 @@ class WebSocketClient(object):
             if not self.reconnections_remaining:
                 self.logger.info("Failed to connect!")
                 return
-            async with websockets.connect(self._websocket_url, max_size=2**22) as websocket:
+            async with websockets.connect(self._websocket_url, ping_interval=None, \
+                    ping_timeout=None, close_timeout=None, max_size=None, \
+                    max_queue=None, read_limit=100000, write_limit=10000, \
+                    create_protocol=ClientWebSocketProtocol) as websocket:
                 await self.send_register_message(websocket)
                 while True:
                     json_response = await self.listen(websocket)
@@ -50,11 +59,12 @@ class WebSocketClient(object):
                     if json_response['action'] == 'TRAIN':
                         self.logger.info('Received TRAIN message, beginning training...')
                         url = self._cloud_url + "/model.h5"
-                        h5_model_folder = os.path.join('sessions', json_response['session_id'])
-                        h5_model_filepath = os.path.join(h5_model_folder, 'model.h5')
-                        if not os.path.isdir(h5_model_folder):
-                            os.makedirs(h5_model_folder)
-                        urllib.request.urlretrieve(url, h5_model_filepath)
+                        if json_response["round"] == 1:
+                            h5_model_folder = os.path.join('sessions', json_response['session_id'])
+                            h5_model_filepath = os.path.join(h5_model_folder, 'model.h5')
+                            if not os.path.isdir(h5_model_folder):
+                                os.makedirs(h5_model_folder)
+                            urllib.request.urlretrieve(url, h5_model_filepath)
                         results = self._optimizer.received_new_message(json_response)
                         if not results["success"]:
                             break
@@ -89,10 +99,8 @@ class WebSocketClient(object):
         try:
             await websocket.send(json.dumps(new_weights_message, default=to_serializable))
         except Exception as e:
-            print("Error sending weights!")
-            print(str(e))
-            print(new_weights_message)
-            
+            print("Error sending weights!: " + str(e))            
+            return {"success": False}          
 
     async def listen(self, websocket):
         try:
