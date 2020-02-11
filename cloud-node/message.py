@@ -18,6 +18,7 @@ class LibraryType(Enum):
     """
     PYTHON = "PYTHON"
     JS = "JAVASCRIPT"
+    IOS = "IOS"
 
 
 class Message:
@@ -75,7 +76,10 @@ class NewSessionMessage(Message):
         self.termination_criteria = serialized_message["termination_criteria"]
         self.library_type = serialized_message["library_type"]
         self.checkpoint_frequency = serialized_message.get("checkpoint_frequency", 1)
+        self.ios_config = serialized_message.get("ios_config", {})
         self.node_type = "DASHBOARD"
+        if self.library_type == LibraryType.IOS.value:
+            assert self.ios_config, "iOS Config must not be empty!"
 
     def __repr__(self):
         return json.dumps({
@@ -100,9 +104,9 @@ class NewUpdateMessage(Message):
     def __init__(self, serialized_message):
         self.session_id = serialized_message["session_id"]
         self.round = serialized_message["round"]
-        self.action = serialized_message["action"]
-        print(serialized_message["results"].keys())
         if "gradients" in serialized_message["results"]:
+            if isinstance(serialized_message["results"], str):
+                serialized_message["results"] = json.loads(serialized_message["results"])
             gradients = serialized_message["results"]["gradients"]
             self.gradients = [np.array(gradient) for gradient in gradients]
         elif "weights" in serialized_message["results"]:
@@ -119,7 +123,6 @@ class NewUpdateMessage(Message):
         return json.dumps({
             "session_id": self.session_id,
             "round": self.round,
-            "action": self.action,
             "weights": "omitted",
             "omega": self.omega,
         })

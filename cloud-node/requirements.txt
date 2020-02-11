@@ -17,6 +17,7 @@ chardet==3.0.4
 Click==7.0
 colorama==0.3.9
 constantly==15.1.0
+coremltools==3.2
 decorator==4.4.0
 dnspython==1.16.0
 docker==3.7.2

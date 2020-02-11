@@ -63,6 +63,26 @@ def serve_tfjs_model(filename):
         filename,
     )
 
+@app.route('/my_model.mlmodel')
+def serve_mlmodel():
+    """
+    Serves the TFJS model to the user.
+
+    TODO: Should do this through ngnix for a boost in performance. Should also
+    have some auth token -> session id mapping (security fix in the future).
+
+    Args:
+        filename (str): The filename to serve.
+    """
+    if not state.state["busy"]:
+        return "No active session!\n"
+
+    if state.state["library_type"] != LibraryType.IOS.value:
+        return "Current session is not for IOS!"
+
+    app_path = os.path.join(app.root_path, state.state['mlmodel_path'])
+    return send_file(app_path)
+
 @app.route('/model.h5', methods=['POST', 'GET'])
 def serve_keras_model():
     if not state.state["busy"]:
