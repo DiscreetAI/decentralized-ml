@@ -1,10 +1,9 @@
-import context
-
 from copy import deepcopy
 
 import pytest
 import boto3
 
+import context
 from message import Message
 from factory import CloudNodeFactory
 from protocol import CloudNodeProtocol
