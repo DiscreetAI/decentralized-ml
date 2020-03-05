@@ -48,7 +48,7 @@ def create_new_version(version_label):
     except (KeyError, TypeError) as err:
         raise Exception(str(err))
 
-def deploy_new_version(env_name, version_label):
+def deploy_new_version(env_name):
     """
     Helper function to deploy a created version of the environment to AWS
     Elastic Beanstalk.
@@ -59,13 +59,21 @@ def deploy_new_version(env_name, version_label):
         client = boto3.client('elasticbeanstalk')
     except ClientError as err:
         raise Exception("Failed to create boto3 client.\n" + str(err))
+    
+    try:
+        result = client.describe_application_versions(
+            ApplicationName=APPLICATION_NAME
+        )
+        latest_version = result["ApplicationVersions"][0]['VersionLabel']
+    except ClientError as err:
+        raise Exception("Failed to get version label.\n" + str(err))
 
     try:
         response = client.create_environment(
             ApplicationName=APPLICATION_NAME,
             EnvironmentName=env_name,
-            VersionLabel=version_label,
             SolutionStackName="64bit Amazon Linux 2018.03 v2.12.10 running Docker 18.06.1-ce",
+            VersionLabel=latest_version,
             OptionSettings=[
                 {
                    'ResourceName':'AWSEBLoadBalancer',
@@ -102,13 +110,7 @@ def deploy_cloud_node(env_name):
     Creates and then deploys a new version of the Cloud Node to AWS Elastic
     Beanstalk.
     """
-    # if not upload_to_s3(ZIP_PATH):
-    #     sys.exit(1)
-    version_label = strftime("%Y%m%d%H%M%S")
-    _ = create_new_version(version_label)
-    # Wait for the new version to be consistent before deploying
-    sleep(5)
-    _ = deploy_new_version(env_name, version_label)
+    _ = deploy_new_version(env_name)
     return True
 
 
