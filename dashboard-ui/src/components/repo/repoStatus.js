@@ -4,7 +4,6 @@ import Reflux from 'reflux';
 import CoordinatorStore from './../../stores/CoordinatorStore';
 import CoordinatorActions from './../../actions/CoordinatorActions';
 
-
 class RepoStatus extends Reflux.Component {
 
   constructor(props) {
@@ -36,6 +35,10 @@ class RepoStatus extends Reflux.Component {
     } else {
       return <span className="badge badge-pill badge-secondary">Idle</span>;
     }
+  }
+
+  rerender() {
+    this.forceUpdate()
   }
 }
 
