@@ -4,8 +4,8 @@ import keras
 import coremltools
 
 from utils.data_config import DataConfig, ImageConfig, TextConfig
-from utils.enums import ErrorMessages, LibraryType, DataType, library_types, \
-    color_spaces, data_types
+from utils.enums import ErrorMessages, LibraryType, DataType, ColorSpace, \
+    ModelNames, ModelPaths, library_types, color_spaces, data_types
 
 
 def valid_repo_id(repo_id):
@@ -198,12 +198,12 @@ def valid_data_config(library_type, data_config):
         bool: True if valid, False otherwise.
     """
     if library_type != LibraryType.IOS.value:
-        if data_config is not None:
+        if data_config:
             print(ErrorMessages.SET_DATA_CONFIG.value)
             return False
         else:
             return True
-    elif data_config == None:
+    elif not data_config:
         print(ErrorMessages.DATA_CONFIG_NOT_SPECIFIED.value)
         return False
     elif not isinstance(data_config, DataConfig):
@@ -294,7 +294,7 @@ def valid_session_args(repo_id, model, hyperparameters, \
         max_rounds (int): Maximum number of rounds to train for.
             Defaults to 5.
         library_type (str): The type of library to train with. Must
-            be either `PYTHON` or `JAVASCRIPT` or `IOS`. Defaults to `PYTHON`.
+            be either `PYTHON` or `JAVASCRIPT` or `IOS`.
         checkpoint_frequency (int): Save the model in S3 every
             `checkpoint_frequency` rounds. Defaults to 1.
         data_config (DataConfig): The configuration for the 
@@ -313,4 +313,56 @@ def valid_session_args(repo_id, model, hyperparameters, \
         and valid_max_rounds(max_rounds) \
         and valid_checkpoint_frequency(checkpoint_frequency, max_rounds) \
         and valid_dataset_id(library_type, dataset_id)
+
+def _make_mnist_config():
+    """
+    Make config for default MNIST model.
+    
+    Returns:
+        ImageConfig: The config for the default MNIST model.
+    """
+    class_labels = [str(i) for i in range(10)]
+    color_space = ColorSpace.GRAYSCALE.value
+    dims = (28, 28)
+    return ImageConfig(class_labels, color_space, dims)
+
+def _make_ngram_config():
+    """
+    Make config for the default n-gram model.
+    
+    Returns:
+        TextConfig: The config for the default n-gram model.
+    """
+    vocab_size = 33279
+    return TextConfig(vocab_size)
+
+def valid_model_name(model_name, library_type, model_path):
+    """
+    Validate the model name that the user provided. Must correspond to a 
+    default dataset. If the model name is invalid, the first returned value
+    will be `None`.
+    
+    Args:
+        model_name (str): The name corresponding to the default model.
+        library_type (str): The type of library to train with.
+        model_path (str): The model path, must be `None` for the model name
+            to be valid.
+    
+    Returns:
+        (str, DataConfig): Returns the model path to the default model and the
+            corresponding data config, if the library type is `IOS`.
+    """
+    if model_path:
+        print(ErrorMessages.ONLY_MODEL_NAME_OR_PATH.value)
+        return None, None
+    elif model_name == ModelNames.MNIST.value:
+        if library_type == LibraryType.IOS.value:
+            return ModelPaths.IOS_MNIST_PATH.value, _make_mnist_config()
+        else:
+            return ModelPaths.MNIST_PATH.value, None
+    elif model_name == ModelNames.NGRAM.value:
+        return ModelPaths.NGRAM_PATH.value, _make_ngram_config()
+    else:
+        print(ErrorMessages.UNKNOWN_MODEL_NAME.value)
+        return None, None
     
