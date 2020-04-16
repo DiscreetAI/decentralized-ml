@@ -24,15 +24,7 @@ def start_new_session(message, clients):
     """
     print("Starting new session...")
 
-    # 1. If server is BUSY or library type is not recognized, error. 
-    #    Otherwise, mark the service as BUSY.
-    if state.state["busy"]:
-        print("Aborting because the server is busy.")
-        return {
-            "error": True,
-            "message": "Server is already busy working."
-        }
-
+    # 1. Mark the service as BUSY.
     state.state["busy"] = True
 
     # 2. Set the internal round variable to 1, reset the number of nodes
@@ -57,6 +49,7 @@ def start_new_session(message, clients):
         "round": 1,
         "action": "TRAIN",
         "hyperparams": message.hyperparams,
+        "error": False,
     }
 
     # 4. Record the message to be sent and the library type we are training
@@ -85,7 +78,6 @@ def start_new_session(message, clients):
 
     # 6. Kickstart a DML Session with the model and round # 1
     return {
-        "error": False,
         "action": "BROADCAST",
         "client_list": chosen_clients,
         "message": new_message,
@@ -120,6 +112,7 @@ def start_next_round(clients):
         "round": state.state["current_round"],
         "action": "TRAIN",
         "hyperparams": message.hyperparams,
+        "error": False,
     }
 
     if state.state['library_type'] == LibraryType.PYTHON.value:
@@ -136,7 +129,6 @@ def start_next_round(clients):
     assert state.state["current_round"] > 0
 
     return {
-        "error": False,
         "action": "BROADCAST",
         "client_list": chosen_clients,
         "message": new_message,
@@ -160,11 +152,11 @@ def stop_session(clients_dict):
         "action": "STOP",
         "session_id": state.state["session_id"],
         "dataset_id": state.state["dataset_id"],
-        "repo_id": state.state["repo_id"]
+        "repo_id": state.state["repo_id"],
+        "error": False,
     }
     
     results = {
-        "error": False,
         "action": "BROADCAST",
         "client_list": clients_dict["LIBRARY"] + clients_dict["DASHBOARD"],
         "message": new_message,
