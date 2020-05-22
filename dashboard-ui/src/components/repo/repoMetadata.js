@@ -9,6 +9,7 @@ class RepoMetadata extends Reflux.Component {
 
         this.repoData = this.props.repoData;
         this.copyRepoIDToClipboard = this.copyRepoIDToClipboard.bind(this);
+        this.copyApiKeyToClipboard = this.copyApiKeyToClipboard.bind(this);
     }
 
     copyRepoIDToClipboard() {
@@ -22,8 +23,19 @@ class RepoMetadata extends Reflux.Component {
         document.body.removeChild(dummy);
     }
 
+    copyApiKeyToClipboard() {
+        // const { match: { params } } = this.props;
+        // const repoId = params.repoId;
+        var dummy = document.createElement("textarea");
+        document.body.appendChild(dummy);
+        dummy.value = this.repoData.ApiKey;
+        dummy.select();
+        document.execCommand("copy");
+        document.body.removeChild(dummy);
+    }
+
     render() {
-        if (!this.repoData.isDemo) {
+        if (!this.repoData.IsDemo) {
             return (
                 <div className="row">
                     <div className="col-1"></div>
@@ -32,14 +44,14 @@ class RepoMetadata extends Reflux.Component {
                     <p>{this.repoData.Description}</p>
                     </div>
                     <div className="col-5 padding">
-                        <h6> <b>REPO ID:  <span className="text-success">{ this.repoData.Id }</span></b>   <button class="btn btn-xs btn-dark copy" onClick={this.copyRepoIDToClipboard}>Copy to Clipboard</button></h6>  
+                        <h6> <b>REPO ID:  <span className="text-success">{ this.repoData.Id }</span></b>   <button class="btn btn-xs btn-dark copy" onClick={this.copyRepoIDToClipboard}>Copy to Clipboard</button></h6> 
+                        <h6> <b>API KEY:  <span className="text-success">{ this.repoData.ApiKey }</span></b>   <button class="btn btn-xs btn-dark copy" onClick={this.copyApiKeyToClipboard}>Copy to Clipboard</button></h6>  
                     </div>
                     <div className="col-2 text-right">
                     <RepoStatus repoId={this.repoData.Id} isDashboard={false}/>
                     </div>
               </div>
             )
-            return 
         } else {
             return (
                 <div className="row">
