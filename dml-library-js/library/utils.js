@@ -1,7 +1,6 @@
 "use strict";
 exports.__esModule = true;
 
-var BASE_URL = '.au4c4pd2ch.us-west-1.elasticbeanstalk.com';
 
 /**
  * Make the HTTP URL for the server.
@@ -9,7 +8,7 @@ var BASE_URL = '.au4c4pd2ch.us-west-1.elasticbeanstalk.com';
  * @param {string} repoID The repo ID associated with the dataset. 
  */
 function makeHTTPURL(repoID) {
-    return "http://" + repoID + BASE_URL;
+    return `http://${repoID}.cloud.discreetai.com`
 }
 
 /**
@@ -18,7 +17,7 @@ function makeHTTPURL(repoID) {
  * @param {string} repoID The repo ID associated with the dataset. 
  */
 function makeWSURL(repoID) {
-    return "ws://" + repoID + BASE_URL;
+    return `ws://${repoID}.cloud.discreetai.com`;
 }
 
 exports.makeHTTPURL = makeHTTPURL;

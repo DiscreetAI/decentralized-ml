@@ -11,15 +11,16 @@ var runner = new Runner(dmlDB);
 var dataManager = new DataManager(dmlDB, runner);
 runner.configure(dataManager)
 
-const repo_id = "99885f00eefcd4107572eb62a5cb429a";
+const repo_id = "test";
+const api_key = "api_key"
 
 async function run() {
-  const [X, y] = await getData();
+  const [X, y] = getData();
   console.log("Data retrieved!");
-  dataManager.bootstrap(repo_id, X, y);  
+  dataManager.bootstrap(repo_id, api_key, X, y);  
 }
 
-async function getData(label_index=0) {
+function getData(label_index=0) {
   var mnist = require('mnist'); // this line is not needed in the browser
 
   var set = mnist.set(8000, 0);

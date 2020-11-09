@@ -29,14 +29,16 @@ class DataManager {
      * server.
      * 
      * @param {string} repoID The repo ID associated with the dataset.
+     * @param {string} apiKey The API key for authentication.
      * @param {tf.Tensor2D} X The datapoints to train on.
      * @param {tf.Tensor1D} y The labels for the datapoints. 
      */
-    bootstrap(repoID, X, y) {
+    bootstrap(repoID, apiKey, X, y) {
         if (this.bootstrapped) {
             return;
         }
         this.repoID = repoID;
+        this.apiKey = apiKey;
         this.dmlDB.createDataEntry(this, X.arraySync(), y.arraySync());
     }
 
@@ -72,14 +74,16 @@ class DataManager {
             dataManager.bootstrapped = true;
             var registrationMessage = {
                 "type": "REGISTER",
-                "node_type": "LIBRARY"
+                "node_type": "LIBRARY",
+                "repo_id": dataManager.repoID,
+                "api_key": dataManager.apiKey
             };
             this.send(JSON.stringify(registrationMessage));
             dataManager._listen();
         });
 
         dataManager.ws.addEventListener("error", function (event) {
-            throw new Error("Bootstrap failed due to a failure to connect. Please check the repo id to make sure it is valid!");
+            throw new Error("Bootstrap failed due to a failure to connect. Please check the repo ID and API key to make sure they are valid!");
         });
 
     }
@@ -101,11 +105,13 @@ class DataManager {
                     dataManager.runner.handleRequest(request);
                 } else if (message["action"] == "STOP") {
                     console.log("Received STOP message. Stopping...")
+                } else if (message["action"] == "REGISTRATION_SUCCESS") {
+                    console.log("Registration was successful!")
                 } else {
                     console.log("Received unknown action. Stopping...")
                 }
-            } else {
-                console.log("No action in message. Stopping...")
+            } else if ((message["error"] || false)) {
+                throw Error(`Received error: ${message["error_messsage"]}! Stopping!`)
             }
         });
 
