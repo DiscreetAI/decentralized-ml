@@ -4,9 +4,10 @@
   "description": "Interoperable and decentralized machine learning in JavaScript.",
   "main": "index.js",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^1.2.9",
+    "@tensorflow/tfjs-node": "^2.7.0",
     "jsdoc": "^3.6.3",
-    "node-fetch": "^2.6.0",
+    "mnist": "^1.1.0",
+    "node-fetch": "^2.6.1",
     "pouchdb": "^7.1.1",
     "ws": "^6.2.1"
   },

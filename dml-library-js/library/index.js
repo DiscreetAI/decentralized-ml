@@ -20,11 +20,12 @@ function isBootstrapped() {
  * server.
  * 
  * @param {string} repoID The repo ID associated with the dataset.
+ * @param {string} apiKey The API key for authentication.
  * @param {tf.Tensor2D} X The datapoints to train on.
  * @param {tf.Tensor1D} y The labels for the datapoints.
  */
-function bootstrapLibrary(repoID, data) {
-    dataManager.bootstrap(repoID, data);
+function bootstrapLibrary(repoID, apiKey, data) {
+    dataManager.bootstrap(repoID, apiKey, data);
 }
 
 /**
